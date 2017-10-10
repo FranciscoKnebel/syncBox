@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 int connect_server (char *host, int port);
 
@@ -10,3 +13,5 @@ void get_file(char *file);
 void delete_file(char *file);
 
 void close_connection();
+
+void show_client_interface();
