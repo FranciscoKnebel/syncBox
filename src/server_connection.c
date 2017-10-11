@@ -87,9 +87,9 @@ int receive_connection(void){
     puts("loop de atendimento"); 
     //fica tentando encontrar trabalhador livre
 
-    //while(pthead_tryjoin_np(soldier[last_soldier],NULL)!=0){
+    while(pthread_tryjoin_np(soldier[last_soldier],NULL)!=0){
       last_soldier = ++last_soldier % MAX_CONNECTIONS;
-    //}
+    }
 
       pthread_create(&soldier[last_soldier], NULL, (void *)hq, &newsockfd);
 
