@@ -1,5 +1,7 @@
-#include "../headers/dropboxUtil.h"
+#include "dropboxUtil.h"
 
-void main(int argc, char *argv[]){
+int main(int argc, char *argv[]){
+  show_dir_content(argv[1]); //coloquei aqui pra testar
 
+  return 0;
 }

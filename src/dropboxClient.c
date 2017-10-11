@@ -1,4 +1,4 @@
-#include "../headers/dropboxUtil.h"
+#include "dropboxUtil.h"
 
 char userid[MAXNAME];
 
