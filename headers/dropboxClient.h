@@ -4,6 +4,7 @@
 
 #include "dropboxUtil.h"
 #include "client/commands.h"
+#include "client/help.h"
 
 // COMMANDS
 #define COMMAND_UPLOAD "upload"

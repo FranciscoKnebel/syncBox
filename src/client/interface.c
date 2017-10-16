@@ -40,7 +40,7 @@ int is_valid_command(char* command) {
 		strncmp(command, COMMAND_EXIT, strlen(COMMAND_EXIT)) == 0;
 }
 
-int callCommand(char* command, char* attribute, int check) {
+void callCommand(char* command, char* attribute, int check) {
 	if(strcmp(command, COMMAND_HELP) == 0) {
 		if(check == COMMAND_WITH_ARGUMENTS) {
 			command_help(attribute);
@@ -48,11 +48,20 @@ int callCommand(char* command, char* attribute, int check) {
 			print_commands();
 		}
 	}
-	else if(strcmp(command, COMMAND_UPLOAD) == 0)
-		command_upload(attribute);
-	else if(strcmp(command, COMMAND_DOWNLOAD) == 0)
-		command_download(attribute);
-	else if(strcmp(command, COMMAND_LS) == 0)
+	else if(strcmp(command, COMMAND_UPLOAD) == 0) {
+		if(check == COMMAND_WITH_ARGUMENTS) {
+			command_upload(attribute);
+		} else {
+			command_help(COMMAND_UPLOAD);
+		}
+	}
+	else if(strcmp(command, COMMAND_DOWNLOAD) == 0) {
+		if(check == COMMAND_WITH_ARGUMENTS) {
+			command_download(attribute);
+		} else {
+			command_help(COMMAND_DOWNLOAD);
+		}
+	} else if(strcmp(command, COMMAND_LS) == 0)
 		command_listserver();
 	else if(strcmp(command, COMMAND_LC) == 0)
 		command_listclient();
@@ -88,7 +97,7 @@ int parseCommand(char* command, char* commandName, char* commandAttrib) {
 				return COMMAND_WITH_NO_ARGUMENTS;
 			}
 
-			printf("Nenhum argumento foi informado.\n");
+			printf("\nNenhum argumento foi informado.\n");
 			return NO_ARGUMENT_PROVIDED;
 		} else {
 			strncpy(commandAttrib, command + offset, strlen(command) - offset);
@@ -121,9 +130,7 @@ void show_client_interface() {
 				char atributo[100];
 
 				int check = parseCommand(comando_solicitado, comando, atributo);
-				if(check >= 0) {
-					callCommand(comando, atributo, check);
-				}
+				callCommand(comando, atributo, check);
 			}
 		} else {
 			printf("Comando '%s%s%s' inválido.\n", ANSI_COLOR_GREEN, comando_solicitado, ANSI_COLOR_RESET);

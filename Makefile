@@ -18,11 +18,12 @@ util:	$(SRC_DIR)dropboxUtil.c $(SRC_DIR)util.c
 OBJ_FILES = $(BIN_DIR)dropboxUtil.o $(BIN_DIR)util.o
 
 ## CLIENT COMMANDS
-client-aux: $(SRC_DIR)client/interface.c
+client-aux: $(SRC_DIR)client/interface.c $(SRC_DIR)client/commands.c $(SRC_DIR)client/help.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/interface.o -I$(HEADERS_DIR) $(SRC_DIR)client/interface.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/commands.o -I$(HEADERS_DIR) $(SRC_DIR)client/commands.c
+	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/help.o -I$(HEADERS_DIR) $(SRC_DIR)client/help.c
 
-CLIENT_FILES = $(BIN_DIR)client/interface.o $(BIN_DIR)client/commands.o
+CLIENT_FILES = $(BIN_DIR)client/interface.o $(BIN_DIR)client/commands.o $(BIN_DIR)client/help.o
 client:	$(SRC_DIR)dropboxClient.c util client-aux
 	$(CC) $(CFLAGS) -o $(CLI_DIR)dropboxClient $(SRC_DIR)dropboxClient.c $(OBJ_FILES) $(CLIENT_FILES) -pthread -I$(HEADERS_DIR)
 
