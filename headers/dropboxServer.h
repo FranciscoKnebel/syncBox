@@ -1,5 +1,4 @@
-#define MAXNAME 32
-#define MAXFILES 15
+#include "dropboxUtil.h"
 
 struct file_info
 {
@@ -16,7 +15,6 @@ struct client
   struct file_info file_info[MAXFILES];
   int logged_in;
 };
-
 
 void sync_server();
 

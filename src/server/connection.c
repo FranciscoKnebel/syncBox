@@ -1,4 +1,5 @@
 #include "server_connection.h"
+#include "dropboxServer.h"
 
 int keep_service = 1;
 
@@ -18,7 +19,7 @@ void hq(int *client_socket){
 
   int n,i=0;
   char mission[MAXNAME],user_name[MAXNAME],current;
-  
+
   printf("In headquarters - client %d\n",*client_socket);
 
   //leitura do usuário
@@ -79,12 +80,12 @@ int receive_connection(void){
 
   clilen = sizeof(struct sockaddr_in);
 
-  
+
   while(keep_service){
-    if ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) <= 0) 
+    if ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) <= 0)
       perror("ERROR on accept");
 
-    puts("loop de atendimento"); 
+    puts("loop de atendimento");
     //fica tentando encontrar trabalhador livre
 
     while(pthread_tryjoin_np(soldier[last_soldier],NULL)!=0){
