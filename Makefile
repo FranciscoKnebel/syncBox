@@ -36,6 +36,10 @@ SERVER_FILES = $(BIN_DIR)server/connection.o $(BIN_DIR)server/fileUtil.o
 server: $(SRC_DIR)dropboxServer.c util server-aux
 	$(CC) $(CFLAGS) -o $(SVR_DIR)dropboxServer $(SRC_DIR)dropboxServer.c $(OBJ_FILES) $(SERVER_FILES) -pthread -I$(HEADERS_DIR)
 
+## TEST
+test:
+	echo "No tests defined."
+
 clean:
 	rm -f $(DST_DIR)*.* $(CLI_DIR)dropboxClient $(SVR_DIR)dropboxServer
 	rm -f $(OBJ_FILES) $(CLIENT_FILES) $(SERVER_FILES)

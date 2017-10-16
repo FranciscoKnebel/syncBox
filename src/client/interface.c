@@ -22,7 +22,7 @@ void print_commands() {
 void show_intro_message() {
 	cprintf(ANSI_COLOR_BLUE, "\tsyncBox\t");
 	cprintf(ANSI_COLOR_MAGENTA, "v0.0.1 - 03/11/2017\n");
-	printf("\nGabriel Pittol\nFrancisco Knebel\nLuciano Zancan\nMatheus Krause\n");
+	printf("\nFrancisco Knebel\nGabriel Pittol\nLuciano Zancan\nMatheus Krause\n");
 }
 
 int is_not_exit_command(char* command) {

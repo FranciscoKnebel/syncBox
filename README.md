@@ -1,8 +1,11 @@
-syncBox
-Trabalho da disciplina de Sistemas Operacionais 2
-Criação de um sistema similar ao Dropbox
+# syncBox
+
+[![Build Status](https://travis-ci.com/FranciscoKnebel/syncBox.svg?token=XTCGVcTeCasm1L7c4fss&branch=master)](https://travis-ci.com/FranciscoKnebel/syncBox)
+
+Aplicação desenvolvida como trabalho da disciplina de Sistemas Operacionais II (INF01151).
+
 Integrantes:
-Francisco Paiva Knebel
+Francisco Knebel
 Gabriel Pittol
 Luciano Zancan
 Matheus Krause
