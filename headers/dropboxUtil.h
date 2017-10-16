@@ -1,9 +1,12 @@
-#include "dropboxClient.h"
-#include "dropboxServer.h"
+#include "util.h"
 
 #include <dirent.h>
 
-#define GREEN  "\x1B[32m"
-#define BLUE  "\x1B[34m"
+// syncBox CONSTANTS
+#define MAXNAME 64
+#define MAXFILES 128
 
-void show_dir_content(char * path);
+// ERROR CODES
+#define FILE_NOT_FOUND -2
+
+int show_dir_content(char * path, struct dirent ** files1);
