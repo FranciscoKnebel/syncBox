@@ -9,7 +9,11 @@ DST_DIR = dst/
 CLI_DIR = $(DST_DIR)client/
 SVR_DIR = $(DST_DIR)server/
 
+TST_SRC_DIR= test/
+TST_DST_DIR = $(TST_SRC_DIR)dst/
+
 all: util client server
+	@echo "All files compiled!"
 
 util:	$(SRC_DIR)dropboxUtil.c $(SRC_DIR)util.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)util.o -I$(HEADERS_DIR) $(SRC_DIR)util.c
@@ -23,7 +27,7 @@ client-aux: $(SRC_DIR)client/interface.c $(SRC_DIR)client/commands.c $(SRC_DIR)c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/commands.o -I$(HEADERS_DIR) $(SRC_DIR)client/commands.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/help.o -I$(HEADERS_DIR) $(SRC_DIR)client/help.c
 
-CLIENT_FILES = $(BIN_DIR)client/interface.o $(BIN_DIR)client/commands.o $(BIN_DIR)client/help.o
+CLIENT_FILES = $(BIN_DIR)client/*.o
 client:	$(SRC_DIR)dropboxClient.c util client-aux
 	$(CC) $(CFLAGS) -o $(CLI_DIR)dropboxClient $(SRC_DIR)dropboxClient.c $(OBJ_FILES) $(CLIENT_FILES) -pthread -I$(HEADERS_DIR)
 
@@ -32,14 +36,23 @@ server-aux:
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/connection.o -I$(HEADERS_DIR) $(SRC_DIR)server/connection.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/fileUtil.o -I$(HEADERS_DIR) $(SRC_DIR)server/fileUtil.c
 
-SERVER_FILES = $(BIN_DIR)server/connection.o $(BIN_DIR)server/fileUtil.o
+SERVER_FILES = $(BIN_DIR)server/*.o
 server: $(SRC_DIR)dropboxServer.c util server-aux
 	$(CC) $(CFLAGS) -o $(SVR_DIR)dropboxServer $(SRC_DIR)dropboxServer.c $(OBJ_FILES) $(SERVER_FILES) -pthread -I$(HEADERS_DIR)
 
 ## TEST
-test:
-	echo "No tests defined."
+test: test_util
+	@echo "All tests finished."
+
+test_util: util
+	$(CC) $(CFLAGS) -o $(TST_DST_DIR)dropboxUtil $(TST_SRC_DIR)dropboxUtil.c $(OBJ_FILES) -pthread -I$(HEADERS_DIR)
+	./$(TST_DST_DIR)dropboxUtil assets
+	./$(TST_DST_DIR)dropboxUtil src
+	./$(TST_DST_DIR)dropboxUtil src/client
+
+TST_FILES = $(TST_DST_DIR)/dropboxUtil
 
 clean:
 	rm -f $(DST_DIR)*.* $(CLI_DIR)dropboxClient $(SVR_DIR)dropboxServer
 	rm -f $(OBJ_FILES) $(CLIENT_FILES) $(SERVER_FILES)
+	rm -f $(TST_FILES)

@@ -23,7 +23,7 @@
 #define COMMAND_WITH_NO_ARGUMENTS 1
 #define NO_ARGUMENT_PROVIDED -2
 
-int connect_server (char *host, int port);
+int connect_server(char *host, int port);
 
 void sync_client();
 

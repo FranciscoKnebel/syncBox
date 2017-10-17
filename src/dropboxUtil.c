@@ -3,24 +3,27 @@
 
 #include "dropboxUtil.h"
 
-int show_dir_content(char * path, struct dirent ** files) {
+int get_dir_content(char * path, struct d_file files[], int* counter) {
   DIR * d = opendir(path);
   if(d == NULL) {
     return FILE_NOT_FOUND;
   }
 
-  struct dirent * dir;
-  while ((dir = readdir(d)) != NULL) {
-    if(dir-> d_type != DT_DIR) { // Arquivo não é um diretório
-      printf("%s%s\n", BLUE, dir->d_name);
-      // add to files variable
-    } else if(dir -> d_type == DT_DIR && strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0 ) {
-      // Arquivo é um diretório
-      printf("%s%s\n", GREEN, dir->d_name);
+  struct dirent * entry;
+  while (((entry = readdir(d)) != NULL) && (*counter) < MAXFILES) {
+    if(strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+      struct d_file newFile;
+      strcpy(newFile.path, path);
+      strcpy(newFile.name, entry->d_name);
 
-      char d_path[255];
-      sprintf(d_path, "%s/%s", path, dir->d_name);
-      show_dir_content(d_path, files);
+      memcpy(&files[(*counter)++], &newFile, sizeof(newFile));
+
+      if(entry->d_type == DT_DIR) { // Arquivo é um diretório
+        char dpath[MAXPATH];
+        sprintf(dpath, "%s/%s", newFile.path, newFile.name);
+
+        get_dir_content(dpath, files, counter);
+      }
     }
   }
 
@@ -28,17 +31,22 @@ int show_dir_content(char * path, struct dirent ** files) {
   return 0;
 }
 
+int get_all_entries(char * path, struct d_file files[]) {
+  int counter = 0;
+
+  return get_dir_content(path, files, &counter);
+}
+
 int print_dir_content(char * path) {
-  struct dirent ** files;
+  struct d_file files[MAXFILES];
+  int counter = 0;
 
-  show_dir_content(path, files);
+  get_dir_content(path, files, &counter);
 
-  /*
-  TO DO
-
-  print file names for debugging
-  remove prints from show_dir_content
-  */
+  printf("ELEMENTS FOUND: %d\n", counter);
+  for (int i = 0; i < counter; i++) {
+    printf("%s%s%s/%s\n", ANSI_COLOR_YELLOW, files[i].path, ANSI_COLOR_RESET, files[i].name);
+  }
 
   return 0;
 }

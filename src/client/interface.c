@@ -111,7 +111,7 @@ int parseCommand(char* command, char* commandName, char* commandAttrib) {
 }
 
 void show_client_interface() {
-	char comando_solicitado[100], nome_arquivo[100];
+	char comando_solicitado[100];//, nome_arquivo[100];
 
 	show_intro_message();
 	print_commands();

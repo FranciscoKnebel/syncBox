@@ -1,13 +1,5 @@
 #include "dropboxUtil.h"
 
-struct file_info
-{
-  char name[MAXNAME];
-  char extension[MAXNAME];
-  char last_modified[MAXNAME];
-  int size;
-};
-
 struct client
 {
   int devices[2];

@@ -4,9 +4,29 @@
 
 // syncBox CONSTANTS
 #define MAXNAME 64
+#define MAXPATH 256
 #define MAXFILES 128
+
+#define DIRECTORY_FILE 0;
+#define REGULAR_FILE 1;
 
 // ERROR CODES
 #define FILE_NOT_FOUND -2
 
-int show_dir_content(char * path, struct dirent ** files1);
+struct file_info
+{
+  char name[MAXNAME];
+  char extension[MAXNAME];
+  char last_modified[MAXNAME];
+  int size;
+};
+
+struct d_file
+{
+  char path[MAXNAME];
+  char name[MAXNAME];
+};
+
+int get_dir_content(char * path, struct d_file files[], int* counter);
+int get_all_entries(char * path, struct d_file files[]);
+int print_dir_content(char * path);
