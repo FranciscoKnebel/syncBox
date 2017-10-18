@@ -1,5 +1,9 @@
 #include "util.h"
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <pthread.h>
 #include <dirent.h>
 
 // syncBox CONSTANTS
@@ -25,6 +29,12 @@ struct d_file
 {
   char path[MAXNAME];
   char name[MAXNAME];
+};
+
+struct dir_content {
+  char* path;
+  struct d_file* files;
+  int* counter;
 };
 
 int get_dir_content(char * path, struct d_file files[], int* counter);

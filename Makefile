@@ -47,8 +47,12 @@ test: test_util
 test_util: util
 	$(CC) $(CFLAGS) -o $(TST_DST_DIR)dropboxUtil $(TST_SRC_DIR)dropboxUtil.c $(OBJ_FILES) -pthread -I$(HEADERS_DIR)
 	./$(TST_DST_DIR)dropboxUtil assets
+	@sleep 3
 	./$(TST_DST_DIR)dropboxUtil src
+	@sleep 3
 	./$(TST_DST_DIR)dropboxUtil src/client
+	@sleep 3
+	./$(TST_DST_DIR)dropboxUtil .
 
 TST_FILES = $(TST_DST_DIR)/dropboxUtil
 

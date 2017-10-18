@@ -1,8 +1,15 @@
-#include <stdio.h>
-#include <string.h>
-
 #include "dropboxUtil.h"
 
+void *dir_content_thread(void *ptr) {
+   struct dir_content *args = (struct dir_content *) ptr;
+
+   get_dir_content(args->path, args->files, args->counter);
+
+   pthread_exit(NULL);
+   return NULL;
+}
+
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 int get_dir_content(char * path, struct d_file files[], int* counter) {
   DIR * d = opendir(path);
   if(d == NULL) {
@@ -16,13 +23,26 @@ int get_dir_content(char * path, struct d_file files[], int* counter) {
       strcpy(newFile.path, path);
       strcpy(newFile.name, entry->d_name);
 
-      memcpy(&files[(*counter)++], &newFile, sizeof(newFile));
+      pthread_mutex_lock(&lock);
+      memcpy(&files[(*counter)], &newFile, sizeof(newFile));
+      (*counter)++;
+      pthread_mutex_unlock(&lock);
 
+      int rc;
+      pthread_t thread;
       if(entry->d_type == DT_DIR) { // Arquivo é um diretório
-        char dpath[MAXPATH];
-        sprintf(dpath, "%s/%s", newFile.path, newFile.name);
+        struct dir_content args;
+        args.path = malloc(sizeof(char) * MAXNAME);
 
-        get_dir_content(dpath, files, counter);
+        sprintf(args.path, "%s/%s", newFile.path, newFile.name);
+        args.files = files;
+        args.counter = counter;
+
+        if((rc = pthread_create(&thread, NULL, &dir_content_thread, (void *) &args))) {
+          printf("Thread creation failed: %d\n", rc);
+        }
+
+        pthread_join(thread, NULL);
       }
     }
   }
@@ -47,6 +67,7 @@ int print_dir_content(char * path) {
   for (int i = 0; i < counter; i++) {
     printf("%s%s%s/%s\n", ANSI_COLOR_YELLOW, files[i].path, ANSI_COLOR_RESET, files[i].name);
   }
+  printf("ELEMENTS FOUND: %d\n", counter);
 
   return 0;
 }
