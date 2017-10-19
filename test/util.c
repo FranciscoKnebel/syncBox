@@ -9,6 +9,8 @@ int main(int argc, char *argv[]) {
   int count1 = 0, count2 = 0;
   FILE* pFile1, *pFile2;
 
+  // FILESIZE
+  printf("Filesize testing...");
   // abre um arquivo e verifica o seu tamanho.
   pFile1 = fopen(path, "rb");
   if(pFile1) {
@@ -50,6 +52,20 @@ int main(int argc, char *argv[]) {
   }
   fclose(pFile1);
   fclose(pFile2);
+
+  puts("done.");
+
+  // FILE EXISTS
+  printf("File exists testing...");
+  assert(fileExists(path));
+  puts("done.");
+
+  // GET USERNAME
+  printf("Get username testing...");
+  char username[MAXNAME];
+  strcpy(username, getUserName());
+  printf("Username: '%s' ", username);
+  puts("done.");
 
   return 0;
 }

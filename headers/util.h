@@ -1,4 +1,8 @@
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <pwd.h>
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -14,3 +18,8 @@ int cprintf(char* ansicode, char* string);
 
 /* Files */
 int getFilesize(FILE* pFile);
+int fileExists_stat(char* pathname, struct stat* st);
+int fileExists(char* pathname);
+
+/* System */
+char* getUserName();

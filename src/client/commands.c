@@ -1,4 +1,4 @@
-  #include "dropboxClient.h"
+#include "dropboxClient.h"
 
 void command_upload(char* path) {
   return send_file(path);
@@ -22,8 +22,13 @@ void command_listclient() {
 }
 
 void command_getsyncdir() {
-  // verifica se o diretório /home/sync_dir_<nomeusuario> existe
+  // verifica se o diretório /home/user/sync_dir_<nomeusuario> existe
     // se não, cria.
+  if(!fileExists(user.folder)) {
+    if(mkdir(user.folder, 0777) != 0) {
+      printf("Error creating user folder '%s'.\n", user.folder);
+    }
+  }
 
   // sincroniza pasta local com o servidor
   sync_client();

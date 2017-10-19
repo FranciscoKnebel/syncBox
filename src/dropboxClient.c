@@ -1,6 +1,6 @@
 #include "dropboxClient.h"
 
-char userid[MAXNAME];
+struct user_info user;
 
 int connect_server (char *host, int port) {
 	// se não conectou
@@ -12,6 +12,14 @@ int connect_server (char *host, int port) {
 void sync_client() {
 	// verifica se o diretório sync_dir_<nomeusuario> existe
   // se não, cria pasta e fecha.
+	if(!fileExists(user.folder)) {
+		if(mkdir(user.folder, 0777) != 0) {
+			printf("Error creating user folder '%s'.\n", user.folder);
+		}
+
+		return;
+	}
+
 	// else {
 		// sincroniza pasta local com o servidor
 		// usar inotify ou dirent
@@ -105,7 +113,12 @@ int main(int argc, char *argv[]) {
 
 	// Parsing de argumentos do programa
 	if (strlen(argv[1]) <= MAXNAME) {
-		strcpy(userid, argv[1]);
+		strcpy(user.id, argv[1]);
+
+		char username[MAXNAME];
+		strcpy(username, getUserName());
+
+		sprintf(user.folder, "/home/%s/sync_dir_%s", username, user.id);
 	} else {
 		puts("Tamanho máximo de userid foi ultrapassado.");
 		printf("Máximo: %d. Inserido: %d.\n", MAXNAME, strlen(argv[1]) <= MAXNAME);

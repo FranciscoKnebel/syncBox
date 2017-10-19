@@ -15,3 +15,26 @@ int getFilesize(FILE* pFile) {
 
 	return size;
 }
+
+int fileExists_stat(char* pathname, struct stat* st) {
+	if (stat(pathname, st) == -1)
+		return 0; // False
+	return 1;
+}
+
+int fileExists(char* pathname) {
+	struct stat st = { 0 };
+
+	return fileExists_stat(pathname, &st);
+}
+
+char* getUserName()
+{
+  uid_t uid = geteuid();
+  struct passwd *pw = getpwuid(uid);
+
+	if (pw) {
+    return pw->pw_name;
+  }
+  return "";
+}

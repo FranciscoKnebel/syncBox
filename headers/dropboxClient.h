@@ -23,6 +23,14 @@
 #define COMMAND_WITH_NO_ARGUMENTS 1
 #define NO_ARGUMENT_PROVIDED -2
 
+
+/* STRUCTURES */
+struct user_info {
+  char id[MAXNAME];
+  char folder[MAXNAME*2];
+};
+extern struct user_info user;
+
 int connect_server(char *host, int port);
 
 void sync_client();
