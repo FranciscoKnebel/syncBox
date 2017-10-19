@@ -1,31 +1,35 @@
-#include "dropboxClient.h"
+  #include "dropboxClient.h"
 
-int command_upload(char* path) {
-  cprintf(ANSI_COLOR_GREEN, COMMAND_UPLOAD);
-  return 0;
+void command_upload(char* path) {
+  return send_file(path);
 }
 
-int command_download(char* path) {
-  cprintf(ANSI_COLOR_GREEN, COMMAND_DOWNLOAD);
-  return 0;
+void command_download(char* path) {
+  return get_file(path);
 }
 
-int command_listserver() {
-  cprintf(ANSI_COLOR_GREEN, COMMAND_LS);
-  return 0;
+void command_listserver() {
+  // Lista os arquivos salvos no servidor associados ao usuário.
+  // pede lista para o servidor e imprime resultado.
 }
 
-int command_listclient() {
-  cprintf(ANSI_COLOR_GREEN, COMMAND_LC);
-  return 0;
+void command_listclient() {
+  // lista os arquivos salvos no diretório "sync_dir_<nomeusuario>".
+  // verifica se o diretório sync_dir_<nomeusuario> existe
+    // se não, retorna erro.
+
+  // retorna os arquivos encontrados no diretório.
 }
 
-int command_getsyncdir() {
-  cprintf(ANSI_COLOR_GREEN, COMMAND_SYNC);
-  return 0;
+void command_getsyncdir() {
+  // verifica se o diretório /home/sync_dir_<nomeusuario> existe
+    // se não, cria.
+
+  // sincroniza pasta local com o servidor
+  sync_client();
 }
 
-int command_help(char* command) {
+void command_help(char* command) {
   if(strcmp(command, COMMAND_HELP) == 0) {
     help_help();
   } else if(strcmp(command, COMMAND_UPLOAD) == 0) {
@@ -43,6 +47,4 @@ int command_help(char* command) {
   } else {
     help_undef(command);
   }
-
-  return 0;
 }

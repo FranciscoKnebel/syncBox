@@ -41,10 +41,16 @@ server: $(SRC_DIR)dropboxServer.c util server-aux
 	$(CC) $(CFLAGS) -o $(SVR_DIR)dropboxServer $(SRC_DIR)dropboxServer.c $(OBJ_FILES) $(SERVER_FILES) -pthread -I$(HEADERS_DIR)
 
 ## TEST
-test: test_util
+test: test_dropboxUtil test_util
 	@echo "All tests finished."
 
 test_util: util
+	$(CC) $(CFLAGS) -o $(TST_DST_DIR)util $(TST_SRC_DIR)util.c $(OBJ_FILES) -pthread -I$(HEADERS_DIR)
+	./$(TST_DST_DIR)util README.md
+	./$(TST_DST_DIR)util src/util.c
+	./$(TST_DST_DIR)util headers/dropboxClient.h
+
+test_dropboxUtil: util
 	$(CC) $(CFLAGS) -o $(TST_DST_DIR)dropboxUtil $(TST_SRC_DIR)dropboxUtil.c $(OBJ_FILES) -pthread -I$(HEADERS_DIR)
 	./$(TST_DST_DIR)dropboxUtil assets
 	@sleep 3

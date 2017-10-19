@@ -136,4 +136,6 @@ void show_client_interface() {
 			printf("Comando '%s%s%s' inválido.\n", ANSI_COLOR_GREEN, comando_solicitado, ANSI_COLOR_RESET);
 		}
 	}
+
+	close_connection();
 }

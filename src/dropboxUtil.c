@@ -26,8 +26,8 @@ int get_dir_content(char * path, struct d_file files[], int* counter) {
       pthread_mutex_lock(&lock);
       memcpy(&files[(*counter)], &newFile, sizeof(newFile));
       (*counter)++;
+      
       pthread_mutex_unlock(&lock);
-
       int rc;
       pthread_t thread;
       if(entry->d_type == DT_DIR) { // Arquivo é um diretório

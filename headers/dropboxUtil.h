@@ -14,6 +14,8 @@
 #define DIRECTORY_FILE 0;
 #define REGULAR_FILE 1;
 
+#define BUFFER_SIZE 1024
+
 // ERROR CODES
 #define FILE_NOT_FOUND -2
 

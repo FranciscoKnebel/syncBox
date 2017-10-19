@@ -3,18 +3,6 @@
 
 int keep_service = 1;
 
-int sync_server(){
-  return 0;
-}
-
-int receive_file(){
-  return 0;
-}
-
-int send_file(){
-  return 0;
-}
-
 void hq(int *client_socket){
 
   int n,i=0;
@@ -40,13 +28,13 @@ void hq(int *client_socket){
   }while(current!='$');
   mission[i-1] = '\0';
 
-  if(strcmp(SYNC_REQUEST,mission)==0)
-    sync_server();
-  else if(strcmp(SEND_REQUEST,mission)==0)
-    receive_file();
-  else if(strcmp(RECEIVE_REQUEST,mission)==0)
-    send_file();
-
+  if(strcmp(SYNC_REQUEST,mission)==0) {
+    //sync_server();
+  } else if(strcmp(SEND_REQUEST,mission)==0) {
+    //receive_file();
+  } else if(strcmp(RECEIVE_REQUEST,mission)==0) {
+    //send_file();
+  } // faltava argumentos, só pra conseguir compilar o server
 }
 
 int receive_connection(void){
