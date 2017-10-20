@@ -19,9 +19,9 @@ void sync_client() {
 
 		return;
 	}
-
 	// else {
 		// sincroniza pasta local com o servidor
+
 		// usar inotify ou dirent
 
 		// se um arquivo local foi criado, adicionar ao servidor
@@ -114,11 +114,7 @@ int main(int argc, char *argv[]) {
 	// Parsing de argumentos do programa
 	if (strlen(argv[1]) <= MAXNAME) {
 		strcpy(user.id, argv[1]);
-
-		char username[MAXNAME];
-		strcpy(username, getUserName());
-
-		sprintf(user.folder, "/home/%s/sync_dir_%s", username, user.id);
+		sprintf(user.folder, "%s/sync_dir_%s", getUserHome(), user.id);
 	} else {
 		puts("Tamanho máximo de userid foi ultrapassado.");
 		printf("Máximo: %d. Inserido: %d.\n", MAXNAME, strlen(argv[1]) <= MAXNAME);

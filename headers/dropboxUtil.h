@@ -1,11 +1,5 @@
 #include "util.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <dirent.h>
-
 // syncBox CONSTANTS
 #define MAXNAME 64
 #define MAXPATH 256

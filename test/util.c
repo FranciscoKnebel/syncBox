@@ -62,9 +62,12 @@ int main(int argc, char *argv[]) {
 
   // GET USERNAME
   printf("Get username testing...");
-  char username[MAXNAME];
-  strcpy(username, getUserName());
-  printf("Username: '%s' ", username);
+  printf("Username: '%s' ", getUserName());
+  puts("done.");
+
+  // GET USERHOME
+  printf("Get userhome testing...");
+  printf("Username: '%s' ", getUserHome());
   puts("done.");
 
   return 0;

@@ -1,7 +1,7 @@
 #include "dropboxClient.h"
 
 void print_commands() {
-	puts("\nComandos disponíveis:");
+	puts("\n\nComandos disponíveis:");
 
 	printf("\tupload ");
 	cprintf(ANSI_COLOR_GREEN, "<path/filename.ext>\n");
@@ -26,6 +26,9 @@ void show_intro_message() {
 
 	printf("\nBem-vindo ao syncBox, ");
 	cprintf(ANSI_COLOR_GREEN, user.id);
+
+	printf("\nPasta do usuário: ");
+	cprintf(ANSI_COLOR_GREEN, user.folder);
 }
 
 int is_not_exit_command(char* command) {

@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "dropboxUtil.h"
 #include "client/commands.h"
 #include "client/help.h"

@@ -38,3 +38,13 @@ char* getUserName()
   }
   return "";
 }
+
+char* getUserHome()
+{
+  struct passwd *pw = getpwuid(geteuid());
+
+	if (pw) {
+    return pw->pw_dir;
+  }
+  return "";
+}

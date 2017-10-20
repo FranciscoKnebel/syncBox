@@ -1,8 +1,15 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include <dirent.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <pwd.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
-#include <pwd.h>
+#include <sys/inotify.h>
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -11,7 +18,6 @@
 #define ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
-
 
 /* Interface */
 int cprintf(char* ansicode, char* string);
@@ -23,3 +29,4 @@ int fileExists(char* pathname);
 
 /* System */
 char* getUserName();
+char* getUserHome();
