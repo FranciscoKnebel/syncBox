@@ -9,6 +9,7 @@
 #define COMMAND_LC "list_client"
 #define COMMAND_SYNC "get_sync_dir"
 #define COMMAND_HELP "help"
+#define COMMAND_CREDITS "credits"
 #define COMMAND_EXIT "exit"
 
 // RETURN CODES

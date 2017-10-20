@@ -46,6 +46,13 @@ void help_sync() {
   puts("Cria o diretório 'sync_dir_<nomeusuário>' no /home do usuário.");
 }
 
+void help_credits() {
+  printf("COMANDO: \n %s ", COMMAND_CREDITS);
+  
+  puts("\nDESCRIÇÃO: ");
+  puts("Informações de autoria.");
+}
+
 void help_exit() {
   printf("COMANDO: \n %s ", COMMAND_EXIT);
 

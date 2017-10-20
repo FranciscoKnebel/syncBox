@@ -16,13 +16,14 @@ void print_commands() {
 	printf("\thelp ");
 	cprintf(ANSI_COLOR_GREEN, "command\n");
 
+	puts("\tcredits");
+
 	cprintf(ANSI_COLOR_RED, "\texit");
 }
 
 void show_intro_message() {
 	cprintf(ANSI_COLOR_BLUE, "\tsyncBox\t");
 	cprintf(ANSI_COLOR_MAGENTA, "v0.0.1 - 03/11/2017\n");
-	printf("\nFrancisco Knebel\nGabriel Pittol\nLuciano Zancan\nMatheus Krause\n");
 
 	printf("\nBem-vindo ao syncBox, ");
 	cprintf(ANSI_COLOR_GREEN, user.id);
@@ -43,6 +44,7 @@ int is_valid_command(char* command) {
 		strncmp(command, COMMAND_LC, strlen(COMMAND_LC)) == 0 ||
 		strncmp(command, COMMAND_SYNC, strlen(COMMAND_SYNC)) == 0 ||
 		strncmp(command, COMMAND_HELP, strlen(COMMAND_HELP)) == 0 ||
+		strncmp(command, COMMAND_CREDITS, strlen(COMMAND_EXIT)) == 0 ||
 		strncmp(command, COMMAND_EXIT, strlen(COMMAND_EXIT)) == 0;
 }
 
@@ -73,6 +75,8 @@ void callCommand(char* command, char* attribute, int check) {
 		command_listclient();
 	else if(strcmp(command, COMMAND_SYNC) == 0)
 		command_getsyncdir();
+	else if(strcmp(command, COMMAND_CREDITS) == 0)
+		command_credits();
 	else {
 		if(check == COMMAND_WITH_ARGUMENTS) {
 			command_help(attribute);
@@ -117,7 +121,7 @@ int parseCommand(char* command, char* commandName, char* commandAttrib) {
 }
 
 void show_client_interface() {
-	char comando_solicitado[100];//, nome_arquivo[100];
+	char comando_solicitado[100];
 
 	show_intro_message();
 	print_commands();
@@ -132,8 +136,7 @@ void show_client_interface() {
 		if(is_valid_command(comando_solicitado)) {
 			not_exited = is_not_exit_command(comando_solicitado);
 			if(not_exited) {
-				char comando[20];
-				char atributo[100];
+				char comando[20], atributo[100];
 
 				int check = parseCommand(comando_solicitado, comando, atributo);
 				callCommand(comando, atributo, check);

@@ -47,9 +47,16 @@ void command_help(char* command) {
     help_listclient();
   } else if(strcmp(command, COMMAND_SYNC) == 0) {
     help_sync();
+  } else if(strcmp(command, COMMAND_CREDITS) == 0) {
+    help_credits();
   } else if(strcmp(command, COMMAND_EXIT) == 0) {
     help_exit();
   } else {
     help_undef(command);
   }
+}
+
+void command_credits() {
+  printf("\nFrancisco Knebel \t Gabriel Pittol\nLuciano Zancan   \t Matheus Krause\n");
+  cprintf(ANSI_COLOR_MAGENTA, "\n2017\n");
 }
