@@ -1,12 +1,12 @@
 #include "dropboxUtil.h"
 
-struct client
+typedef struct client
 {
   int devices[2];
   char userid[MAXNAME];
   struct file_info file_info[MAXFILES];
   int logged_in;
-};
+} Client;
 
 void sync_server();
 

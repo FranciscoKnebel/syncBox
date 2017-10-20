@@ -22,10 +22,11 @@
 
 
 /* STRUCTURES */
-struct user_info {
+typedef struct user_info {
   char id[MAXNAME];
   char folder[MAXNAME*2];
-};
+} UserInfo;
+
 extern struct user_info user;
 
 int connect_server(char *host, int port);
