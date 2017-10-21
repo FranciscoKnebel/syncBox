@@ -28,7 +28,7 @@ typedef struct user_info {
   char folder[MAXNAME*2];
 } UserInfo;
 
-extern struct user_info user;
+extern UserInfo user;
 
 int connect_server(char *host, int port);
 

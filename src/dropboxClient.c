@@ -2,6 +2,7 @@
 
 pthread_t sync_thread;
 struct user_info user;
+int sockid;
 
 int connect_server (char *host, int port) {
   int send_status,receive_status;
@@ -13,7 +14,7 @@ int connect_server (char *host, int port) {
   serverconn.sin_port = htons(port);
   serverconn.sin_addr.s_addr = inet_addr(host);
 
-  int sockid=socket(PF_INET, SOCK_STREAM, 0);   
+  sockid=socket(PF_INET, SOCK_STREAM, 0);   
 
   int connect_status = connect(sockid, (struct sockaddr *) &serverconn, sizeof(serverconn));
   if(connect_status < 0){
@@ -21,16 +22,15 @@ int connect_server (char *host, int port) {
     return 0;
   }
 
-  printf("\nConnected\n");
-
   strcpy(buffer, user.id);
 
   send_status = send(sockid, buffer, BUFFER_SIZE, 0);
   receive_status = recv(sockid, c, BUFFER_SIZE, 0);
-
-  printf("\nServer : %s \n ", c);
-  close(sockid);
-  return 1;
+  if(strcmp(c, "conectado") != 0){
+    printf("\nConnected\n");
+    return 1;
+  }
+  return 0;
 }
 
 void sync_client() {
@@ -120,6 +120,7 @@ void close_connection() {
 	pthread_cancel(sync_thread);
 
 	// Fechar conexão com o servidor
+        close(sockid);
 
 }
 
