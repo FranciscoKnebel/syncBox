@@ -3,10 +3,33 @@
 struct user_info user;
 
 int connect_server (char *host, int port) {
-	// se não conectou
-	// return 0
+  int send_status,receive_status;
+  char buffer[BUFFER_SIZE],c[BUFFER_SIZE];
 
-	return 1;
+  struct sockaddr_in serverconn;
+
+  serverconn.sin_family = AF_INET;
+  serverconn.sin_port = htons(port);
+  serverconn.sin_addr.s_addr = inet_addr(host);
+
+  int sockid=socket(PF_INET, SOCK_STREAM, 0);   
+
+  int connect_status = connect(sockid, (struct sockaddr *) &serverconn, sizeof(serverconn));
+  if(connect_status < 0){
+    printf("\nConnection Error\n");
+    return 0;
+  }
+
+  printf("\nConnected\n");
+
+  strcpy(buffer, user.id);
+
+  send_status = send(sockid, buffer, BUFFER_SIZE, 0);
+  receive_status = recv(sockid, c, BUFFER_SIZE, 0);
+
+  printf("\nServer : %s \n ", c);
+  close(sockid);
+  return 1;
 }
 
 void sync_client() {
