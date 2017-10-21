@@ -26,13 +26,13 @@ int get_dir_content(char * path, struct d_file files[], int* counter) {
       pthread_mutex_lock(&lock);
       memcpy(&files[(*counter)], &newFile, sizeof(newFile));
       (*counter)++;
-      
+
       pthread_mutex_unlock(&lock);
       int rc;
       pthread_t thread;
       if(entry->d_type == DT_DIR) { // Arquivo é um diretório
         struct dir_content args;
-        args.path = malloc(sizeof(char) * MAXNAME);
+        args.path = malloc(sizeof(char) * MAXNAME * 2 + 1); // MAXNAME + / + MAXNAME
 
         sprintf(args.path, "%s/%s", newFile.path, newFile.name);
         args.files = files;

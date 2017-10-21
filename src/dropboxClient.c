@@ -1,5 +1,6 @@
 #include "dropboxClient.h"
 
+pthread_t sync_thread;
 struct user_info user;
 
 int connect_server (char *host, int port) {
@@ -11,7 +12,7 @@ int connect_server (char *host, int port) {
 
 void sync_client() {
 	// verifica se o diretório sync_dir_<nomeusuario> existe
-  // se não, cria pasta e fecha.
+	// se não, cria pasta e fecha.
 	if(!fileExists(user.folder)) {
 		if(mkdir(user.folder, 0777) != 0) {
 			printf("Error creating user folder '%s'.\n", user.folder);
@@ -19,22 +20,18 @@ void sync_client() {
 
 		return;
 	}
-	// else {
-		// sincroniza pasta local com o servidor
 
-		// usar inotify ou dirent
+	// sincroniza pasta local com o servidor
+	// cria thread para manter a sincronização
+	int rc;
+	if((rc = pthread_create(&sync_thread, NULL, watcher_thread, (void *) user.folder))) {
+		printf("Syncronization Thread creation failed: %d\n", rc);
+	}
 
-		// se um arquivo local foi criado, adicionar ao servidor
-		// send_file
-
-		// se um arquivo local foi apagado, remover do servidor
-		// delete_file
-
-		// se há um conflito entre cópias do mesmo arquivo entre cliente e servidor,
-		// apagar arquivo local e trazer do servidor.
+	// se há um conflito entre cópias do mesmo arquivo entre cliente e servidor,
+	// apagar arquivo local e trazer do servidor.
 		// delete_file, mas apenas local.
 		// get_file
-	// }
 }
 
 void send_file(char *file) {
@@ -65,7 +62,6 @@ void send_file(char *file) {
 	} else {
 		printf("Erro abrindo arquivo %s.\n", file);
 	}
-
 }
 
 void get_file(char *file) {
@@ -97,6 +93,10 @@ void delete_file(char *file) {
 }
 
 void close_connection() {
+	// Fechar a thread de sincronização
+	pthread_cancel(sync_thread);
+
+	// Fechar conexão com o servidor
 
 }
 

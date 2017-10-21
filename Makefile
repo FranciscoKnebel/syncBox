@@ -1,32 +1,37 @@
+## Flags pra compilar em produção. Se for compilar para uma arquitetura específica (ou usar em outra), trocar o valor native.
+## Quando for usar, remover comentário da linha #CFLAGS += $(PRODUCTIONFLAGS)
+PRODUCTIONFLAGS = -Wextra -march=native -O2 -pipe
+
 CC = gcc
 CFLAGS = -Wall -g
+#CFLAGS += $(PRODUCTIONFLAGS)
 
 HEADERS_DIR = headers/
 SRC_DIR = src/
 BIN_DIR = bin/
 
 DST_DIR = dst/
-CLI_DIR = $(DST_DIR)client/
-SVR_DIR = $(DST_DIR)server/
+CLI_DIR = $(DST_DIR)
+SVR_DIR = $(DST_DIR)
 
-TST_SRC_DIR= test/
+TST_SRC_DIR = test/
 TST_DST_DIR = $(TST_SRC_DIR)dst/
 
 all: util client server
 	@echo "All files compiled!"
 
-util:	$(SRC_DIR)dropboxUtil.c $(SRC_DIR)util.c $(SRC_DIR)inotify.c
+util:	$(SRC_DIR)dropboxUtil.c $(SRC_DIR)util.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)dropboxUtil.o -I$(HEADERS_DIR) $(SRC_DIR)dropboxUtil.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)util.o -I$(HEADERS_DIR) $(SRC_DIR)util.c
-	$(CC) $(CFLAGS) -c -o $(BIN_DIR)inotify.o -I$(HEADERS_DIR) $(SRC_DIR)inotify.c
 
-OBJ_FILES = $(BIN_DIR)dropboxUtil.o $(BIN_DIR)util.o $(BIN_DIR)inotify.o
+OBJ_FILES = $(BIN_DIR)dropboxUtil.o $(BIN_DIR)util.o
 
 ## CLIENT COMMANDS
-client-aux: $(SRC_DIR)client/interface.c $(SRC_DIR)client/commands.c $(SRC_DIR)client/help.c
+client-aux: $(SRC_DIR)client/interface.c $(SRC_DIR)client/commands.c $(SRC_DIR)client/help.c $(SRC_DIR)client/watcher.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/interface.o -I$(HEADERS_DIR) $(SRC_DIR)client/interface.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/commands.o -I$(HEADERS_DIR) $(SRC_DIR)client/commands.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/help.o -I$(HEADERS_DIR) $(SRC_DIR)client/help.c
+	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/watcher.o -I$(HEADERS_DIR) $(SRC_DIR)client/watcher.c
 
 CLIENT_FILES = $(BIN_DIR)client/*.o
 client:	$(SRC_DIR)dropboxClient.c util client-aux
@@ -42,7 +47,7 @@ server: $(SRC_DIR)dropboxServer.c util server-aux
 	$(CC) $(CFLAGS) -o $(SVR_DIR)dropboxServer $(SRC_DIR)dropboxServer.c $(OBJ_FILES) $(SERVER_FILES) -pthread -I$(HEADERS_DIR)
 
 ## TEST
-test: test_dropboxUtil test_util test_inotify
+test: test_dropboxUtil test_util test_clientwatcher
 	@echo "All tests finished."
 
 test_util: util
@@ -61,11 +66,11 @@ test_dropboxUtil: util
 	@sleep 3
 	./$(TST_DST_DIR)dropboxUtil .
 
-test_inotify: util
-	$(CC) $(CFLAGS) -o $(TST_DST_DIR)inotify $(TST_SRC_DIR)inotify.c $(OBJ_FILES) -pthread -I$(HEADERS_DIR)
-	./$(TST_DST_DIR)inotify /home/francisco/sync_dir_1
+test_clientwatcher: util client-aux
+	$(CC) $(CFLAGS) -o $(TST_DST_DIR)watcher $(TST_SRC_DIR)watcher.c $(OBJ_FILES) $(BIN_DIR)client/watcher.o -pthread -I$(HEADERS_DIR)
+	#./$(TST_DST_DIR)watcher /home/francisco/sync_dir_1
 
-TST_FILES = $(TST_DST_DIR)/dropboxUtil $(TST_DST_DIR)/util $(TST_DST_DIR)/inotify
+TST_FILES = $(TST_DST_DIR)dropboxUtil $(TST_DST_DIR)util $(TST_DST_DIR)watcher
 
 clean:
 	rm -f $(DST_DIR)*.* $(CLI_DIR)dropboxClient $(SVR_DIR)dropboxServer

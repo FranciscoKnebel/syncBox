@@ -87,9 +87,9 @@ void callCommand(char* command, char* attribute, int check) {
 }
 
 int parseCommand(char* command, char* commandName, char* commandAttrib) {
-	int commandLength, offset;
-
+	unsigned int commandLength, offset;
 	commandLength = strcspn(command, " ");
+
 	strncpy(commandName, command, commandLength);
 	commandName[commandLength] = '\0';
 
@@ -121,7 +121,8 @@ int parseCommand(char* command, char* commandName, char* commandAttrib) {
 }
 
 void show_client_interface() {
-	char comando_solicitado[100];
+	char comando_solicitado[11 + MAXPATH];
+	char *valid;
 
 	show_intro_message();
 	print_commands();
@@ -130,8 +131,10 @@ void show_client_interface() {
 	while(not_exited) {
 		printf("\nDigite seu comando: ");
 
-		fgets(comando_solicitado, sizeof(comando_solicitado), stdin);
-		comando_solicitado[strcspn(comando_solicitado, "\r\n")] = 0; //remover trailing \n
+		valid = fgets(comando_solicitado, sizeof(comando_solicitado)-1, stdin);
+		if(valid != NULL) {
+			comando_solicitado[strcspn(comando_solicitado, "\r\n")] = 0; //remover trailing \n
+		}
 
 		if(is_valid_command(comando_solicitado)) {
 			not_exited = is_not_exit_command(comando_solicitado);
