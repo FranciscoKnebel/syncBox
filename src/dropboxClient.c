@@ -5,29 +5,27 @@ struct user_info user;
 int sockid;
 
 int connect_server (char *host, int port) {
-  int send_status,receive_status;
-  char buffer[BUFFER_SIZE],c[BUFFER_SIZE];
+  int send_status, receive_status;
+  char bufferSend[BUFFER_SIZE], bufferReceive[BUFFER_SIZE];
 
   struct sockaddr_in serverconn;
-
   serverconn.sin_family = AF_INET;
   serverconn.sin_port = htons(port);
   serverconn.sin_addr.s_addr = inet_addr(host);
 
-  sockid=socket(PF_INET, SOCK_STREAM, 0);   
+  sockid = socket(PF_INET, SOCK_STREAM, 0);
 
   int connect_status = connect(sockid, (struct sockaddr *) &serverconn, sizeof(serverconn));
-  if(connect_status < 0){
-    printf("\nConnection Error\n");
+  if(connect_status < 0) {
     return 0;
   }
 
-  strcpy(buffer, user.id);
+  strcpy(bufferSend, user.id);
+  send_status = send(sockid, bufferSend, MAXNAME, 0);
+  receive_status = recv(sockid, bufferReceive, MAXNAME, 0);
 
-  send_status = send(sockid, buffer, BUFFER_SIZE, 0);
-  receive_status = recv(sockid, c, BUFFER_SIZE, 0);
-  if(strcmp(c, "conectado") != 0){
-    printf("\nConnected\n");
+  // Recebeu confirmação de conexão do servidor.
+  if(strcmp(bufferReceive, bufferSend) == 0) {
     return 1;
   }
   return 0;
@@ -120,8 +118,7 @@ void close_connection() {
 	pthread_cancel(sync_thread);
 
 	// Fechar conexão com o servidor
-        close(sockid);
-
+  close(sockid);
 }
 
 int main(int argc, char *argv[]) {
@@ -159,6 +156,6 @@ int main(int argc, char *argv[]) {
 		// cria a interface do cliente e espera por comandos
 		show_client_interface();
 	} else {
-		puts("Conexão ao servidor falhou.");
+    printf("Conexão ao servidor '%s' na porta '%d' falhou.\n", endereco, porta);
 	}
 }

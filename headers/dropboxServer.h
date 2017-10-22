@@ -1,13 +1,16 @@
 #include "dropboxUtil.h"
 
 /* CONSTANTS */
-#define DEFAULT_PORT 5100
+#define DEFAULT_PORT 3000
 #define DEFAULT_ADDRESS "127.0.0.1"
+#define SOCKET_BACKLOG 1
+#define MAX_REQUESTS 4
 
 /* ERROR CODES */
 #define ERROR_ON_BIND -9
 #define ERROR_CREATING_SERVER_FOLDER -10
 #define ERROR_CREATING_USER_FOLDER -11
+#define ERROR_RECV -12
 
 typedef struct client
 {
@@ -19,8 +22,8 @@ typedef struct client
 } Client;
 
 typedef struct server_info {
-  char ip[MAXNAME];
-  char folder[MAXNAME*2];
+  char ip[sizeof(DEFAULT_ADDRESS) + 2];
+  char folder[MAXNAME * 2];
   int port;
 } ServerInfo;
 
