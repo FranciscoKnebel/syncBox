@@ -2,7 +2,6 @@
 
 void help_help() {
   puts("Você já está aqui!");
-
   puts("Para ver todos os comandos, insira apenas help.");
 }
 
@@ -48,7 +47,7 @@ void help_sync() {
 
 void help_credits() {
   printf("COMANDO: \n %s ", COMMAND_CREDITS);
-  
+
   puts("\nDESCRIÇÃO: ");
   puts("Informações de autoria.");
 }

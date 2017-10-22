@@ -10,24 +10,19 @@ void command_download(char* path) {
 
 void command_listserver() {
   // Lista os arquivos salvos no servidor associados ao usuário.
+
   // pede lista para o servidor e imprime resultado.
-  
 }
 
 void command_listclient() {
- // lista os arquivos salvos no diretório "sync_dir_<nomeusuario>".
-  // verifica se o diretório sync_dir_<nomeusuario> existe
   if(!fileExists(user.folder)) {
     printf("Error, User folder '%s' doesn't exist.\n", user.folder);
-   
-  } else{
-      print_dir_content(user.folder);
+  } else {
+    print_dir_content(user.folder);
   }
 }
 
 void command_getsyncdir() {
-  // verifica se o diretório /home/user/sync_dir_<nomeusuario> existe
-    // se não, cria.
   if(!fileExists(user.folder)) {
     if(mkdir(user.folder, 0777) != 0) {
       printf("Error creating user folder '%s'.\n", user.folder);
