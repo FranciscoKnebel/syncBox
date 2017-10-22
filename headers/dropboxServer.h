@@ -5,6 +5,7 @@ typedef struct client
   int devices[2];
   char userid[MAXNAME];
   FileInfo file_info[MAXFILES];
+  int n_files;
   int logged_in;
 } Client;
 

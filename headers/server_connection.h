@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include "user.h"
+#include "dropboxServer.h"
 
 #define MAX_CONNECTIONS 5
 #define MAXNAME 64
@@ -17,4 +19,7 @@
 #define RECEIVE_REQUEST "receive-request"
 #define SEND_REQUEST "send-request"
 
+/*função de recepção de conexão, utiliza poll de threads para atender para atender*/
 int receive_connection(void);
+/*básicamente o escalonador/coordenador, decide o que cada thread fará*/
+void hq(int *client_socket);
