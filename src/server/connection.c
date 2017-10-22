@@ -1,10 +1,14 @@
 #include "server_connection.h"
-#include "dropboxServer.h"
 
 int keep_service = 1;
 
-void hq(int *client_socket){
 
+
+void hq(int *client_socket){
+/*
+escalonador, a ideia é que diversas threads utilizem está função para decidir o que fazer,
+cuidado deve ser para que somente haja uma escrita por arquivo...
+*/
   int n,i=0;
   char mission[MAXNAME],user_name[MAXNAME],current;
 
@@ -37,8 +41,11 @@ void hq(int *client_socket){
   } // faltava argumentos, só pra conseguir compilar o server
 }
 
-int receive_connection(void){
 
+int receive_connection(void){
+/*
+seria básicamente a main do servidor! recebe conexão, gera thread soldado, repete!
+*/
   //para sockets
   int sockfd, newsockfd;
   socklen_t clilen;
@@ -52,7 +59,6 @@ int receive_connection(void){
     perror("ERROR opening socket");
     return 1;
   }
-  printf("opções:\n%s\n%s\n%s\n",SYNC_REQUEST,SEND_REQUEST,RECEIVE_REQUEST);
 
   serv_addr.sin_family = AF_INET;
   serv_addr.sin_port = htons(PORT);
@@ -68,7 +74,7 @@ int receive_connection(void){
 
   clilen = sizeof(struct sockaddr_in);
 
-
+  //loop principal de gera thread para conexão
   while(keep_service){
     if ((newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen)) <= 0)
       perror("ERROR on accept");

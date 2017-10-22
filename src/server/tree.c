@@ -1,5 +1,9 @@
 #include "tree.h"
+
 NODE* create_node(void *value){
+/*
+criação de um nodo com o valor passado, void para ser genérico
+*/
     NODE* new_node = (NODE *)malloc(sizeof(NODE));
     new_node->value = value;
     new_node->left=NULL;
@@ -8,6 +12,11 @@ NODE* create_node(void *value){
 }
 
 void print_int_tree(NODE* n,int depth){
+
+/*
+print de uma árvore caso ela seja inteira!
+Útil para debug da árvore
+*/
     if(!n)
         return;
     int i=0;
@@ -20,6 +29,7 @@ void print_int_tree(NODE* n,int depth){
 
 int free_node(NODE* n){
 
+
     if(!n)
         return 1;
 
@@ -30,6 +40,12 @@ int free_node(NODE* n){
 }
 
 void free_tree(NODE* n){
+
+    /*
+    libera recursivamente a árvore, note que é dado free em value
+    logo valores que são com ponteiros terão suas referências 
+    perdidas!
+    */
     if(n == NULL)
         return;
     NODE *l,*r;
@@ -42,6 +58,11 @@ void free_tree(NODE* n){
 }
 
 NODE* insert_node(NODE *tree,void * new_item,int (*f)(void *,void*)){
+    /*
+    principal função da árvore, com auxilio de uma função f do usuário
+    insere o valor na árvore!Note que f deve lidar com o valor passado de inserção
+    e dos nós!
+    */
     if(!tree)
         return create_node(new_item);
     if(f(new_item,tree->value)){
@@ -54,7 +75,9 @@ NODE* insert_node(NODE *tree,void * new_item,int (*f)(void *,void*)){
 }
 
 int save_tree(FILE* destiny,NODE *tree,int size){
-    
+    /*
+    salva a árvore em um arquivo, NÃO CHECA se houve sucesso
+    */
     if(!tree)
         return 0;
 
@@ -66,7 +89,9 @@ int save_tree(FILE* destiny,NODE *tree,int size){
 }
 
 NODE * mount_tree(FILE* origin,int (*f)(void *,void*),int size){
-
+    /*
+    leitura de arquivo para obter a árvore salva, com alocação!
+    */
     NODE * tree = NULL;
     while(!feof(origin)){
         char * buffer = malloc(sizeof(size));
@@ -77,7 +102,11 @@ NODE * mount_tree(FILE* origin,int (*f)(void *,void*),int size){
 }
 
 void* get_value(NODE *tree, void *target, int (*f)(void *,void*)){
-    
+    /*
+    consulta de um valor na árvore, deve haver uma função que retorna verdade quando encontrado!
+    */
+
+
     if(!tree)
         return NULL;
 
@@ -95,7 +124,7 @@ void* get_value(NODE *tree, void *target, int (*f)(void *,void*)){
 }
 
 /*TESTE*/
-
+/*
 int* init(int n){
     int *i = malloc(sizeof(int));
     *i = n;
@@ -161,3 +190,4 @@ int main()
 
     return 0;
 }
+*/
