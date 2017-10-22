@@ -76,8 +76,26 @@ NODE * mount_tree(FILE* origin,int (*f)(void *,void*),int size){
     return tree;
 }
 
+void* get_value(NODE *tree, void *target, int (*f)(void *,void*)){
+    
+    if(!tree)
+        return NULL;
+
+    if(f(tree->value,target))
+        return tree->value;
+
+    void * l = get_value(tree->left,target,f);
+    if(l != NULL)
+        return l;
+    void * r = get_value(tree->right,target,f);
+    if(r != NULL)
+        return l;
+
+    return NULL;
+}
+
 /*TESTE*/
-/*
+
 int* init(int n){
     int *i = malloc(sizeof(int));
     *i = n;
@@ -85,6 +103,10 @@ int* init(int n){
 }
 int comp(void *a,void *b){
     return *(int*)a < *(int*)b;
+}
+
+int find(void *a,void *b){
+    return *(int*)a == *(int*)b;
 }
 
 int main()
@@ -127,6 +149,15 @@ int main()
 
     fclose(f);
 
+    puts("etapa 6");
+
+    int target = 7;
+    char *resultado;
+    do{
+        void * res_busca = get_value(tree,(void*)init(target),find);
+        resultado = (res_busca == NULL) ? strdup("não encontrado\n") : strdup("encontrado");
+        printf("procurando %d - resultado %s\n",target,resultado);
+    }while(target--);
+
     return 0;
 }
-*/
