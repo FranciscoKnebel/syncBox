@@ -57,7 +57,7 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
   parseArguments(argc, argv, address, &port, &server);
   server.sin_family = AF_INET; // address format is host and port number
   server.sin_port = htons(port); // host to network short
-  server.sin else {_addr.s_addr = inet_addr(address);
+  server.sin_addr.s_addr = inet_addr(address);
 
   sprintf(serverInfo.folder, "%s/syncBox_users", getUserHome());
   strcpy(serverInfo.ip, address);
@@ -72,22 +72,24 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
 
   // Criação da pasta de armazenamento
   if(!fileExists(serverInfo.folder)) {
-      if(mkdir(serverInfo.folder, 0777) != 0) {
-         printf("Error creating server folder '%s'.\n", serverInfo.folder);
-         return ERROR_CREATING_SERVER_FOLDER;
-      }
+    if(mkdir(serverInfo.folder, 0777) != 0) {
+      printf("Error creating server folder '%s'.\n", serverInfo.folder);
+      return ERROR_CREATING_SERVER_FOLDER;
     }
+  }
 
-  printf("Pasta do servidor: %s\n", serverInfo.folder);
-  printf("Endereço do servidor: %s\n", serverInfo.ip);
-  printf("Porta do servidor: %d\n", port);
-  printf("Servidor no ar! Esperando conexões...\n");
+  printf("Pasta do servidor: %s%s%s\n", ANSI_COLOR_GREEN, serverInfo.folder, ANSI_COLOR_RESET);
+  printf("Endereço do servidor: %s%s%s\n", ANSI_COLOR_GREEN, serverInfo.ip, ANSI_COLOR_RESET);
+  printf("Porta do servidor: %s%d%s\n", ANSI_COLOR_GREEN, serverInfo.port, ANSI_COLOR_RESET);
+
 
 
   int listen_status = listen(sockid, MAX_CLIENT_LISTENED); // segundo argumento é a quantidade de clientes que o socket vai fazer o listen
-  
-  if(listen_status == -1){
+
+  if(listen_status == -1) {
     printf("\nListening Error\n");
+  } else {
+    printf("Servidor no ar! Esperando conexões...\n");
   }
 
   while(1) {
@@ -96,11 +98,11 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
 
     int new_client_socket = accept(sockid, (struct sockaddr *) &client, &cliLen);
 
-    if(new_client_socket < 0){
-	printf("Error on accept\n");
+    if(new_client_socket < 0) {
+	     printf("Error on accept\n");
     }
-    
-    pid = fork(); // Create child process 
+
+    pid = fork(); // Create child process
     if (pid < 0) {
       printf("ERROR on fork\n");
       exit(1);
@@ -146,7 +148,9 @@ void continueClientProcess(int socket, char* client_ip) {
 	}
    }
 
-   printf("\nConexão de %s através do IP %s \n", client_id, client_ip);
+   printf("Conexão iniciada do usuário '%s%s%s' através do IP '%s%s%s'.\n", ANSI_COLOR_GREEN, client_id, ANSI_COLOR_RESET,
+   ANSI_COLOR_GREEN, client_ip, ANSI_COLOR_RESET);
+
 
    // write
    status = write(socket, buffer, BUFFER_SIZE);
@@ -178,7 +182,7 @@ void continueClientProcess(int socket, char* client_ip) {
      } else {
 
      	printf("recebido: %s\n",buffer); // debug
-     
+
      	// write
      	status = write(socket, buffer, BUFFER_SIZE);
      	if (status < 0) {
@@ -189,5 +193,5 @@ void continueClientProcess(int socket, char* client_ip) {
     }
   } while(disconnected != 1);
   printf("%s desconectou!\n", client_id);
-	
+
 }
