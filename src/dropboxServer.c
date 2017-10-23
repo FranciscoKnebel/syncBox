@@ -19,8 +19,9 @@ char buffer[BUFFER_SIZE];
 
 void clearBuffer() {
   int i;
-  for(i = 0; i < BUFFER_SIZE; i++)
+  for(i = 0; i < BUFFER_SIZE; i++){
     buffer[i] = 0;
+  }
 }
 
 void error(char *msg) { // handle error
@@ -43,10 +44,15 @@ void parseArguments(int argc, char *argv[], char* address, int* port, struct soc
 
 int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
   int status;
+  int pid;
 
   int port = DEFAULT_PORT;
-  struct sockaddr_in server;
+  struct sockaddr_in server, client;
+
   char* address = malloc(strlen(DEFAULT_ADDRESS));
+
+  /* Initialize socket structure */
+  bzero((char *) &server, sizeof(server));
 
   parseArguments(argc, argv, address, &port, &server);
   server.sin_family = AF_INET; // address format is host and port number
@@ -66,64 +72,122 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
 
   // Criação da pasta de armazenamento
   if(!fileExists(serverInfo.folder)) {
-    if(mkdir(serverInfo.folder, 0777) != 0) {
-      printf("Error creating server folder '%s'.\n", serverInfo.folder);
-      return ERROR_CREATING_SERVER_FOLDER;
+      if(mkdir(serverInfo.folder, 0777) != 0) {
+         printf("Error creating server folder '%s'.\n", serverInfo.folder);
+         return ERROR_CREATING_SERVER_FOLDER;
+      }
     }
-  }
 
-  // Ouvindo o socket
-  int listen_status = listen(sockid, SOCKET_BACKLOG);
-  if(listen_status == -1) {
-    perror("Listening Error");
-  } else {
-    printf("Pasta do servidor: %s%s%s\n", ANSI_COLOR_GREEN, serverInfo.folder, ANSI_COLOR_RESET);
-    printf("Endereço do servidor: %s%s%s\n", ANSI_COLOR_GREEN, serverInfo.ip, ANSI_COLOR_RESET);
-    printf("Porta do servidor: %s%d%s\n", ANSI_COLOR_GREEN, serverInfo.port, ANSI_COLOR_RESET);
-    printf("Servidor no ar! Esperando conexões...\n");
+  printf("Pasta do servidor: %s\n", serverInfo.folder);
+  printf("Endereço do servidor: %s\n", serverInfo.ip);
+  printf("Porta do servidor: %d\n", port);
+  printf("Servidor no ar! Esperando conexões...\n");
+
+
+  int listen_status = listen(sockid, MAX_CLIENT_LISTENED); // segundo argumento é a quantidade de clientes que o socket vai fazer o listen
+  
+  if(listen_status == -1){
+    printf("\nListening Error\n");
   }
 
   while(1) {
-    struct sockaddr_in client;
 
     unsigned int cliLen = sizeof(struct sockaddr_in);
 
     int new_client_socket = accept(sockid, (struct sockaddr *) &client, &cliLen);
 
-    char client_id[MAXNAME];
-    char *client_ip;
+    if(new_client_socket < 0){
+	printf("Error on accept\n");
+    }
+    
+    pid = fork(); // Create child process 
+    if (pid < 0) {
+      printf("ERROR on fork\n");
+      exit(1);
+    }
 
-    client_ip = inet_ntoa(client.sin_addr); // inet_ntoa converte o IP de numeros e pontos para uma struct in_addr
-
-    status = recv(new_client_socket, buffer, MAXNAME, 0);
-    if(status == -1) {
-      perror("Erro ao receber conexão");
+    if (pid == 0) { // This is the client process
+         close(sockid);
+         char *client_ip = inet_ntoa(client.sin_addr); // inet_ntoa converte o IP de numeros e pontos para uma struct in_addr
+         continueClientProcess(new_client_socket, client_ip);
+         exit(0);
     } else {
-      // Salva id do cliente conectado
-      strncpy(client_id, buffer, MAXNAME);
-      client_id[MAXNAME] = '\0';
-
-      // Enviar id de volta, como confirmação de conexão para o cliente
-      strcpy(buffer, client_id);
-      status = send(new_client_socket, buffer, MAXNAME, 0);
+         close(new_client_socket);
     }
-
-    char server_new_client_folder[2*MAXNAME +1];
-    sprintf(server_new_client_folder, "%s/%s", serverInfo.folder, client_id);
-    if(!fileExists(server_new_client_folder)) {
-    	if(mkdir(server_new_client_folder, 0777) != 0) {
-        printf("Erro criando pasta do usuário '%s'.\n", server_new_client_folder);
-        return ERROR_CREATING_USER_FOLDER;
-      }
-    }
-
-    printf("Conexão iniciada do usuário '%s%s%s' através do IP '%s%s%s'.\n", ANSI_COLOR_GREEN, client_id, ANSI_COLOR_RESET,
-    ANSI_COLOR_GREEN, client_ip, ANSI_COLOR_RESET);
-
-    clearBuffer();
   }
 
-  close(sockid); // nunca chega aqui, while(1). Loop precisa quebrar pra fechar o socket.
-
   return 0;
+}
+
+void continueClientProcess(int socket, char* client_ip) {
+   char client_id[MAXNAME];
+   int status;
+   bzero(buffer, BUFFER_SIZE);
+
+   // read
+   status = read(socket, buffer, BUFFER_SIZE);
+   if (status < 0) {
+      perror("ERROR reading from socket");
+      exit(1);
+   }
+   printf("%s\n",buffer); // debug
+   // do stuff...
+   strncpy(client_id, buffer, MAXNAME);
+   client_id[MAXNAME] = '\0';
+
+   strcpy(buffer, "conectado");
+
+   char server_new_client_folder[2*MAXNAME +1];
+   sprintf(server_new_client_folder, "%s/%s", serverInfo.folder, client_id);
+   if(!fileExists(server_new_client_folder)) {
+	if(mkdir(server_new_client_folder, 0777) != 0) {
+		printf("Error creating user folder in server '%s'.\n", server_new_client_folder);
+		return ERROR_CREATING_USER_FOLDER;
+	}
+   }
+
+   printf("\nConexão de %s através do IP %s \n", client_id, client_ip);
+
+   // write
+   status = write(socket, buffer, BUFFER_SIZE);
+   if (status < 0) {
+      printf("ERROR writing to socket\n");
+      exit(1);
+   }
+
+   int disconnected = 0;
+   do{
+     bzero(buffer, BUFFER_SIZE);
+
+     // read
+     status = read(socket, buffer, BUFFER_SIZE);
+     if (status < 0) {
+        printf("ERROR reading from socket");
+        exit(1);
+     }
+
+     if(strcmp(buffer, "disconnect") == 0){
+       strcpy(buffer, "disconnected");
+       // write
+       status = write(socket, buffer, BUFFER_SIZE);
+       if (status < 0) {
+        printf("ERROR writing to socket\n");
+        exit(1);
+       }
+       disconnected = 1;
+     } else {
+
+     	printf("recebido: %s\n",buffer); // debug
+     
+     	// write
+     	status = write(socket, buffer, BUFFER_SIZE);
+     	if (status < 0) {
+          printf("ERROR writing to socket\n");
+          exit(1);
+        }
+
+    }
+  } while(disconnected != 1);
+  printf("%s desconectou!\n", client_id);
+	
 }

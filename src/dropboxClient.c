@@ -3,29 +3,63 @@
 pthread_t sync_thread;
 struct user_info user;
 int sockid;
+int status;
+
+char buffer[BUFFER_SIZE];
+
+void clearBuffer() {
+  int i;
+  for(i = 0; i < BUFFER_SIZE; i++){
+    buffer[i] = 0;
+  }
+}
 
 int connect_server (char *host, int port) {
-  int send_status, receive_status;
-  char bufferSend[BUFFER_SIZE], bufferReceive[BUFFER_SIZE];
 
   struct sockaddr_in serverconn;
+
+  /* Create a socket point */
+  sockid = socket(AF_INET, SOCK_STREAM, 0);  
+
+  if (sockid < 0) {
+      printf("ERROR opening socket\n");
+      exit(1);
+  }
+
+  bzero((char *) &serverconn, sizeof(serverconn));
+
   serverconn.sin_family = AF_INET;
   serverconn.sin_port = htons(port);
   serverconn.sin_addr.s_addr = inet_addr(host);
 
-  sockid = socket(PF_INET, SOCK_STREAM, 0);
+ 
 
-  int connect_status = connect(sockid, (struct sockaddr *) &serverconn, sizeof(serverconn));
-  if(connect_status < 0) {
-    return 0;
+  status = connect(sockid, (struct sockaddr *) &serverconn, sizeof(serverconn));
+  if(status < 0){
+    printf("\nConnection Error\n");
+    exit(1);
   }
 
-  strcpy(bufferSend, user.id);
-  send_status = send(sockid, bufferSend, MAXNAME, 0);
-  receive_status = recv(sockid, bufferReceive, MAXNAME, 0);
+  bzero(buffer, BUFFER_SIZE);
 
-  // Recebeu confirmação de conexão do servidor.
-  if(strcmp(bufferReceive, bufferSend) == 0) {
+  strcpy(buffer, user.id);
+
+  // write to socket
+  status = write(sockid, buffer, BUFFER_SIZE);
+  if (status < 0) {
+      printf("ERROR writing to socket\n");
+      exit(1);
+   }
+   
+  // read server response 
+  bzero(buffer, BUFFER_SIZE);
+  status = read(sockid, buffer, BUFFER_SIZE);
+  if (status < 0) {
+     printf("ERROR reading from socket\n");
+     exit(1);
+  }
+  if(strcmp(buffer, "conectado") == 0){
+    printf("\nConnected\n");
     return 1;
   }
   return 0;
@@ -116,9 +150,32 @@ void delete_file(char *file) {
 void close_connection() {
 	// Fechar a thread de sincronização
 	pthread_cancel(sync_thread);
-
+	
 	// Fechar conexão com o servidor
-  close(sockid);
+	bzero(buffer, BUFFER_SIZE);
+
+	strcpy(buffer, "disconnect");
+	status = write(sockid, buffer, BUFFER_SIZE);
+  	if (status < 0) {
+      		printf("ERROR writing to socket\n");
+      		exit(1);
+   	}
+
+  	status = read(sockid, buffer, BUFFER_SIZE);
+  	if (status < 0) {
+     		printf("ERROR reading from socket\n");
+     		exit(1);
+  	}
+
+  	if(strcmp(buffer, "disconnected") == 0){
+    		printf("\nDesconectado!\n");
+		close(sockid);
+  	} else{
+		printf("Erro ao desconectar!\n");		
+	}
+
+      
+    
 }
 
 int main(int argc, char *argv[]) {

@@ -3,6 +3,7 @@
 /* CONSTANTS */
 #define DEFAULT_PORT 3000
 #define DEFAULT_ADDRESS "127.0.0.1"
+#define MAX_CLIENT_LISTENED 10
 #define SOCKET_BACKLOG 1
 #define MAX_REQUESTS 4
 
@@ -36,3 +37,5 @@ void receive_file(char *file);
 void send_file(char *file);
 
 void startServer();
+
+void continueClientProcess(int socketId, char* client_ip);
