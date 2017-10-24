@@ -3,9 +3,8 @@
 /* CONSTANTS */
 #define DEFAULT_PORT 3000
 #define DEFAULT_ADDRESS "127.0.0.1"
-#define MAX_CLIENT_LISTENED 10
+#define MAX_CLIENTS 10
 #define SOCKET_BACKLOG 1
-#define MAX_REQUESTS 4
 
 /* ERROR CODES */
 #define ERROR_ON_BIND -9
@@ -28,6 +27,11 @@ typedef struct server_info {
   int port;
 } ServerInfo;
 
+typedef struct connection_info{
+  int socket_id;
+  char* ip;
+} Connection;
+
 extern ServerInfo serverInfo;
 
 void sync_server();
@@ -38,4 +42,14 @@ void send_file(char *file);
 
 void startServer();
 
-void continueClientProcess(int socketId, char* client_ip);
+void* continueClientProcess(Connection* connection);
+
+Client* searchClient(char* userId);
+
+int newClient(char* userid);
+
+int addDevice(Client* client);
+
+int removeDevice(Client* client);
+
+void check_login_status(Client* client);

@@ -1,6 +1,7 @@
 #include "dropboxServer.h"
 
 ServerInfo serverInfo;
+Client clients[MAX_CLIENTS];
 
 void sync_server() {
   return;
@@ -84,13 +85,15 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
 
 
 
-  int listen_status = listen(sockid, MAX_CLIENT_LISTENED); // segundo argumento é a quantidade de clientes que o socket vai fazer o listen
+  int listen_status = listen(sockid, MAX_CLIENTS); // segundo argumento é a quantidade de clientes que o socket vai fazer o listen
 
   if(listen_status == -1) {
     printf("\nListening Error\n");
   } else {
     printf("Servidor no ar! Esperando conexões...\n");
   }
+
+  pthread_t thread_id;
 
   while(1) {
 
@@ -102,26 +105,25 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
 	     printf("Error on accept\n");
     }
 
-    pid = fork(); // Create child process
-    if (pid < 0) {
-      printf("ERROR on fork\n");
-      exit(1);
-    }
+    char *client_ip = inet_ntoa(client.sin_addr); // inet_ntoa converte o IP de numeros e pontos para uma struct in_addr
 
-    if (pid == 0) { // This is the client process
-         close(sockid);
-         char *client_ip = inet_ntoa(client.sin_addr); // inet_ntoa converte o IP de numeros e pontos para uma struct in_addr
-         continueClientProcess(new_client_socket, client_ip);
-         exit(0);
-    } else {
-         close(new_client_socket);
+    Connection *connection = malloc(sizeof(*connection));
+    connection->socket_id = new_client_socket;
+    connection->ip = client_ip;
+    
+
+    if(pthread_create( &thread_id , NULL ,  continueClientProcess, connection) < 0){
+            printf("Error on create thread\n");
+            exit(1);
     }
   }
 
   return 0;
 }
 
-void continueClientProcess(int socket, char* client_ip) {
+void* continueClientProcess(Connection* connection) {
+   int socket = connection->socket_id;
+   char* client_ip = connection->ip;
    char client_id[MAXNAME];
    int status;
    bzero(buffer, BUFFER_SIZE);
@@ -129,69 +131,151 @@ void continueClientProcess(int socket, char* client_ip) {
    // read
    status = read(socket, buffer, BUFFER_SIZE);
    if (status < 0) {
-      perror("ERROR reading from socket");
+      printf("ERROR reading from socket\n");
       exit(1);
    }
-   printf("%s\n",buffer); // debug
    // do stuff...
    strncpy(client_id, buffer, MAXNAME);
    client_id[MAXNAME] = '\0';
 
    strcpy(buffer, "conectado");
 
-   char server_new_client_folder[2*MAXNAME +1];
-   sprintf(server_new_client_folder, "%s/%s", serverInfo.folder, client_id);
-   if(!fileExists(server_new_client_folder)) {
-	if(mkdir(server_new_client_folder, 0777) != 0) {
-		printf("Error creating user folder in server '%s'.\n", server_new_client_folder);
-		return ERROR_CREATING_USER_FOLDER;
+   Client* client = searchClient(&client_id);
+
+   int retorno_addDevice = 0;
+   if(client == NULL){
+   	printf("client pos: %d\n", newClient(client_id));
+	client = searchClient(&client_id);
+   } else {
+	retorno_addDevice = addDevice(client);
+	printf("device: %d\n", retorno_addDevice);
+	if(retorno_addDevice == -1){
+		strcpy(buffer, "excess devices");
 	}
    }
+   if(retorno_addDevice != -1){
 
-   printf("Conexão iniciada do usuário '%s%s%s' através do IP '%s%s%s'.\n", ANSI_COLOR_GREEN, client_id, ANSI_COLOR_RESET,
-   ANSI_COLOR_GREEN, client_ip, ANSI_COLOR_RESET);
+	   char server_new_client_folder[2*MAXNAME +1];
+
+	   sprintf(server_new_client_folder, "%s/%s", serverInfo.folder, client_id);
+	   if(!fileExists(server_new_client_folder)) {
+		if(mkdir(server_new_client_folder, 0777) != 0) {
+			printf("Error creating user folder in server '%s'.\n", server_new_client_folder);
+			return ERROR_CREATING_USER_FOLDER;
+		}
+	   }
+
+	   printf("Conexão iniciada do usuário '%s%s%s' através do IP '%s%s%s'.\n", ANSI_COLOR_GREEN, client_id, ANSI_COLOR_RESET,
+	   ANSI_COLOR_GREEN, client_ip, ANSI_COLOR_RESET);
 
 
-   // write
-   status = write(socket, buffer, BUFFER_SIZE);
-   if (status < 0) {
-      printf("ERROR writing to socket\n");
-      exit(1);
-   }
+	   // write
+	   status = write(socket, buffer, BUFFER_SIZE);
+	   if (status < 0) {
+	      printf("ERROR writing to socket\n");
+	      exit(1);
+	   }
 
-   int disconnected = 0;
-   do{
-     bzero(buffer, BUFFER_SIZE);
+	   int disconnected = 0;
 
-     // read
-     status = read(socket, buffer, BUFFER_SIZE);
-     if (status < 0) {
-        printf("ERROR reading from socket");
-        exit(1);
-     }
+	   do{
+	     bzero(buffer, BUFFER_SIZE);
 
-     if(strcmp(buffer, "disconnect") == 0){
-       strcpy(buffer, "disconnected");
-       // write
-       status = write(socket, buffer, BUFFER_SIZE);
-       if (status < 0) {
-        printf("ERROR writing to socket\n");
-        exit(1);
-       }
-       disconnected = 1;
-     } else {
+	     // read
+	     status = read(socket, buffer, BUFFER_SIZE);
+	     if (status < 0) {
+		printf("ERROR reading from socket");
+		exit(1);
+	     }
 
-     	printf("recebido: %s\n",buffer); // debug
+	     if(strcmp(buffer, "disconnect") == 0){
+	       strcpy(buffer, "disconnected");
+	       // write
+	       status = write(socket, buffer, BUFFER_SIZE);
+	       if (status < 0) {
+		printf("ERROR writing to socket\n");
+		exit(1);
+	       }
+	       disconnected = 1;
+	     } else {
 
-     	// write
-     	status = write(socket, buffer, BUFFER_SIZE);
-     	if (status < 0) {
-          printf("ERROR writing to socket\n");
-          exit(1);
-        }
+	     	// write
+	     	status = write(socket, buffer, BUFFER_SIZE);
+	     	if (status < 0) {
+		  printf("ERROR writing to socket\n");
+		  exit(1);
+		}
 
+	    }
+	  } while(disconnected != 1);
+	  
+	  printf("%s desconectou no dispositivo %d!\n", client_id, removeDevice(client));
+  } else{
+    	   // write
+	   status = write(socket, buffer, BUFFER_SIZE);
+	   if (status < 0) {
+	      printf("ERROR writing to socket\n");
+	      exit(1);
+	   }
     }
-  } while(disconnected != 1);
-  printf("%s desconectou!\n", client_id);
 
 }
+
+Client* searchClient(char* userId){
+	int i;
+	for(i = 0; i < MAX_CLIENTS; i++){
+		if(strcmp(userId, clients[i].userid) == 0){
+			return &clients[i];		
+		}
+	}
+	return NULL;
+}
+
+int newClient(char* userid){
+	int i;
+	for(i = 0; i < MAX_CLIENTS; i++){
+		if(!clients[i].logged_in){
+                        clients[i].devices[0] = 1;
+			strcpy(clients[i].userid, userid);
+			// TODO search files... and number of files
+			clients[i].logged_in = 1;
+			return i;
+		}
+	}
+	return -1; // cheio de usuários
+}
+
+int addDevice(Client* client){
+	if(client->devices[0] == 0){
+     		client->devices[0] = 1;
+		return 0;
+        }
+        if(client->devices[1] == 0){
+     		client->devices[1] = 1;
+		return 1;
+        }
+	return -1;
+}
+
+int removeDevice(Client* client){ // TODO rever... se passar parametro do dispositivo ou o que fazer.
+	if(client){
+		if(client->devices[0] == 1){
+     			client->devices[0] = 0;
+			return 0;
+        	}
+        	if(client->devices[1] == 1){
+     			client->devices[1] = 0;
+			return 1;
+        	}
+	}
+	return -1;
+}
+
+void check_login_status(Client* client){
+	if(client->devices[0] == 0 && client->devices[1] == 0){
+		client->logged_in == 0;
+		printf("Cliente %s logged out!", client->userid);
+	}
+}
+
+

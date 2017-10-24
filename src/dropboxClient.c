@@ -62,6 +62,10 @@ int connect_server (char *host, int port) {
     printf("\nConnected\n");
     return 1;
   }
+  if(strcmp(buffer, "excess devices") == 0){
+    printf("\nMuitas conexões simultaneas do mesmo usuário. encerrando...\n");
+  }
+  
   return 0;
 }
 
@@ -213,6 +217,7 @@ int main(int argc, char *argv[]) {
 		// cria a interface do cliente e espera por comandos
 		show_client_interface();
 	} else {
-    printf("Conexão ao servidor '%s' na porta '%d' falhou.\n", endereco, porta);
+    		printf("Conexão ao servidor '%s' na porta '%d' falhou.\n", endereco, porta);
+		//close(sockid);
 	}
 }
