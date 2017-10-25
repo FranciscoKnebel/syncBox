@@ -44,12 +44,12 @@ void startServer();
 
 void* continueClientProcess(Connection* connection);
 
-Client* searchClient(char* userId);
+int searchClient(Client* client, char* userId);
 
 int newClient(char* userid);
 
 int addDevice(Client* client);
 
-int removeDevice(Client* client);
+int removeDevice(Client* client, int device);
 
 void check_login_status(Client* client);

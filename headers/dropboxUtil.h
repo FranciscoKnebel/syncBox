@@ -34,5 +34,6 @@ typedef struct dir_content {
 } DirContent;
 
 int get_dir_content(char * path, struct d_file files[], int* counter);
+int get_dir_content_file_info(char * path, FileInfo files[]);
 int get_all_entries(char * path, struct d_file files[]);
 int print_dir_content(char * path);

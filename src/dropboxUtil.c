@@ -51,6 +51,18 @@ int get_dir_content(char * path, struct d_file files[], int* counter) {
   return 0;
 }
 
+int get_dir_content_file_info(char * path, FileInfo files[]) {
+  struct d_file dfiles[MAXFILES];
+  int counter = 0;
+  get_dir_content(path, dfiles, &counter);
+  
+  for(int i = 0; i < MAXFILES; i++){
+  	strcpy(&files[i].name, &dfiles[i].name);
+  }
+  return counter;
+
+}
+
 int get_all_entries(char * path, struct d_file files[]) {
   int counter = 0;
 
