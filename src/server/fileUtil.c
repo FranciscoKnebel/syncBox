@@ -1,9 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <string.h>
-#include <assert.h>
+#include "fileUtil.h"
 
 int read_file(char **content,char *file_name){
 
@@ -75,7 +70,6 @@ int get_file_extension(char *file_name,char **file_extension){
 
 int get_last_modification_time(char *file_name,char **last_modfication){
 
-	FILE *file;
 	struct stat sb;
 
 	if(!file_name || stat(file_name,&sb)!= 0)

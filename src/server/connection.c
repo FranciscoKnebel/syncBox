@@ -21,6 +21,7 @@ cuidado deve ser para que somente haja uma escrita por arquivo...
       user_name[i++] = current;
   }while(current!='$');
   user_name[i-1] = '\0';
+  puts(user_name);
 
   //fazer a leitura dos meta dados do usuário, criar caso não existam
 

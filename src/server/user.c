@@ -1,5 +1,4 @@
-#include "user.h"
-#include "fileUtil.c"
+#include "dropboxServer.h"
 
 NODE *clients = NULL;
 
@@ -21,7 +20,7 @@ encontrar o alvo!
 }
 
 
-int * get_clients_from_file(const char *file_name){
+int get_clients_from_file( char *file_name){
 /*
 recupera os clientes de um arquivo!
 */
@@ -39,7 +38,7 @@ recupera os clientes de um arquivo!
 	return 0;
 }
 
-int add_client(const char *client_name){
+int add_client( char *client_name){
 /*
 adiciona novo cliente na árvore global de clientes do servidor,
 deve ser observado que a posição depende da função definida bem acima!
@@ -49,13 +48,18 @@ novos clientes tem 0 arquivos por definição!
 		return 1;
 
 	Client * new_c = malloc(sizeof(Client));
-	strncpy(new_c->userid,client_name, (MAXNAME < strlen(client_name)) ? MAXNAME : strlen(client_name));
+
+	strncpy(new_c->userid,client_name, MAXNAME);
+
 	new_c->n_files = 0;
+	int i=0;
+	for(i=0;i<2;i++)
+		new_c->devices[i] = 0; //0 é disponível
 	clients = insert_node(clients,(void*)new_c,comp_clients);
 	return 0;
 }
 
-Client *get_client(const char *client_name){
+Client *get_client( char *client_name){
 
 /*
 busca o cliente na árvore de clientes, utiliza a função definida bem acima para encontrar!
@@ -71,7 +75,7 @@ busca o cliente na árvore de clientes, utiliza a função definida bem acima pa
 
 }
 
-int add_file_to_client(Client *c,const char* file_name){
+int add_file_to_client(Client *c, char* file_name){
 /*
 adição de arquivo no cliente. O arquivo deve existir, logo
 esse controle da posição do arquivo não faz parte desta função,
@@ -82,7 +86,7 @@ aqui basicamente ocorre a ligação entre arquivo e cliente!
 
 
 	/*buscamos o tamanho do arquivo!*/
-	FILE *f = fopen(file_name);
+	FILE *f = fopen(file_name,"r");
 	fseek(f, 0, SEEK_END); // seek to end of file
 	int size = ftell(f); // get current file pointer
 	fclose(f);
@@ -101,7 +105,7 @@ aqui basicamente ocorre a ligação entre arquivo e cliente!
 	info->size = size;
 
 	/*aumentamos o número de arquivos do usuário*/
-	c->file_info[c->n_files] = info;
+	c->file_info[c->n_files] = *info;
 	c->n_files++;
 
 	free(extention);
@@ -110,7 +114,7 @@ aqui basicamente ocorre a ligação entre arquivo e cliente!
 	return 0;
 }
 
-int remove_file_from_client(Client *c,const char* file_name){
+int remove_file_from_client(Client *c, char* file_name){
 /*
 remoção da conexão do usuário com o arquivo alvo
 */
@@ -120,7 +124,7 @@ remoção da conexão do usuário com o arquivo alvo
 	/*for para encontrar o arquivo i no usuário e
 	 fazer com que o valor de i seja equivalente a sua posição*/
 	int i=0;
-	for(;i<c->n_files && strcmp(c->file_info[i]->name,file_name);i++);
+	for(;i<c->n_files && strcmp(c->file_info[i].name,file_name);i++);
 	if(i == c->n_files)
 		return 1;
 	/*sobre-escreve o arquivo a ser deletado com os outros
@@ -131,7 +135,7 @@ remoção da conexão do usuário com o arquivo alvo
 	}
 	return 0;
 }
-int get_file_from_client(Client *c,const char* file_name,char * buffer){
+int get_file_from_client(Client *c, char* file_name,char * buffer){
 /*
 pegar conteudo de arquivo do usuário
 */
@@ -141,7 +145,7 @@ pegar conteudo de arquivo do usuário
 		return 1;
 
 	/*utiliza o for para encontrar o arquivo que se deseja ler, posição em i*/
-	for(;i<c->n_files && strcmp(c->file_info[i]->name,file_name);i++);
+	for(;i<c->n_files && strcmp(c->file_info[i].name,file_name);i++);
 	if(i == c->n_files)
 		return 1;
 
