@@ -1,16 +1,21 @@
+#ifndef DROPBOXSERVER_H
+#define DROPBOXSERVER_H
 #include "dropboxUtil.h"
+#include "user.h"
 
 /* CONSTANTS */
 #define DEFAULT_PORT 3000
 #define DEFAULT_ADDRESS "127.0.0.1"
 #define MAX_CLIENTS 10
 #define SOCKET_BACKLOG 1
+#define DEFAULT_USER_METADATA_FILE "banco_de_usuarios"
 
 /* ERROR CODES */
 #define ERROR_ON_BIND -9
 #define ERROR_CREATING_SERVER_FOLDER -10
 #define ERROR_CREATING_USER_FOLDER -11
 #define ERROR_RECV -12
+#define ERROR_ON_OPENING_SOCKET -13
 
 typedef struct client
 {
@@ -53,3 +58,5 @@ int addDevice(Client* client);
 int removeDevice(Client* client, int device);
 
 void check_login_status(Client* client);
+
+#endif

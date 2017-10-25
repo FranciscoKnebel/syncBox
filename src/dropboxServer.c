@@ -50,8 +50,6 @@ void clearClients(){
 }
 
 int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
-  int status;
-  int pid;
   
   int port = DEFAULT_PORT;
   struct sockaddr_in server, client;
@@ -72,7 +70,11 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
   serverInfo.port = port;
 
   // Criação e nomeação de socket
-  int sockid = socket(PF_INET, SOCK_STREAM, 0);
+  int sockid = socket(AF_INET, SOCK_STREAM, 0);//era PF_INET, porém slides do sor confirmão AF_INET
+  if(sockid == -1 ){
+    perror("Falha na abertura do socket");
+    return ERROR_ON_OPENING_SOCKET;
+  }
   if(bind(sockid, (struct sockaddr *) &server, sizeof(server)) == -1) { // 0 = ok; -1 = erro, ele já faz o handle do erro
     perror("Falha na nomeação do socket");
     return ERROR_ON_BIND;
@@ -90,6 +92,17 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
   printf("Endereço do servidor: %s%s%s\n", ANSI_COLOR_GREEN, serverInfo.ip, ANSI_COLOR_RESET);
   printf("Porta do servidor: %s%d%s\n", ANSI_COLOR_GREEN, serverInfo.port, ANSI_COLOR_RESET);
 
+  //leitura da árvore de usuários já existentes!
+  char arquivo_de_persistencia[MAXNAME*3];
+  sprintf(arquivo_de_persistencia,"%s/%s",serverInfo.folder,DEFAULT_USER_METADATA_FILE);
+
+  printf("arquivo de persistência de dados:%s",arquivo_de_persistencia);
+
+  int op_mod = get_clients_from_file(arquivo_de_persistencia);
+  if(op_mod == 0)
+    puts("houve recuperação de usuários");
+  else
+    puts("novo local, sem usuários");
 
 
   int listen_status = listen(sockid, MAX_CLIENTS); // segundo argumento é a quantidade de clientes que o socket vai fazer o listen
@@ -119,7 +132,7 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
     connection->ip = client_ip;
     
 
-    if(pthread_create( &thread_id , NULL ,  continueClientProcess, connection) < 0){
+    if(pthread_create( &thread_id , NULL ,  (void * (*)(void *))continueClientProcess, connection) < 0){
             printf("Error on create thread\n");
             exit(1);
     }
@@ -151,6 +164,20 @@ void* continueClientProcess(Connection* connection) {
    strcpy(buffer, "conectado");
 
    int clientPos = 0;
+
+   //parte envolvendo metadados, como professor pediu algo diferente de array, coloquei a árvore
+   //se usuário é novo no dropbox ele tem 0 arquivos
+   client = get_client(client_id);
+   if(client == NULL){
+    add_client(client_id);
+    client = get_client(client_id);
+   }
+   device = addDevice(client);
+   if(device == -1){
+    strcpy(buffer, "excess devices");
+    }
+
+   /*
    
    clientPos = searchClient(client, &client_id);
    
@@ -162,8 +189,8 @@ void* continueClientProcess(Connection* connection) {
 	device = addDevice(client);
 	if(device == -1){
 		strcpy(buffer, "excess devices");
-	}
-   }
+	}*/
+   
 
 
    printf("client pos: %d\n", clientPos);
@@ -178,10 +205,11 @@ void* continueClientProcess(Connection* connection) {
 
 	   sprintf(server_new_client_folder, "%s/%s", serverInfo.folder, client_id);
 	   if(!fileExists(server_new_client_folder)) {
-		if(mkdir(server_new_client_folder, 0777) != 0) {
-			printf("Error creating user folder in server '%s'.\n", server_new_client_folder);
-			return ERROR_CREATING_USER_FOLDER;
-		}
+    		if(mkdir(server_new_client_folder, 0777) != 0) {
+    			printf("Error creating user folder in server '%s'.\n", server_new_client_folder);
+          exit(1);
+    			//return ERROR_CREATING_USER_FOLDER;
+    		}
 	   }
 
 	   printf("Conexão iniciada do usuário '%s%s%s' através do IP '%s%s%s'.\n", ANSI_COLOR_GREEN, client_id, ANSI_COLOR_RESET,
@@ -203,8 +231,8 @@ void* continueClientProcess(Connection* connection) {
 	     // read
 	     status = read(socket, buffer, BUFFER_SIZE);
 	     if (status < 0) {
-		printf("ERROR reading from socket");
-		exit(1);
+    		printf("ERROR reading from socket");
+    		exit(1);
 	     }
 
 	     if(strcmp(buffer, "disconnect") == 0){
@@ -212,8 +240,8 @@ void* continueClientProcess(Connection* connection) {
 	       // write
 	       status = write(socket, buffer, BUFFER_SIZE);
 	       if (status < 0) {
-		printf("ERROR writing to socket\n");
-		exit(1);
+      		printf("ERROR writing to socket\n");
+      		exit(1);
 	       }
 	       disconnected = 1;
 	     } else {
@@ -237,8 +265,7 @@ void* continueClientProcess(Connection* connection) {
 	      exit(1);
 	   }
     }
-   
-
+    return (void*)NULL;
 }
 
 int searchClient(Client* client, char* userId){
@@ -262,7 +289,7 @@ int newClient(char* userid){
 			strcpy(clients[i].userid, userid);
 			char server_new_client_folder[2*MAXNAME +1];
 	   		sprintf(server_new_client_folder, "%s/%s", serverInfo.folder, userid);
-			clients[i].n_files = get_dir_content_file_info(&server_new_client_folder, clients[i].file_info); 
+			clients[i].n_files = get_dir_content_file_info(server_new_client_folder, clients[i].file_info); 
 			clients[i].logged_in = 1;
 			return i;
 		}
