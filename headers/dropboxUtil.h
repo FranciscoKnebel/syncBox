@@ -37,3 +37,6 @@ int get_dir_content(char * path, struct d_file files[], int* counter);
 int get_dir_content_file_info(char * path, FileInfo files[]);
 int get_all_entries(char * path, struct d_file files[]);
 int print_dir_content(char * path);
+void getFileCreationTime(char *path, char* last_modified);
+void getFileSize(char *path, int* size);
+void getFileExtension(const char *filename, char* extension);

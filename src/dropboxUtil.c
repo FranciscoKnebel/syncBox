@@ -56,8 +56,11 @@ int get_dir_content_file_info(char * path, FileInfo files[]) {
   int counter = 0;
   get_dir_content(path, dfiles, &counter);
   
-  for(int i = 0; i < MAXFILES; i++){
+  for(int i = 0; i < counter; i++){
   	strcpy(&files[i].name, &dfiles[i].name);
+	getFileCreationTime(&dfiles[i].path, &files[i].name);
+	getFileSize(&dfiles[i].path, &files[i].size);
+	getFileExtension(&dfiles[i].name, &files[i].extension);
   }
   return counter;
 
@@ -82,4 +85,22 @@ int print_dir_content(char * path) {
   printf("ELEMENTS FOUND: %d\n", counter);
 
   return 0;
+}
+
+void getFileCreationTime(char *path, char* last_modified) {
+    struct stat attr;
+    stat(path, &attr);
+    strcpy(last_modified, ctime(&attr.st_mtime));
+}
+
+void getFileSize(char *path, int* size) {
+    struct stat attr;
+    stat(path, &attr);
+    size = attr.st_size;
+}
+
+void getFileExtension(const char *filename, char* extension) {
+    const char *dot = strrchr(filename, '.');
+    if(!dot || !strcmp(dot, filename)) return "";
+    strcpy(extension, dot+1);
 }
