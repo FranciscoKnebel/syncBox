@@ -57,10 +57,10 @@ int get_dir_content_file_info(char * path, FileInfo files[]) {
   get_dir_content(path, dfiles, &counter);
   
   for(int i = 0; i < counter; i++){
-  	strcpy(&files[i].name, &dfiles[i].name);
-	getFileCreationTime(&dfiles[i].path, &files[i].name);
-	getFileSize(&dfiles[i].path, &files[i].size);
-	getFileExtension(&dfiles[i].name, &files[i].extension);
+  	strcpy(files[i].name, dfiles[i].name);
+	getFileCreationTime(dfiles[i].path, files[i].name);
+	getFileSize(dfiles[i].path, &files[i].size);
+	getFileExtension(dfiles[i].name, files[i].extension);
   }
   return counter;
 
@@ -96,11 +96,14 @@ void getFileCreationTime(char *path, char* last_modified) {
 void getFileSize(char *path, int* size) {
     struct stat attr;
     stat(path, &attr);
-    size = attr.st_size;
+    *size = attr.st_size;
 }
 
 void getFileExtension(const char *filename, char* extension) {
     const char *dot = strrchr(filename, '.');
-    if(!dot || !strcmp(dot, filename)) return "";
+    if(!dot || !strcmp(dot, filename)){
+      strcpy(extension,"");
+      return;
+    }
     strcpy(extension, dot+1);
 }

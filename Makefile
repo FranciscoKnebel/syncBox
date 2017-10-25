@@ -39,8 +39,9 @@ client:	$(SRC_DIR)dropboxClient.c util client-aux
 
 ## SERVER COMMANDS
 server-aux:
-	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/connection.o -I$(HEADERS_DIR) $(SRC_DIR)server/connection.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/fileUtil.o -I$(HEADERS_DIR) $(SRC_DIR)server/fileUtil.c
+	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/tree.o -I$(HEADERS_DIR) $(SRC_DIR)server/tree.c
+	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/user.o -I$(HEADERS_DIR) $(SRC_DIR)server/user.c
 
 SERVER_FILES = $(BIN_DIR)server/*.o
 server: $(SRC_DIR)dropboxServer.c util server-aux
