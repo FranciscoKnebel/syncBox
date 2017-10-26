@@ -55,5 +55,5 @@ void command_help(char* command) {
 
 void command_credits() {
   printf("\nFrancisco Knebel \t Gabriel Pittol\nLuciano Zancan   \t Matheus Krause\n");
-  cprintf(ANSI_COLOR_MAGENTA, "\n2017\n");
+  cprintf(COLOR_MAGENTA, "\n2017\n");
 }

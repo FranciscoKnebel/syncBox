@@ -4,32 +4,32 @@ void print_commands() {
 	puts("\n\nComandos disponíveis:");
 
 	printf("\tupload ");
-	cprintf(ANSI_COLOR_GREEN, "<path/filename.ext>\n");
+	cprintf(COLOR_GREEN, "<path/filename.ext>\n");
 
 	printf("\tdownload ");
-	cprintf(ANSI_COLOR_GREEN, "<filename.ext>\n");
+	cprintf(COLOR_GREEN, "<filename.ext>\n");
 
 	puts("\tlist_server");
 	puts("\tlist_client");
 	puts("\tget_sync_dir");
 
 	printf("\thelp ");
-	cprintf(ANSI_COLOR_GREEN, "command\n");
+	cprintf(COLOR_GREEN, "command\n");
 
 	puts("\tcredits");
 
-	cprintf(ANSI_COLOR_RED, "\texit");
+	cprintf(COLOR_RED, "\texit");
 }
 
 void show_intro_message() {
-	cprintf(ANSI_COLOR_BLUE, "\tsyncBox\t");
-	cprintf(ANSI_COLOR_MAGENTA, "v0.0.1 - 03/11/2017\n");
+	cprintf(COLOR_BLUE, "\tsyncBox\t");
+	cprintf(COLOR_MAGENTA, "v0.0.1 - 03/11/2017\n");
 
 	printf("\nBem-vindo ao syncBox, ");
-	cprintf(ANSI_COLOR_GREEN, user.id);
+	cprintf(COLOR_GREEN, user.id);
 
 	printf("\nPasta do usuário: ");
-	cprintf(ANSI_COLOR_GREEN, user.folder);
+	cprintf(COLOR_GREEN, user.folder);
 }
 
 int is_not_exit_command(char* command) {
@@ -145,7 +145,7 @@ void show_client_interface() {
 				callCommand(comando, atributo, check);
 			}
 		} else {
-			printf("Comando '%s%s%s' inválido.\n", ANSI_COLOR_GREEN, comando_solicitado, ANSI_COLOR_RESET);
+			printf("Comando '%s%s%s' inválido.\n", COLOR_GREEN, comando_solicitado, COLOR_RESET);
 		}
 	}
 

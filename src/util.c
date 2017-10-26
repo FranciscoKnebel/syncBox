@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 int cprintf(char* ansicode, char* string) {
-	return printf("%s%s"ANSI_COLOR_RESET, ansicode, string);
+	return printf("%s%s"COLOR_RESET, ansicode, string);
 }
 
 int getFilesize(FILE* pFile) {

@@ -155,9 +155,9 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
     }
   }
 
-  printf("Pasta do servidor: %s%s%s\n", ANSI_COLOR_GREEN, serverInfo.folder, ANSI_COLOR_RESET);
-  printf("Endereço do servidor: %s%s%s\n", ANSI_COLOR_GREEN, serverInfo.ip, ANSI_COLOR_RESET);
-  printf("Porta do servidor: %s%d%s\n", ANSI_COLOR_GREEN, serverInfo.port, ANSI_COLOR_RESET);
+  printf("Pasta do servidor: %s%s%s\n", COLOR_GREEN, serverInfo.folder, COLOR_RESET);
+  printf("Endereço do servidor: %s%s%s\n", COLOR_GREEN, serverInfo.ip, COLOR_RESET);
+  printf("Porta do servidor: %s%d%s\n", COLOR_GREEN, serverInfo.port, COLOR_RESET);
 
 
 
@@ -253,8 +253,8 @@ void* continueClientProcess(Connection* connection) {
 		}
 	   }
 
-	   printf("Conexão iniciada do usuário '%s%s%s' através do IP '%s%s%s'.\n", ANSI_COLOR_GREEN, client_id, ANSI_COLOR_RESET,
-	   ANSI_COLOR_GREEN, client_ip, ANSI_COLOR_RESET);
+	   printf("Conexão iniciada do usuário '%s%s%s' através do IP '%s%s%s'.\n", COLOR_GREEN, client_id, COLOR_RESET,
+	   COLOR_GREEN, client_ip, COLOR_RESET);
 
 
 	   // write

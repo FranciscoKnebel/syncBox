@@ -7,7 +7,7 @@ void help_help() {
 
 void help_upload() {
   printf("COMANDO: \n %s ", COMMAND_UPLOAD);
-  cprintf(ANSI_COLOR_GREEN, "<path/filename.ext>");
+  cprintf(COLOR_GREEN, "<path/filename.ext>");
 
   puts("\nDESCRIÇÃO: ");
   puts("Envia o arquivo filename.ext para o servidor.");
@@ -16,7 +16,7 @@ void help_upload() {
 
 void help_download() {
   printf("COMANDO: \n %s ", COMMAND_DOWNLOAD);
-  cprintf(ANSI_COLOR_GREEN, "<filename.ext>");
+  cprintf(COLOR_GREEN, "<filename.ext>");
 
   puts("\nDESCRIÇÃO: ");
   puts("Faz download do arquivo filename.ext do servidor para o diretório local.");

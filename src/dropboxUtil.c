@@ -26,8 +26,8 @@ int get_dir_content(char * path, struct d_file files[], int* counter) {
       pthread_mutex_lock(&lock);
       memcpy(&files[(*counter)], &newFile, sizeof(newFile));
       (*counter)++;
-
       pthread_mutex_unlock(&lock);
+      
       int rc;
       pthread_t thread;
       if(entry->d_type == DT_DIR) { // Arquivo é um diretório
@@ -55,15 +55,15 @@ int get_dir_content_file_info(char * path, FileInfo files[]) {
   struct d_file dfiles[MAXFILES];
   int counter = 0;
   get_dir_content(path, dfiles, &counter);
-  
+
   for(int i = 0; i < counter; i++){
   	strcpy(&files[i].name, &dfiles[i].name);
-	getFileCreationTime(&dfiles[i].path, &files[i].last_modified);
-	getFileSize(&dfiles[i].path, &files[i].size);
-	getFileExtension(&dfiles[i].name, &files[i].extension);
+  	getFileCreationTime(&dfiles[i].path, &files[i].last_modified);
+  	getFileSize(&dfiles[i].path, &files[i].size);
+  	getFileExtension(&dfiles[i].name, &files[i].extension);
   }
-  return counter;
 
+  return counter;
 }
 
 int get_all_entries(char * path, struct d_file files[]) {
@@ -80,7 +80,7 @@ int print_dir_content(char * path) {
 
   printf("ELEMENTS FOUND: %d\n", counter);
   for (int i = 0; i < counter; i++) {
-    printf("%s%s%s/%s\n", ANSI_COLOR_YELLOW, files[i].path, ANSI_COLOR_RESET, files[i].name);
+    printf("%s%s%s/%s\n", COLOR_YELLOW, files[i].path, COLOR_RESET, files[i].name);
   }
   printf("ELEMENTS FOUND: %d\n", counter);
 
@@ -88,35 +88,33 @@ int print_dir_content(char * path) {
 }
 
 void getFileCreationTime(char *path, char* last_modified) {
-    struct stat attr;
-    stat(path, &attr);
-    strcpy(last_modified, ctime(&attr.st_mtime));
+  struct stat attr;
+  stat(path, &attr);
+  strcpy(last_modified, ctime(&attr.st_mtime));
 }
 
 void getFileSize(char *path, int* size) {
-    struct stat attr;
-    stat(path, &attr);
-    size = attr.st_size;
+  struct stat attr;
+  stat(path, &attr);
+  size = attr.st_size;
 }
 
 void getFileExtension(const char *filename, char* extension) {
-    const char *dot = strrchr(filename, '.');
-    if(!dot || !strcmp(dot, filename)){
-	strcpy(extension, "");
-    } else{
-    	strcpy(extension, dot+1);
-    }
+  const char *dot = strrchr(filename, '.');
+  if(!dot || !strcmp(dot, filename)) {
+    strcpy(extension, "");
+  } else {
+  	strcpy(extension, dot+1);
+  }
 }
 
 void getLastStringElement(char filename[], char* string, const char *separator){
-  	string = strtok(string, separator);
-	
-  	while (string) {
-    		//printf("element: %s\n", string);
-		strcpy(filename, string);
-    		string = strtok(NULL, separator);
-  	}
-	//printf("final: %s\n", filename);	
+	string = strtok(string, separator);
+
+	while (string) {
+    //printf("element: %s\n", string);
+    strcpy(filename, string);
+    string = strtok(NULL, separator);
+	}
+	//printf("final: %s\n", filename);
 }
-
-
