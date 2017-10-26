@@ -19,7 +19,7 @@ int connect_server (char *host, int port) {
   struct sockaddr_in serverconn;
 
   /* Create a socket point */
-  sockid = socket(AF_INET, SOCK_STREAM, 0);  
+  sockid = socket(AF_INET, SOCK_STREAM, 0);
 
   if (sockid < 0) {
       printf("ERROR opening socket\n");
@@ -32,7 +32,7 @@ int connect_server (char *host, int port) {
   serverconn.sin_port = htons(port);
   serverconn.sin_addr.s_addr = inet_addr(host);
 
- 
+
 
   status = connect(sockid, (struct sockaddr *) &serverconn, sizeof(serverconn));
   if(status < 0){
@@ -50,22 +50,22 @@ int connect_server (char *host, int port) {
       printf("ERROR writing to socket\n");
       exit(1);
    }
-   
-  // read server response 
+
+  // read server response
   bzero(buffer, BUFFER_SIZE);
   status = read(sockid, buffer, BUFFER_SIZE);
   if (status < 0) {
      printf("ERROR reading from socket\n");
      exit(1);
   }
-  if(strcmp(buffer, "conectado") == 0){
+  if(strcmp(buffer, S_CONNECTED) == 0){
     printf("\nConnected\n");
     return 1;
   }
-  if(strcmp(buffer, "excess devices") == 0){
+  if(strcmp(buffer, S_EXCESS_DEVICES) == 0){
     printf("\nMuitas conexões simultaneas do mesmo usuário. encerrando...\n");
   }
-  
+
   return 0;
 }
 
@@ -96,17 +96,17 @@ void sync_client() {
 void send_file(char *file) {
 	int file_size = 0;
 	int bytes_read = 0;
-	int status = 0; 
-	
-	strcpy(buffer, "upload"); 
+	int status = 0;
+
+	strcpy(buffer, S_UPLOAD);
 	status = write(sockid, buffer, BUFFER_SIZE); // requisita upload
-  
+
 	status = read(sockid, buffer, BUFFER_SIZE); // recebe resposta
-	 
-	if(strcmp(buffer, "name") == 0){ // envia o nome do arquivo para o servidor
-	   strcpy(buffer, file); 
-	   status = write(sockid, buffer, BUFFER_SIZE); 
-	} 
+
+	if(strcmp(buffer, S_NAME) == 0){ // envia o nome do arquivo para o servidor
+	   strcpy(buffer, file);
+	   status = write(sockid, buffer, BUFFER_SIZE);
+	}
 
 	FILE* pFile;
 	char buffer[BUFFER_SIZE]; // 1 KB buffer
@@ -114,9 +114,9 @@ void send_file(char *file) {
 	pFile = fopen(file, "rb");
 	if(pFile) {
 		file_size = getFilesize(pFile);
-		
+
 		sprintf(buffer, "%d", file_size); // envia tamanho do arquivo para o servidor
-		status = write(sockid, buffer, BUFFER_SIZE); 
+		status = write(sockid, buffer, BUFFER_SIZE);
 
 		if(file_size == 0) {
 			fclose(pFile);
@@ -128,14 +128,14 @@ void send_file(char *file) {
 				bytes_read += sizeof(char) * BUFFER_SIZE;
 
 				// enviar buffer para salvar no servidor
-				status = write(sockid, buffer, BUFFER_SIZE); 
-        			//status = read(sockid, buffer, BUFFER_SIZE); 
+				status = write(sockid, buffer, BUFFER_SIZE);
+        			//status = read(sockid, buffer, BUFFER_SIZE);
 				//printf("recebido: %s", buffer);
 		}
 
 		fclose(pFile);
 
-    		status = write(sockid, buffer, BUFFER_SIZE); 
+    		status = write(sockid, buffer, BUFFER_SIZE);
 
 		printf("Arquivo %s enviado.\n", file);
 	} else {
@@ -146,18 +146,18 @@ void send_file(char *file) {
 void get_file(char *file) {
 	int bytes_written = 0;
         int file_size = 0;
-        
 
-        strcpy(buffer, "download"); 
+
+        strcpy(buffer, S_DOWNLOAD);
 	status = write(sockid, buffer, BUFFER_SIZE); // requisita download
-  
+
 	status = read(sockid, buffer, BUFFER_SIZE); // recebe resposta
-	
-	if(strcmp(buffer, "name") == 0){ // envia o nome do arquivo para o servidor
+
+	if(strcmp(buffer, S_NAME) == 0){ // envia o nome do arquivo para o servidor
 	   printf("envia...\n");
-	   strcpy(buffer, file); 
-	   status = write(sockid, buffer, BUFFER_SIZE); 
-	} 
+	   strcpy(buffer, file);
+	   status = write(sockid, buffer, BUFFER_SIZE);
+	}
         printf("nome: %s\n", file);
 
         char filename_path[MAXNAME*2];
@@ -172,23 +172,23 @@ void get_file(char *file) {
                 status = read(sockid, buffer, BUFFER_SIZE); // recebe tamanho do arquivo
                 file_size = atoi(buffer);
 		printf("tamanho: %d\n", file_size);
-		
-		status = 0; 
+
+		status = 0;
 		int bytes_to_read = file_size;
 		while(file_size > bytes_written) {
 			status = read(sockid, buffer, BUFFER_SIZE); // le no buffer
 			if(bytes_to_read > BUFFER_SIZE){ // se o tamanho do arquivo for maior, lê buffer completo
-				fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile); 
-				bytes_written += sizeof(char) * BUFFER_SIZE; 
+				fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
+				bytes_written += sizeof(char) * BUFFER_SIZE;
 				bytes_to_read -= bytes_to_read;
 			 } else{ // senão lê só o bytes_to_read
-				fwrite(buffer, sizeof(char), bytes_to_read, pFile); 
-				bytes_written += sizeof(char) * bytes_to_read; 
+				fwrite(buffer, sizeof(char), bytes_to_read, pFile);
+				bytes_written += sizeof(char) * bytes_to_read;
 			 }
 			      printf("leu\n");
-		 } 
-		 
-		fclose(pFile); 
+		 }
+
+		fclose(pFile);
 
 		printf("Arquivo %s salvo.\n", filename_path);
 	} else {
@@ -204,11 +204,11 @@ void delete_file(char *file) {
 void close_connection() {
 	// Fechar a thread de sincronização
 	pthread_cancel(sync_thread);
-	
+
 	// Fechar conexão com o servidor
 	bzero(buffer, BUFFER_SIZE);
 
-	strcpy(buffer, "disconnect");
+	strcpy(buffer, S_REQ_DC);
 	status = write(sockid, buffer, BUFFER_SIZE);
   	if (status < 0) {
       		printf("ERROR writing to socket\n");
@@ -221,23 +221,23 @@ void close_connection() {
      		exit(1);
   	}
 
-  	if(strcmp(buffer, "disconnected") == 0){
+  	if(strcmp(buffer, S_RPL_DC) == 0){
     		printf("\nDesconectado!\n");
 		close(sockid);
   	} else{
-		printf("Erro ao desconectar!\n");		
+		printf("Erro ao desconectar!\n");
 	}
 
-      
-    
+
+
 }
 
 void list_server(){
 	int number_files = 0;
 
-	strcpy(buffer, "list_server"); 
+	strcpy(buffer, S_LS);
 	status = write(sockid, buffer, BUFFER_SIZE); // requisita list server
-  
+
   	// Lista os arquivos salvos no servidor associados ao usuário.
 
   	status = read(sockid, buffer, BUFFER_SIZE); // numero de arquivos

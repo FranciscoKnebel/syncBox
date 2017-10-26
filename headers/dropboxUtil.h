@@ -1,4 +1,5 @@
 #include "util.h"
+#include "communication.h"
 
 // syncBox CONSTANTS
 #define MAXNAME 64
