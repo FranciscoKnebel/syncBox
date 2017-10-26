@@ -7,13 +7,83 @@ void sync_server() {
   return;
 }
 
-void receive_file(char *file) {
-  return;
-}
+void receive_file(char *file){ 
+  int sockid = 4;
+  int bytes_written = 0; 
+  int status = 0;
+  int file_size = 0; 
 
-void send_file(char *file) {
-  return;
-}
+  printf("recebendo %s\n", file);
+ 
+  FILE* pFile; 
+  char buffer[BUFFER_SIZE]; // 1 KB buffer 
+ 
+  pFile = fopen(file, "wb"); 
+  if(pFile) { 
+     
+    //requisita o arquivo file do cliente
+    // recebe buffer do servidor 
+    status = read(sockid, buffer, BUFFER_SIZE);
+    file_size = atoi(buffer);
+
+    status = 0;
+    int bytes_to_read = file_size;
+    while(file_size > bytes_written) {
+      status = read(sockid, buffer, BUFFER_SIZE); // le no buffer
+      if(bytes_to_read > BUFFER_SIZE){ // se o tamanho do arquivo for maior, lê buffer completo
+        fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile); 
+        bytes_written += sizeof(char) * BUFFER_SIZE; 
+        bytes_to_read -= bytes_to_read;
+      } else{ // senão lê só o file_size
+         fwrite(buffer, sizeof(char), bytes_to_read, pFile); 
+         bytes_written += sizeof(char) * bytes_to_read; 
+      }
+      printf("leu\n");
+    } 
+    fclose(pFile); 
+ 
+    printf("Arquivo %s salvo.\n", file); 
+  } else { 
+    printf("Erro abrindo arquivo %s.\n", file); 
+  }
+} 
+
+void send_file(char *file) { 
+  int sockid = 4;
+  int file_size = 0; 
+  int bytes_read = 0; 
+  int status = 0; 
+ 
+  FILE* pFile; 
+  char buffer[BUFFER_SIZE]; // 1 KB buffer 
+ 
+  pFile = fopen(file, "rb"); 
+  if(pFile) { 
+
+    file_size = getFilesize(pFile); 
+    printf("file size: %d\n", file_size);
+    sprintf(buffer, "%d", file_size); // envia tamanho do arquivo para o cliente
+    status = write(sockid, buffer, BUFFER_SIZE);
+
+    if(file_size == 0) { 
+      fclose(pFile); 
+      return; 
+    } 
+     
+    while(!feof(pFile)) { 
+        fread(buffer, sizeof(char), BUFFER_SIZE, pFile); 
+        bytes_read += sizeof(char) * BUFFER_SIZE; 
+ 
+        // enviar buffer para salvar no cliente
+        status = write(sockid, buffer, BUFFER_SIZE); 
+    } 
+ 
+    fclose(pFile); 
+    printf("Arquivo %s enviado.\n", file); 
+  } else { 
+    printf("Erro abrindo arquivo %s.\n", file); 
+  } 
+} 
 
 
 char buffer[BUFFER_SIZE];
@@ -51,7 +121,6 @@ void clearClients(){
 
 int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
   int status;
-  int pid;
   
   int port = DEFAULT_PORT;
   struct sockaddr_in server, client;
@@ -152,20 +221,20 @@ void* continueClientProcess(Connection* connection) {
 
    int clientPos = 0;
    
-   clientPos = searchClient(client, &client_id);
+   clientPos = searchClient(client, client_id);
    
    if(clientPos == -1){
-	clientPos = newClient(client_id);
+	clientPos = newClient(client_id, socket);
 	client = &clients[clientPos];
    } else {
 	client = &clients[clientPos];
-	device = addDevice(client);
+	device = addDevice(client, socket);
 	if(device == -1){
 		strcpy(buffer, "excess devices");
 	}
    }
 
-
+   printf("socket: %d\n", socket);
    printf("client pos: %d\n", clientPos);
    printf("device: %d\n", device);
 
@@ -217,18 +286,11 @@ void* continueClientProcess(Connection* connection) {
 	       }
 	       disconnected = 1;
 	     } else {
-
-	     	// write
-	     	status = write(socket, buffer, BUFFER_SIZE);
-	     	if (status < 0) {
-		  printf("ERROR writing to socket\n");
-		  exit(1);
-		}
-
+	     	 select_commands(socket, buffer, client); 
 	    }
 	  } while(disconnected != 1);
 	  
-	  printf("%s desconectou no dispositivo %d!\n", client_id, removeDevice(client, device));
+	  printf("%s desconectou no dispositivo %d, socket %d!\n", client_id, removeDevice(client, device), socket);
   } else{
     	   // write
 	   status = write(socket, buffer, BUFFER_SIZE);
@@ -254,11 +316,12 @@ int searchClient(Client* client, char* userId){
 	return -1;
 }
 
-int newClient(char* userid){
+int newClient(char* userid, int socket){
 	int i;
 	for(i = 0; i < MAX_CLIENTS; i++){
 		if(!clients[i].logged_in){
-                        clients[i].devices[0] = 1;
+                        clients[i].devices[0] = socket;
+			clients[i].devices[1] = -1;
 			strcpy(clients[i].userid, userid);
 			char server_new_client_folder[2*MAXNAME +1];
 	   		sprintf(server_new_client_folder, "%s/%s", serverInfo.folder, userid);
@@ -270,13 +333,13 @@ int newClient(char* userid){
 	return -1; // cheio de usuários
 }
 
-int addDevice(Client* client){
-	if(client->devices[0] == 0){
-     		client->devices[0] = 1;
+int addDevice(Client* client, int socket){
+	if(client->devices[0] == -1){
+     		client->devices[0] = socket;
 		return 0;
         }
-        if(client->devices[1] == 0){
-     		client->devices[1] = 1;
+        if(client->devices[1] == -1){
+     		client->devices[1] = socket;
 		return 1;
         }
 	return -1;
@@ -284,7 +347,7 @@ int addDevice(Client* client){
 
 int removeDevice(Client* client, int device){
 	if(client){
-		client->devices[device] = 0;
+		client->devices[device] = -1;
 		return device;
 	}
 	return -1;
@@ -294,6 +357,72 @@ void check_login_status(Client* client){
 	if(client->devices[0] == 0 && client->devices[1] == 0){
 		client->logged_in = 0;
 		printf("Cliente %s logged out!", client->userid);
+	}
+}
+
+void select_commands(int socket, char buffer[], Client* client){ 
+  if(strcmp(buffer, "upload") == 0){ 
+    printf("\nupload\n");
+    do_upload(socket, buffer, client); 
+  } else if(strcmp(buffer, "download") == 0){
+    printf("\ndownload\n");
+    do_download(socket, buffer, client);
+  } else if(strcmp(buffer, "list_server") == 0){
+    printf("\nlist_server\n");
+    do_list_server(socket, buffer, client);
+  }
+} 
+ 
+void do_upload(int socket, char buffer[], Client* client){ 
+  int status = 0; 
+  strcpy(buffer, "name"); 
+  status = write(socket, buffer, BUFFER_SIZE); 
+   
+  char filename[MAXNAME]; 
+ 
+  status = read(socket, buffer, BUFFER_SIZE); 
+
+  getLastStringElement(filename, buffer, "/");
+
+  char file[MAXNAME];
+  strcpy(file, filename);
+  printf("%s\n",file);
+  
+  sprintf(filename, "%s/%s/%s", serverInfo.folder, client->userid, file);
+ 
+  receive_file(filename); 
+   
+} 
+
+void do_download(int socket, char buffer[], Client* client){ 
+  int status = 0; 
+  strcpy(buffer, "name"); 
+  status = write(socket, buffer, BUFFER_SIZE); 
+   
+  char filename[MAXNAME]; 
+ 
+  status = read(socket, buffer, BUFFER_SIZE); 
+
+  strcpy(filename, buffer);
+  char file[MAXNAME];
+  strcpy(file, filename);
+  printf("%s\n",file);
+  
+  sprintf(filename, "%s/%s/%s", serverInfo.folder, client->userid, file);
+ 
+  send_file(filename); 
+   
+} 
+
+void do_list_server(int socket, char buffer[], Client* client){
+	int sockid = 4;
+	int status = 0;
+        sprintf(buffer, "%d", client->n_files);
+	printf("number files: %d\n", atoi(buffer));
+	status = write(sockid, buffer, BUFFER_SIZE);
+	for(int i = 0; i < client->n_files; i++){
+		strcpy(buffer, client->file_info[i].name);
+		status = write(sockid, buffer, BUFFER_SIZE);
 	}
 }
 

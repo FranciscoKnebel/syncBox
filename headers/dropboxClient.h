@@ -42,4 +42,6 @@ void delete_file(char *file);
 
 void close_connection();
 
+void list_server();
+
 void show_client_interface();

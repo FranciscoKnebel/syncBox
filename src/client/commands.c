@@ -9,9 +9,7 @@ void command_download(char* path) {
 }
 
 void command_listserver() {
-  // Lista os arquivos salvos no servidor associados ao usuário.
-
-  // pede lista para o servidor e imprime resultado.
+  return list_server();
 }
 
 void command_listclient() {

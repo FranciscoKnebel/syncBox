@@ -40,3 +40,4 @@ int print_dir_content(char * path);
 void getFileCreationTime(char *path, char* last_modified);
 void getFileSize(char *path, int* size);
 void getFileExtension(const char *filename, char* extension);
+void getLastStringElement(char filename[], char* string, const char *separator);

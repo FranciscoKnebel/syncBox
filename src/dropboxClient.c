@@ -96,6 +96,17 @@ void sync_client() {
 void send_file(char *file) {
 	int file_size = 0;
 	int bytes_read = 0;
+	int status = 0; 
+	
+	strcpy(buffer, "upload"); 
+	status = write(sockid, buffer, BUFFER_SIZE); // requisita upload
+  
+	status = read(sockid, buffer, BUFFER_SIZE); // recebe resposta
+	 
+	if(strcmp(buffer, "name") == 0){ // envia o nome do arquivo para o servidor
+	   strcpy(buffer, file); 
+	   status = write(sockid, buffer, BUFFER_SIZE); 
+	} 
 
 	FILE* pFile;
 	char buffer[BUFFER_SIZE]; // 1 KB buffer
@@ -103,6 +114,9 @@ void send_file(char *file) {
 	pFile = fopen(file, "rb");
 	if(pFile) {
 		file_size = getFilesize(pFile);
+		
+		sprintf(buffer, "%d", file_size); // envia tamanho do arquivo para o servidor
+		status = write(sockid, buffer, BUFFER_SIZE); 
 
 		if(file_size == 0) {
 			fclose(pFile);
@@ -114,9 +128,15 @@ void send_file(char *file) {
 				bytes_read += sizeof(char) * BUFFER_SIZE;
 
 				// enviar buffer para salvar no servidor
+				status = write(sockid, buffer, BUFFER_SIZE); 
+        			//status = read(sockid, buffer, BUFFER_SIZE); 
+				//printf("recebido: %s", buffer);
 		}
 
 		fclose(pFile);
+
+    		status = write(sockid, buffer, BUFFER_SIZE); 
+
 		printf("Arquivo %s enviado.\n", file);
 	} else {
 		printf("Erro abrindo arquivo %s.\n", file);
@@ -125,24 +145,54 @@ void send_file(char *file) {
 
 void get_file(char *file) {
 	int bytes_written = 0;
+        int file_size = 0;
+        
+
+        strcpy(buffer, "download"); 
+	status = write(sockid, buffer, BUFFER_SIZE); // requisita download
+  
+	status = read(sockid, buffer, BUFFER_SIZE); // recebe resposta
+	
+	if(strcmp(buffer, "name") == 0){ // envia o nome do arquivo para o servidor
+	   printf("envia...\n");
+	   strcpy(buffer, file); 
+	   status = write(sockid, buffer, BUFFER_SIZE); 
+	} 
+        printf("nome: %s\n", file);
+
+        char filename_path[MAXNAME*2];
+	sprintf(filename_path, "%s/%s", user.folder, file);
+	printf("%s\n", filename_path);
 
 	FILE* pFile;
 	char buffer[BUFFER_SIZE]; // 1 KB buffer
 
-	pFile = fopen(file, "wb");
+	pFile = fopen(filename_path, "wb");
 	if(pFile) {
-		// requisita arquivo file para o servidor
-		// recebe buffer do servidor
+                status = read(sockid, buffer, BUFFER_SIZE); // recebe tamanho do arquivo
+                file_size = atoi(buffer);
+		printf("tamanho: %d\n", file_size);
+		
+		status = 0; 
+		int bytes_to_read = file_size;
+		while(file_size > bytes_written) {
+			status = read(sockid, buffer, BUFFER_SIZE); // le no buffer
+			if(bytes_to_read > BUFFER_SIZE){ // se o tamanho do arquivo for maior, lê buffer completo
+				fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile); 
+				bytes_written += sizeof(char) * BUFFER_SIZE; 
+				bytes_to_read -= bytes_to_read;
+			 } else{ // senão lê só o bytes_to_read
+				fwrite(buffer, sizeof(char), bytes_to_read, pFile); 
+				bytes_written += sizeof(char) * bytes_to_read; 
+			 }
+			      printf("leu\n");
+		 } 
+		 
+		fclose(pFile); 
 
-		// while( faltam bytes para escrever ) {
-			fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
-			bytes_written += sizeof(char) * BUFFER_SIZE;
-		// }
-		fclose(pFile);
-
-		printf("Arquivo %s salvo.\n", file);
+		printf("Arquivo %s salvo.\n", filename_path);
 	} else {
-		printf("Erro abrindo arquivo %s.\n", file);
+		printf("Erro abrindo arquivo %s.\n", filename_path);
 	}
 }
 
@@ -180,6 +230,23 @@ void close_connection() {
 
       
     
+}
+
+void list_server(){
+	int number_files = 0;
+
+	strcpy(buffer, "list_server"); 
+	status = write(sockid, buffer, BUFFER_SIZE); // requisita list server
+  
+  	// Lista os arquivos salvos no servidor associados ao usuário.
+
+  	status = read(sockid, buffer, BUFFER_SIZE); // numero de arquivos
+	number_files = atoi(buffer);
+	printf("%d\n", number_files);
+	for(int i = 0; i < number_files; i++){
+		status = read(sockid, buffer, BUFFER_SIZE);
+		printf("%s\n", buffer);
+	}
 }
 
 int main(int argc, char *argv[]) {

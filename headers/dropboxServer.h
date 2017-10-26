@@ -46,10 +46,18 @@ void* continueClientProcess(Connection* connection);
 
 int searchClient(Client* client, char* userId);
 
-int newClient(char* userid);
+int newClient(char* userid, int socket);
 
-int addDevice(Client* client);
+int addDevice(Client* client, int socket);
 
 int removeDevice(Client* client, int device);
 
 void check_login_status(Client* client);
+
+void select_commands(int socket, char buffer[], Client* client); 
+ 
+void do_upload(int socket, char buffer[], Client* client); 
+
+void do_download(int socket, char buffer[], Client* client); 
+
+void do_list_server(int socket, char buffer[], Client* client); 

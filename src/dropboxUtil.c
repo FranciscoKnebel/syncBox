@@ -58,7 +58,7 @@ int get_dir_content_file_info(char * path, FileInfo files[]) {
   
   for(int i = 0; i < counter; i++){
   	strcpy(&files[i].name, &dfiles[i].name);
-	getFileCreationTime(&dfiles[i].path, &files[i].name);
+	getFileCreationTime(&dfiles[i].path, &files[i].last_modified);
 	getFileSize(&dfiles[i].path, &files[i].size);
 	getFileExtension(&dfiles[i].name, &files[i].extension);
   }
@@ -101,6 +101,22 @@ void getFileSize(char *path, int* size) {
 
 void getFileExtension(const char *filename, char* extension) {
     const char *dot = strrchr(filename, '.');
-    if(!dot || !strcmp(dot, filename)) return "";
-    strcpy(extension, dot+1);
+    if(!dot || !strcmp(dot, filename)){
+	strcpy(extension, "");
+    } else{
+    	strcpy(extension, dot+1);
+    }
 }
+
+void getLastStringElement(char filename[], char* string, const char *separator){
+  	string = strtok(string, separator);
+	
+  	while (string) {
+    		//printf("element: %s\n", string);
+		strcpy(filename, string);
+    		string = strtok(NULL, separator);
+  	}
+	//printf("final: %s\n", filename);	
+}
+
+
