@@ -1,7 +1,19 @@
-#include "dropboxUtil.h"
-#include "client/commands.h"
-#include "client/help.h"
-#include "client/watcher.h"
+#ifndef util_h
+#define util_h
+  #include "dropboxUtil.h"
+#endif
+
+#ifndef client_aux_h
+#define client_aux_h
+  #include "client/commands.h"
+  #include "client/help.h"
+  #include "client/watcher.h"
+#endif
+
+#ifndef client_h
+#define client_h
+
+#define INTRO_MESSAGE "v0.0.1 - 03/11/2017\n"
 
 // COMMANDS
 #define COMMAND_UPLOAD "upload"
@@ -45,3 +57,5 @@ void close_connection();
 void list_server();
 
 void show_client_interface();
+
+#endif

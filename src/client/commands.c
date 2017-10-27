@@ -54,6 +54,7 @@ void command_help(char* command) {
 }
 
 void command_credits() {
+  printf("Trabalho original por:\n");
   printf("\nFrancisco Knebel \t Gabriel Pittol\nLuciano Zancan   \t Matheus Krause\n");
-  cprintf(COLOR_MAGENTA, "\n2017\n");
+  cprintf(COLOR_MAGENTA, "\nsyncBox - 2017\n");
 }

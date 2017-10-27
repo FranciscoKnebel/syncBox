@@ -23,7 +23,7 @@ void print_commands() {
 
 void show_intro_message() {
 	cprintf(COLOR_BLUE, "\tsyncBox\t");
-	cprintf(COLOR_MAGENTA, "v0.0.1 - 03/11/2017\n");
+	cprintf(COLOR_MAGENTA, INTRO_MESSAGE);
 
 	printf("\nBem-vindo ao syncBox, ");
 	cprintf(COLOR_GREEN, user.id);

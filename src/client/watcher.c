@@ -35,12 +35,12 @@ void *watcher_thread(void* ptr_path) {
 
           if (event->mask & (IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO)) {
             if (fileExists(path) && (event->name[0] != '.')) {
-              printf("Request upload: %s\n", path);
+              DEBUG_PRINT("\nRequest upload: %s\n", path);
               send_file(path);
             }
           } else if (event->mask & (IN_DELETE | IN_DELETE_SELF | IN_MOVED_FROM)) {
             if (event->name[0] != '.') {
-              printf("Request delete: %s\n", path);
+              DEBUG_PRINT("\nRequest delete: %s\n", path);
               delete_file(path);
             }
           }

@@ -39,8 +39,10 @@ client:	$(SRC_DIR)dropboxClient.c util client-aux
 
 ## SERVER COMMANDS
 server-aux:
-	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/connection.o -I$(HEADERS_DIR) $(SRC_DIR)server/connection.c
-	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/fileUtil.o -I$(HEADERS_DIR) $(SRC_DIR)server/fileUtil.c
+	#$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/connection.o -I$(HEADERS_DIR) $(SRC_DIR)server/connection.c
+	#$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/fileUtil.o -I$(HEADERS_DIR) $(SRC_DIR)server/fileUtil.c
+	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/client.o -I$(HEADERS_DIR) $(SRC_DIR)server/client.c
+	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/commands.o -I$(HEADERS_DIR) $(SRC_DIR)server/commands.c
 
 SERVER_FILES = $(BIN_DIR)server/*.o
 server: $(SRC_DIR)dropboxServer.c util server-aux
@@ -67,7 +69,7 @@ test_dropboxUtil: util
 	./$(TST_DST_DIR)dropboxUtil .
 
 test_clientwatcher: util client-aux
-	$(CC) $(CFLAGS) -o $(TST_DST_DIR)watcher $(TST_SRC_DIR)watcher.c $(OBJ_FILES) $(BIN_DIR)client/watcher.o -pthread -I$(HEADERS_DIR)
+	#$(CC) $(CFLAGS) -o $(TST_DST_DIR)watcher $(TST_SRC_DIR)watcher.c $(OBJ_FILES) $(BIN_DIR)client/watcher.o -pthread -I$(HEADERS_DIR)
 	#./$(TST_DST_DIR)watcher /home/francisco/sync_dir_1
 
 TST_FILES = $(TST_DST_DIR)dropboxUtil $(TST_DST_DIR)util $(TST_DST_DIR)watcher

@@ -27,7 +27,7 @@ int get_dir_content(char * path, struct d_file files[], int* counter) {
       memcpy(&files[(*counter)], &newFile, sizeof(newFile));
       (*counter)++;
       pthread_mutex_unlock(&lock);
-      
+
       int rc;
       pthread_t thread;
       if(entry->d_type == DT_DIR) { // Arquivo é um diretório
@@ -51,7 +51,7 @@ int get_dir_content(char * path, struct d_file files[], int* counter) {
   return 0;
 }
 
-int get_dir_content_file_info(char * path, FileInfo files[]) {
+int get_dir_file_info(char * path, FileInfo files[]) {
   struct d_file dfiles[MAXFILES];
   int counter = 0;
   get_dir_content(path, dfiles, &counter);
@@ -108,7 +108,7 @@ void getFileExtension(const char *filename, char* extension) {
   }
 }
 
-void getLastStringElement(char filename[], char* string, const char *separator){
+void getLastStringElement(char filename[], char* string, const char *separator) {
 	string = strtok(string, separator);
 
 	while (string) {

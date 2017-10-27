@@ -1,4 +1,16 @@
-#include "dropboxUtil.h"
+#ifndef util_h
+#define util_h
+  #include "dropboxUtil.h"
+#endif
+
+#ifndef server_aux_h
+#define server_aux_h
+  #include "server/client.h"
+  #include "server/commands.h"
+#endif
+
+#ifndef server_h
+#define server_h
 
 /* CONSTANTS */
 #define DEFAULT_PORT 3000
@@ -11,6 +23,9 @@
 #define ERROR_CREATING_SERVER_FOLDER -10
 #define ERROR_CREATING_USER_FOLDER -11
 #define ERROR_RECV -12
+
+#define CLIENT_NOTFOUND -1
+#define MAX_CLIENTS_REACHED -20
 
 typedef struct client
 {
@@ -33,6 +48,7 @@ typedef struct connection_info{
 } Connection;
 
 extern ServerInfo serverInfo;
+extern Client clients[MAX_CLIENTS];
 
 void sync_server();
 
@@ -40,24 +56,4 @@ void receive_file(char *file);
 
 void send_file(char *file);
 
-void startServer();
-
-void* continueClientProcess(Connection* connection);
-
-int searchClient(Client* client, char* userId);
-
-int newClient(char* userid, int socket);
-
-int addDevice(Client* client, int socket);
-
-int removeDevice(Client* client, int device);
-
-void check_login_status(Client* client);
-
-void select_commands(int socket, char buffer[], Client* client); 
- 
-void do_upload(int socket, char buffer[], Client* client); 
-
-void do_download(int socket, char buffer[], Client* client); 
-
-void do_list_server(int socket, char buffer[], Client* client); 
+#endif

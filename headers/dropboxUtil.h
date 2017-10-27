@@ -1,3 +1,5 @@
+#define DEBUG // Comentar esta linha para desativar DEBUG mode.
+
 #include "util.h"
 #include "communication.h"
 
@@ -35,7 +37,7 @@ typedef struct dir_content {
 } DirContent;
 
 int get_dir_content(char * path, struct d_file files[], int* counter);
-int get_dir_content_file_info(char * path, FileInfo files[]);
+int get_dir_file_info(char * path, FileInfo files[]);
 int get_all_entries(char * path, struct d_file files[]);
 int print_dir_content(char * path);
 void getFileCreationTime(char *path, char* last_modified);

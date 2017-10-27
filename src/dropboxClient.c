@@ -6,13 +6,6 @@ struct user_info user;
 int sockid;
 int status;
 
-void clearBuffer() {
-	int i;
-	for(i = 0; i < BUFFER_SIZE; i++){
-		buffer[i] = 0;
-	}
-}
-
 int connect_server (char *host, int port) {
 	struct sockaddr_in serverconn;
 
@@ -50,8 +43,8 @@ int connect_server (char *host, int port) {
 	bzero(buffer, BUFFER_SIZE);
 	status = read(sockid, buffer, BUFFER_SIZE);
 	if (status < 0) {
-		 printf("ERROR reading from socket\n");
-		 return 1;
+		printf("ERROR reading from socket\n");
+		return 1;
 	}
 
 	if(strcmp(buffer, S_EXCESS_DEVICES) == 0){
@@ -63,6 +56,34 @@ int connect_server (char *host, int port) {
 	}
 
 	return 0;
+}
+
+void close_connection() {
+	// Fechar a thread de sincronização
+	pthread_cancel(sync_thread);
+
+	// Fechar conexão com o servidor
+	bzero(buffer, BUFFER_SIZE);
+
+	strcpy(buffer, S_REQ_DC);
+	status = write(sockid, buffer, BUFFER_SIZE);
+	if (status < 0) {
+		printf("ERROR writing to socket\n");
+		return 1;
+	}
+
+	status = read(sockid, buffer, BUFFER_SIZE);
+	if (status < 0) {
+		printf("ERROR reading from socket\n");
+		exit(1);
+	}
+
+	if(strcmp(buffer, S_RPL_DC) == 0) {
+		DEBUG_PRINT("Desconectado!\n");
+		close(sockid);
+	} else {
+		printf("Erro ao desconectar!\n");
+	}
 }
 
 void sync_client() {
@@ -157,15 +178,15 @@ void get_file(char *file) {
 	// TODO teste de status
 
 	if(strcmp(buffer, S_NAME) == 0) { // envia o nome do arquivo para o servidor
-		printf("envia...\n");
+		DEBUG_PRINT("envia...\n");
 		strcpy(buffer, file);
 		status = write(sockid, buffer, BUFFER_SIZE);
 	}
-	printf("nome: %s\n", file);
+	DEBUG_PRINT("nome: %s\n", file);
 
 	char path[MAXNAME*2];
 	sprintf(path, "%s/%s", user.folder, file);
-	printf("%s\n", path);
+	DEBUG_PRINT("%s\n", path);
 
 	FILE* pFile;
 	 // 1 KB buffer
@@ -175,7 +196,7 @@ void get_file(char *file) {
 		// TODO teste de status
 
 		file_size = atoi(buffer);
-		printf("tamanho: %d\n", file_size);
+		DEBUG_PRINT("tamanho: %d\n", file_size);
 
 		bytes_written = 0;
 		bytes_to_read = file_size;
@@ -192,7 +213,7 @@ void get_file(char *file) {
 				bytes_written += sizeof(char) * bytes_to_read;
 			}
 
-			printf("leu\n");
+			DEBUG_PRINT("leu\n");
 		}
 
 		fclose(pFile);
@@ -208,44 +229,15 @@ void delete_file(char *file) {
 	// recebe confirmação de que arquivo foi removido
 }
 
-void close_connection() {
-	// Fechar a thread de sincronização
-	pthread_cancel(sync_thread);
-
-	// Fechar conexão com o servidor
-	bzero(buffer, BUFFER_SIZE);
-
-	strcpy(buffer, S_REQ_DC);
-	status = write(sockid, buffer, BUFFER_SIZE);
-	if (status < 0) {
-		printf("ERROR writing to socket\n");
-		return 1;
-	}
-
-	status = read(sockid, buffer, BUFFER_SIZE);
-	if (status < 0) {
-		printf("ERROR reading from socket\n");
-		exit(1);
-	}
-
-	if(strcmp(buffer, S_RPL_DC) == 0) {
-		printf("Desconectado!\n");
-		close(sockid);
-	} else {
-		printf("Erro ao desconectar!\n");
-	}
-}
-
 void list_server() {
 	int number_files = 0;
 
+	/* Request List Server */
 	strcpy(buffer, S_LS);
 	status = write(sockid, buffer, BUFFER_SIZE); // requisita list server
 	// TODO teste de status
 
-		// Lista os arquivos salvos no servidor associados ao usuário.
-
-	status = read(sockid, buffer, BUFFER_SIZE); // numero de arquivos
+	status = read(sockid, buffer, BUFFER_SIZE); // numero de arquivos no servidor
 	// TODO teste de status
 
 	number_files = atoi(buffer);
