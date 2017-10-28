@@ -11,7 +11,6 @@ int connect_server (char *host, int port) {
 
 	/* Create a socket point */
 	sockid = socket(AF_INET, SOCK_STREAM, 0);
-
 	if (sockid < 0) {
 		printf("ERROR opening socket\n");
 		return 1;
@@ -69,13 +68,13 @@ void close_connection() {
 	status = write(sockid, buffer, BUFFER_SIZE);
 	if (status < 0) {
 		printf("ERROR writing to socket\n");
-		return 1;
+		return;
 	}
 
 	status = read(sockid, buffer, BUFFER_SIZE);
 	if (status < 0) {
 		printf("ERROR reading from socket\n");
-		exit(1);
+		return;
 	}
 
 	if(strcmp(buffer, S_RPL_DC) == 0) {
@@ -87,79 +86,25 @@ void close_connection() {
 }
 
 void sync_client() {
-        int number_files_server = 0;
-        int number_files_client = 0;
-        char file_name[MAXNAME];
-        char last_modified[MAXNAME];
-        char path[MAXNAME * 2];
-        FileInfo client_files[MAXFILES];
-
 	// verifica se o diretório sync_dir_<nomeusuario> existe
-	// se não, cria pasta e fecha.
+	// se não, cria pasta.
 	if(!fileExists(user.folder)) {
 		if(mkdir(user.folder, 0777) != 0) {
 			printf("Error creating user folder '%s'.\n", user.folder);
 		}
-
-		//return;
 	}
-
-	//printf("%d files in client\n", number_files_client);
 
 	// sincroniza pasta local com o servidor
-	
-	strcpy(buffer, S_SYNC);
-        status = write(sockid, buffer, BUFFER_SIZE);
+	syncronize_local(sockid);
 
-        status = read(sockid, buffer, BUFFER_SIZE);
-        number_files_server = atoi(buffer);
-        //printf("%d arquivos no servidor\n", number_files_server);
+	// sincroniza servidor com pasta local
+	syncronize_server(sockid);
 
-        char last_modified_file_2[MAXNAME];
-        for(int i = 0; i < number_files_server; i++){
-		status = read(sockid, buffer, BUFFER_SIZE);
-                strcpy(file_name, buffer);
-		//printf("%s\n", file_name);
-		status = read(sockid, buffer, BUFFER_SIZE);
-                strcpy(last_modified, buffer);
-                //printf("ultima modificaçao server: %s\n", last_modified);
-                sprintf(path, "%s/%s", user.folder, file_name);
-	        getFileModifiedTime(&path, &last_modified_file_2);
-                //printf("ultima modificacao user: %s\n", last_modified_file_2);
-                if(!fileExists(path) || older_file(&last_modified, &last_modified_file_2) == 1){
-			get_file(&file_name);
-		} else{
-			strcpy(buffer, "OK");
-			status = write(sockid, buffer, BUFFER_SIZE);	
-		}
-	}
- 	// sincriniza servidor com cliente
-        number_files_client = get_dir_file_info(user.folder, &client_files);
-        sprintf(buffer, "%d", number_files_client);
-        status = write(sockid, buffer, BUFFER_SIZE);
-
-        for(int i = 0; i < number_files_client; i++){
-		strcpy(buffer, client_files[i].name);
-	    	status = write(sockid, buffer, BUFFER_SIZE); 
-	    	strcpy(buffer, client_files[i].last_modified);
-	    	status = write(sockid, buffer, BUFFER_SIZE); 
-	    	status = read(sockid, buffer, BUFFER_SIZE); 
-		if(strcmp(buffer, S_GET) == 0){
-			sprintf(path, "%s/%s", user.folder, client_files[i].name);
-			send_file(&path);
-		}
-	}
-
-	// cria thread para manter a sincronização
+	// cria thread para manter a sincronização local
 	int rc;
 	if((rc = pthread_create(&sync_thread, NULL, watcher_thread, (void *) user.folder))) {
 		printf("Syncronization Thread creation failed: %d\n", rc);
 	}
-
-	// se há um conflito entre cópias do mesmo arquivo entre cliente e servidor,
-	// apagar arquivo local e trazer do servidor.
-		// delete_file, mas apenas local.
-		// get_file
 }
 
 void send_file(char *file) {
@@ -191,7 +136,7 @@ void send_file(char *file) {
 
 		if(file_size == 0) {
 			fclose(pFile);
-			return 1;
+			return;
 		}
 
 		while(!feof(pFile)) {
@@ -210,7 +155,6 @@ void send_file(char *file) {
 		// TODO teste de status
 
 		printf("Arquivo %s enviado.\n", file);
-		return status;
 	} else {
 		printf("Erro abrindo arquivo %s.\n", file);
 	}
@@ -236,12 +180,11 @@ void get_file(char *file) {
 	}
 	DEBUG_PRINT("nome: %s\n", file);
 
-	char path[MAXNAME*2];
+	char path[MAXNAME*2 + 1];
 	sprintf(path, "%s/%s", user.folder, file);
 	DEBUG_PRINT("%s\n", path);
 
 	FILE* pFile;
-	 // 1 KB buffer
 	pFile = fopen(path, "wb");
 	if(pFile) {
 		status = read(sockid, buffer, BUFFER_SIZE); // recebe tamanho do arquivo
@@ -264,7 +207,6 @@ void get_file(char *file) {
 				fwrite(buffer, sizeof(char), bytes_to_read, pFile);
 				bytes_written += sizeof(char) * bytes_to_read;
 			}
-
 		}
 
 		fclose(pFile);
@@ -276,22 +218,22 @@ void get_file(char *file) {
 }
 
 void delete_file(char *file) {
-  // avisa servidor para remover arquivo file 
-  /* Request de delete */ 
-  strcpy(buffer, S_DELETE); 
-  status = write(sockid, buffer, BUFFER_SIZE); 
- 
-  status = read(sockid, buffer, BUFFER_SIZE); 
-  if(strcmp(buffer, S_NAME) == 0){ 
-  	strcpy(buffer, file); 
-  	status = write(sockid, buffer, BUFFER_SIZE); 
-  } 
- 
-  status = read(sockid, buffer, BUFFER_SIZE); 
-  if(strcmp(buffer, S_DELETED) == 0){ 
-    printf("Arquivo %s deletado!\n", file);   
-  } 
-  // recebe confirmação de que arquivo foi removido 
+  // avisa servidor para remover arquivo file
+  /* Request de delete */
+  strcpy(buffer, S_REQ_DELETE);
+  status = write(sockid, buffer, BUFFER_SIZE);
+
+  status = read(sockid, buffer, BUFFER_SIZE);
+  if(strcmp(buffer, S_NAME) == 0){
+  	strcpy(buffer, file);
+  	status = write(sockid, buffer, BUFFER_SIZE);
+  }
+
+  status = read(sockid, buffer, BUFFER_SIZE);
+  if(strcmp(buffer, S_RPL_DELETE) == 0){
+    printf("Arquivo %s deletado!\n", file);
+  }
+  // recebe confirmação de que arquivo foi removido
 }
 
 void list_server() {

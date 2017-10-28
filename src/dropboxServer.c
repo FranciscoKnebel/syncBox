@@ -4,78 +4,84 @@ ServerInfo serverInfo;
 Client clients[MAX_CLIENTS];
 char buffer[BUFFER_SIZE];
 
+pthread_mutex_t mutex;
+pthread_mutex_t mutex_sync;
 
-pthread_mutex_t mutex; 
-pthread_mutex_t mutex_sync; 
+int sockid_upload = 0;
+int sockid_download = 0;
+int sockid_sync = 0;
 
-int sockid_upload = 0; 
-int sockid_download = 0; 
-int sockid_sync = 0; 
- 
-Client* client_sync; 
+Client* client_sync;
 
 void sync_server() {
   // sincroniza o cliente com servidor e servidor com cliente
-  int status = 0; 
-  char buffer[BUFFER_SIZE]; // 1 KB buffer 
+  int status = 0;
+  char buffer[BUFFER_SIZE]; // 1 KB buffer
   int number_files_client = 0;
   char file_name[MAXNAME];
   char last_modified[MAXNAME];
   char path[MAXNAME * 2];
 
-  status = read(sockid_sync, buffer, BUFFER_SIZE); 
-  if(strcmp(buffer, S_SYNC) == 0){
-	DEBUG_PRINT("sincronizar!\n");
+  status = read(sockid_sync, buffer, BUFFER_SIZE);
+  // TODO: check de status
+
+  if(strcmp(buffer, S_SYNC) == 0) {
+    DEBUG_PRINT("sincronizar!\n");
   }
 
-  sprintf(buffer, "%d", client_sync->n_files); 
-  status = write(sockid_sync, buffer, BUFFER_SIZE); 
+  sprintf(buffer, "%d", client_sync->n_files);
+  status = write(sockid_sync, buffer, BUFFER_SIZE);
+  // TODO: check de status
 
-  for(int i = 0; i < client_sync->n_files; i++){
+  for(int i = 0; i < client_sync->n_files; i++) {
 	    strcpy(buffer, client_sync->file_info[i].name);
-	    status = write(sockid_sync, buffer, BUFFER_SIZE); 
+	    status = write(sockid_sync, buffer, BUFFER_SIZE);
+      // TODO: check de status
 	    strcpy(buffer, client_sync->file_info[i].last_modified);
-	    status = write(sockid_sync, buffer, BUFFER_SIZE); 
-	    status = read(sockid_sync, buffer, BUFFER_SIZE); 
+	    status = write(sockid_sync, buffer, BUFFER_SIZE);
+      // TODO: check de status
+      status = read(sockid_sync, buffer, BUFFER_SIZE);
+      // TODO: check de status
 	    if(strcmp(buffer, S_DOWNLOAD) == 0){
 	    	download(sockid_sync, client_sync);
 	    }
+    }
+
+    // sincroniza agora o servidor com o cliente
+    status = read(sockid_sync, buffer, BUFFER_SIZE);
+    // TODO: check de status
+    number_files_client = atoi(buffer);
+    printf("Number files client: %d\n", number_files_client);
+    char last_modified_file_2[MAXNAME];
+    for(int i = 0; i < number_files_client; i++){
+      status = read(sockid_sync, buffer, BUFFER_SIZE);
+      // TODO: check de status
+      strcpy(file_name, buffer);
+      //printf("%s\n", file_name);
+      status = read(sockid_sync, buffer, BUFFER_SIZE);
+      // TODO: check de status
+      strcpy(last_modified, buffer);
+      //printf("ultima modificaçao server: %s\n", last_modified);
+      sprintf(path, "%s/%s/%s", serverInfo.folder, client_sync->userid, file_name);
+      getFileModifiedTime(&path, &last_modified_file_2);
+      //printf("ultima modificacao user: %s\n", last_modified_file_2);
+      if(!fileExists(path) || older_file(&last_modified, &last_modified_file_2) == 1){
+        strcpy(buffer, S_GET);
+        status = write(sockid_sync, buffer, BUFFER_SIZE);
+        // TODO: check de status
+        status = read(sockid_sync, buffer, BUFFER_SIZE);
+        // TODO: check de status
+        if(strcmp(buffer, S_UPLOAD) == 0) {
+          upload(sockid_sync, client_sync);
+        }
+  	} else {
+  		strcpy(buffer, S_OK);
+  		status = write(sockid_sync, buffer, BUFFER_SIZE);
+  	}
   }
-  // sincroniza agora o servidor com o cliente
-  status = read(sockid_sync, buffer, BUFFER_SIZE);
-  number_files_client = atoi(buffer);
-  printf("Number files client: %d\n", number_files_client);
-  char last_modified_file_2[MAXNAME];
-  for(int i = 0; i < number_files_client; i++){
-	status = read(sockid_sync, buffer, BUFFER_SIZE);
-        strcpy(file_name, buffer);
-	//printf("%s\n", file_name);
-	status = read(sockid_sync, buffer, BUFFER_SIZE);
-        strcpy(last_modified, buffer);
-        //printf("ultima modificaçao server: %s\n", last_modified);
-        sprintf(path, "%s/%s/%s", serverInfo.folder, client_sync->userid, file_name);
-	getFileModifiedTime(&path, &last_modified_file_2);
-        //printf("ultima modificacao user: %s\n", last_modified_file_2);
-        if(!fileExists(path) || older_file(&last_modified, &last_modified_file_2) == 1){
-		strcpy(buffer, S_GET);
-		status = write(sockid_sync, buffer, BUFFER_SIZE); 
-                status = read(sockid_sync, buffer, BUFFER_SIZE);
-		if(strcmp(buffer, S_UPLOAD) == 0){
-			upload(sockid_sync, client_sync);
-		}	
-	} else{
-		strcpy(buffer, "OK");
-		status = write(sockid_sync, buffer, BUFFER_SIZE);	
-	}
-  }
-
-
-
 
   DEBUG_PRINT("sincronizacao finalizada!\n");
-   
 }
-
 
 void receive_file(char *file){
   int bytes_written = 0;
@@ -89,8 +95,7 @@ void receive_file(char *file){
 
   pFile = fopen(file, "wb");
   if(pFile) {
-
-    //requisita o arquivo file do cliente
+    // requisita o arquivo file do cliente
     // recebe buffer do servidor
     status = read(sockid_upload, buffer, BUFFER_SIZE);
     file_size = atoi(buffer);
@@ -127,11 +132,11 @@ void send_file(char *file) {
 
   pFile = fopen(file, "rb");
   if(pFile) {
-
     file_size = getFilesize(pFile);
     DEBUG_PRINT("file size: %d\n", file_size);
     sprintf(buffer, "%d", file_size); // envia tamanho do arquivo para o cliente
     status = write(sockid_download, buffer, BUFFER_SIZE);
+    // TODO: check de status
 
     if(file_size == 0) {
       fclose(pFile);
@@ -144,6 +149,7 @@ void send_file(char *file) {
 
         // enviar buffer para salvar no cliente
         status = write(sockid_download, buffer, BUFFER_SIZE);
+        // TODO: check de status
     }
 
     fclose(pFile);
@@ -222,13 +228,12 @@ void* continueClientProcess(Connection* connection) {
     COLOR_GREEN, client_id, COLOR_RESET, COLOR_GREEN, client_ip, COLOR_RESET);
 
     status = write(socket, buffer, BUFFER_SIZE);
-    
-    pthread_mutex_lock(&mutex_sync); // seção crítica 
-    sockid_sync = socket; 
+
+    pthread_mutex_lock(&mutex_sync); // seção crítica
+    sockid_sync = socket;
     client_sync = client;
     sync_server();
-    pthread_mutex_unlock (&mutex_sync); // fim da seção crítica 
-
+    pthread_mutex_unlock (&mutex_sync); // fim da seção crítica
 
     if (status < 0) {
       DEBUG_PRINT("ERROR writing to socket\n");

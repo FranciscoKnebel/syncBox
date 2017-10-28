@@ -31,6 +31,7 @@ client-aux: $(SRC_DIR)client/interface.c $(SRC_DIR)client/commands.c $(SRC_DIR)c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/interface.o -I$(HEADERS_DIR) $(SRC_DIR)client/interface.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/commands.o -I$(HEADERS_DIR) $(SRC_DIR)client/commands.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/help.o -I$(HEADERS_DIR) $(SRC_DIR)client/help.c
+	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/sync.o -I$(HEADERS_DIR) $(SRC_DIR)client/sync.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/watcher.o -I$(HEADERS_DIR) $(SRC_DIR)client/watcher.c
 
 CLIENT_FILES = $(BIN_DIR)client/*.o

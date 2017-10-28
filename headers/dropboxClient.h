@@ -7,6 +7,7 @@
 #define client_aux_h
   #include "client/commands.h"
   #include "client/help.h"
+  #include "client/sync.h"
   #include "client/watcher.h"
 #endif
 
