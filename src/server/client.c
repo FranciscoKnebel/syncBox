@@ -10,12 +10,10 @@ int newClient(char* userid, int socket) {
 	for(int i = 0; i < MAX_CLIENTS; i++) {
 		if(!clients[i].logged_in) {
 			strcpy(clients[i].userid, userid);
-
-      clients[i].devices[0] = socket;
+      			clients[i].devices[0] = socket;
 			clients[i].devices[1] = -1;
-
 			char new_client_folder[2*MAXNAME +1];
-	   	sprintf(new_client_folder, "%s/%s", serverInfo.folder, userid);
+	   		sprintf(new_client_folder, "%s/%s", serverInfo.folder, userid);
 			clients[i].n_files = get_dir_file_info(&new_client_folder, clients[i].file_info);
 			clients[i].logged_in = 1;
 
@@ -38,17 +36,22 @@ int searchClient(Client* client, char* userId) {
 }
 
 int addDevice(Client* client, int socket) {
-	if(client->devices[0] == -1) {
+  char new_client_folder[2*MAXNAME +1];
+  if(client->devices[0] == -1) {
+	   	sprintf(new_client_folder, "%s/%s", serverInfo.folder, client->userid);
+                client->n_files = get_dir_file_info(&new_client_folder, client->file_info);
 		client->devices[0] = socket;
 		return 0;
   }
 
   if(client->devices[1] == -1) {
+	   	sprintf(new_client_folder, "%s/%s", serverInfo.folder, client->userid);
+                client->n_files = get_dir_file_info(&new_client_folder, client->file_info);
 		client->devices[1] = socket;
 		return 1;
   }
 
-	return -1;
+  return -1;
 }
 
 int removeDevice(Client* client, int device) {

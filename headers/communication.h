@@ -12,3 +12,7 @@
 #define S_DOWNLOAD "download"
 #define S_UPLOAD "upload"
 #define S_LS "list server"
+#define S_DELETE "delete"
+#define S_DELETED "deleted" 
+#define S_SYNC "sync"
+#define S_GET "get"

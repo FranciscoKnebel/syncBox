@@ -4,12 +4,80 @@ ServerInfo serverInfo;
 Client clients[MAX_CLIENTS];
 char buffer[BUFFER_SIZE];
 
+
+pthread_mutex_t mutex; 
+pthread_mutex_t mutex_sync; 
+
+int sockid_upload = 0; 
+int sockid_download = 0; 
+int sockid_sync = 0; 
+ 
+Client* client_sync; 
+
 void sync_server() {
-  return;
+  // sincroniza o cliente com servidor e servidor com cliente
+  int status = 0; 
+  char buffer[BUFFER_SIZE]; // 1 KB buffer 
+  int number_files_client = 0;
+  char file_name[MAXNAME];
+  char last_modified[MAXNAME];
+  char path[MAXNAME * 2];
+
+  status = read(sockid_sync, buffer, BUFFER_SIZE); 
+  if(strcmp(buffer, S_SYNC) == 0){
+	DEBUG_PRINT("sincronizar!\n");
+  }
+
+  sprintf(buffer, "%d", client_sync->n_files); 
+  status = write(sockid_sync, buffer, BUFFER_SIZE); 
+
+  for(int i = 0; i < client_sync->n_files; i++){
+	    strcpy(buffer, client_sync->file_info[i].name);
+	    status = write(sockid_sync, buffer, BUFFER_SIZE); 
+	    strcpy(buffer, client_sync->file_info[i].last_modified);
+	    status = write(sockid_sync, buffer, BUFFER_SIZE); 
+	    status = read(sockid_sync, buffer, BUFFER_SIZE); 
+	    if(strcmp(buffer, S_DOWNLOAD) == 0){
+	    	download(sockid_sync, client_sync);
+	    }
+  }
+  // sincroniza agora o servidor com o cliente
+  status = read(sockid_sync, buffer, BUFFER_SIZE);
+  number_files_client = atoi(buffer);
+  printf("Number files client: %d\n", number_files_client);
+  char last_modified_file_2[MAXNAME];
+  for(int i = 0; i < number_files_client; i++){
+	status = read(sockid_sync, buffer, BUFFER_SIZE);
+        strcpy(file_name, buffer);
+	//printf("%s\n", file_name);
+	status = read(sockid_sync, buffer, BUFFER_SIZE);
+        strcpy(last_modified, buffer);
+        //printf("ultima modificaçao server: %s\n", last_modified);
+        sprintf(path, "%s/%s/%s", serverInfo.folder, client_sync->userid, file_name);
+	getFileModifiedTime(&path, &last_modified_file_2);
+        //printf("ultima modificacao user: %s\n", last_modified_file_2);
+        if(!fileExists(path) || older_file(&last_modified, &last_modified_file_2) == 1){
+		strcpy(buffer, S_GET);
+		status = write(sockid_sync, buffer, BUFFER_SIZE); 
+                status = read(sockid_sync, buffer, BUFFER_SIZE);
+		if(strcmp(buffer, S_UPLOAD) == 0){
+			upload(sockid_sync, client_sync);
+		}	
+	} else{
+		strcpy(buffer, "OK");
+		status = write(sockid_sync, buffer, BUFFER_SIZE);	
+	}
+  }
+
+
+
+
+  DEBUG_PRINT("sincronizacao finalizada!\n");
+   
 }
 
+
 void receive_file(char *file){
-  int sockid = 4;
   int bytes_written = 0;
   int status = 0;
   int file_size = 0;
@@ -24,13 +92,13 @@ void receive_file(char *file){
 
     //requisita o arquivo file do cliente
     // recebe buffer do servidor
-    status = read(sockid, buffer, BUFFER_SIZE);
+    status = read(sockid_upload, buffer, BUFFER_SIZE);
     file_size = atoi(buffer);
 
     status = 0;
     int bytes_to_read = file_size;
     while(file_size > bytes_written) {
-      status = read(sockid, buffer, BUFFER_SIZE); // le no buffer
+      status = read(sockid_upload, buffer, BUFFER_SIZE); // le no buffer
       if(bytes_to_read > BUFFER_SIZE){ // se o tamanho do arquivo for maior, lê buffer completo
         fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
         bytes_written += sizeof(char) * BUFFER_SIZE;
@@ -45,12 +113,11 @@ void receive_file(char *file){
 
     DEBUG_PRINT("Arquivo %s salvo.\n", file);
   } else {
-    printf("Erro abrindo arquivo %s.\n", file);
+    DEBUG_PRINT("Erro abrindo arquivo %s.\n", file);
   }
 }
 
 void send_file(char *file) {
-  int sockid = 4;
   int file_size = 0;
   int bytes_read = 0;
   int status = 0;
@@ -64,7 +131,7 @@ void send_file(char *file) {
     file_size = getFilesize(pFile);
     DEBUG_PRINT("file size: %d\n", file_size);
     sprintf(buffer, "%d", file_size); // envia tamanho do arquivo para o cliente
-    status = write(sockid, buffer, BUFFER_SIZE);
+    status = write(sockid_download, buffer, BUFFER_SIZE);
 
     if(file_size == 0) {
       fclose(pFile);
@@ -76,13 +143,13 @@ void send_file(char *file) {
         bytes_read += sizeof(char) * BUFFER_SIZE;
 
         // enviar buffer para salvar no cliente
-        status = write(sockid, buffer, BUFFER_SIZE);
+        status = write(sockid_download, buffer, BUFFER_SIZE);
     }
 
     fclose(pFile);
     DEBUG_PRINT("Arquivo %s enviado.\n", file);
   } else {
-    printf("Erro abrindo arquivo %s.\n", file);
+    DEBUG_PRINT("Erro abrindo arquivo %s.\n", file);
   }
 }
 
@@ -112,7 +179,7 @@ void* continueClientProcess(Connection* connection) {
   // read
   status = read(socket, buffer, BUFFER_SIZE);
   if (status < 0) {
-    printf("ERROR reading from socket\n");
+    DEBUG_PRINT("ERROR reading from socket\n");
     exit(1);
   }
   // do stuff...
@@ -154,10 +221,17 @@ void* continueClientProcess(Connection* connection) {
     printf("Conexão iniciada do usuário '%s%s%s' através do IP '%s%s%s'.\n",
     COLOR_GREEN, client_id, COLOR_RESET, COLOR_GREEN, client_ip, COLOR_RESET);
 
-    // write
     status = write(socket, buffer, BUFFER_SIZE);
+    
+    pthread_mutex_lock(&mutex_sync); // seção crítica 
+    sockid_sync = socket; 
+    client_sync = client;
+    sync_server();
+    pthread_mutex_unlock (&mutex_sync); // fim da seção crítica 
+
+
     if (status < 0) {
-      printf("ERROR writing to socket\n");
+      DEBUG_PRINT("ERROR writing to socket\n");
       exit(1);
     }
 
@@ -168,7 +242,7 @@ void* continueClientProcess(Connection* connection) {
       // read
       status = read(socket, buffer, BUFFER_SIZE);
       if (status < 0) {
-        printf("ERROR reading from socket");
+        DEBUG_PRINT("ERROR reading from socket");
         exit(1);
       }
 
@@ -192,7 +266,7 @@ void* continueClientProcess(Connection* connection) {
     // write
     status = write(socket, buffer, BUFFER_SIZE);
     if (status < 0) {
-      printf("ERROR writing to socket\n");
+      DEBUG_PRINT("ERROR writing to socket\n");
       exit(1);
     }
   }
