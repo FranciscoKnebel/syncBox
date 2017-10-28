@@ -28,21 +28,3 @@
 #define COLOR_MAGENTA "\x1b[35m"
 #define COLOR_CYAN    "\x1b[36m"
 #define COLOR_RESET   "\x1b[0m"
-
-/* Interface */
-int cprintf(char* ansicode, char* string);
-
-#ifdef DEBUG
-  #define DEBUG_PRINT(fmt, args...) fprintf(stderr, fmt, ## args)
-#else
-  #define DEBUG_PRINT(fmt, args...) /* Don't do anything in release builds */
-#endif
-
-/* Files */
-int getFilesize(FILE* pFile);
-int fileExists_stat(char* pathname, struct stat* st);
-int fileExists(char* pathname);
-
-/* System */
-char* getUserName();
-char* getUserHome();

@@ -20,11 +20,10 @@ TST_DST_DIR = $(TST_SRC_DIR)dst/
 all: util client server
 	@echo "All files compiled!"
 
-util:	$(SRC_DIR)dropboxUtil.c $(SRC_DIR)util.c
+util:	$(SRC_DIR)dropboxUtil.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)dropboxUtil.o -I$(HEADERS_DIR) $(SRC_DIR)dropboxUtil.c
-	$(CC) $(CFLAGS) -c -o $(BIN_DIR)util.o -I$(HEADERS_DIR) $(SRC_DIR)util.c
 
-OBJ_FILES = $(BIN_DIR)dropboxUtil.o $(BIN_DIR)util.o
+OBJ_FILES = $(BIN_DIR)dropboxUtil.o
 
 ## CLIENT COMMANDS
 client-aux: $(SRC_DIR)client/interface.c $(SRC_DIR)client/commands.c $(SRC_DIR)client/help.c $(SRC_DIR)client/watcher.c
@@ -56,7 +55,7 @@ test: test_dropboxUtil test_util test_clientwatcher
 test_util: util
 	$(CC) $(CFLAGS) -o $(TST_DST_DIR)util $(TST_SRC_DIR)util.c $(OBJ_FILES) -pthread -I$(HEADERS_DIR)
 	./$(TST_DST_DIR)util README.md
-	./$(TST_DST_DIR)util src/util.c
+	./$(TST_DST_DIR)util src/dropboxUtil.c
 	./$(TST_DST_DIR)util headers/dropboxClient.h
 
 test_dropboxUtil: util

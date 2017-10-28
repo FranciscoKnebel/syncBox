@@ -1,6 +1,6 @@
 #define DEBUG // Comentar esta linha para desativar DEBUG mode.
 
-#include "util.h"
+#include "includes.h"
 #include "communication.h"
 
 // syncBox CONSTANTS
@@ -41,8 +41,26 @@ int get_dir_file_info(char * path, FileInfo files[]);
 int get_all_entries(char * path, struct d_file files[]);
 int print_dir_content(char * path);
 void getFileModifiedTime(char *path, char* last_modified);
-void getFileSize(char *path, int* size);
 void getFileExtension(const char *filename, char* extension);
+int  getFileSize(char *path);
 void getLastStringElement(char filename[], char* string, const char *separator);
 time_t getTime(char* last_modified);
 int older_file(char* last_modified_file_1, char* last_modified_file_2);
+
+/* Interface */
+int cprintf(char* ansicode, char* string);
+
+#ifdef DEBUG
+  #define DEBUG_PRINT(fmt, args...) fprintf(stderr, fmt, ## args)
+#else
+  #define DEBUG_PRINT(fmt, args...) /* Don't do anything in release builds */
+#endif
+
+/* Files */
+int getFilesize(FILE* pFile);
+int fileExists_stat(char* pathname, struct stat* st);
+int fileExists(char* pathname);
+
+/* System */
+char* getUserName();
+char* getUserHome();
