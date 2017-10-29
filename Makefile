@@ -48,8 +48,12 @@ server: $(SRC_DIR)dropboxServer.c util server-aux
 	$(CC) $(CFLAGS) -o $(SVR_DIR)dropboxServer $(SRC_DIR)dropboxServer.c $(OBJ_FILES) $(SERVER_FILES) -pthread -I$(HEADERS_DIR)
 
 ## TEST
-test: test_dropboxUtil test_util test_clientwatcher
+test: test_dropboxUtil test_util test_clientwatcher test_arvoreUsuario
 	@echo "All tests finished."
+
+test_arvoreUsuario: all
+	$(CC) $(CFLAGS) -o $(TST_DST_DIR)arvoreUsuario $(TST_SRC_DIR)arvoreUsuario.c \
+	$(SRC_DIR)/server/user.c $(SRC_DIR)/server/tree.c $(SRC_DIR)/server/fileUtil.c -pthread -I$(HEADERS_DIR)
 
 test_util: util
 	$(CC) $(CFLAGS) -o $(TST_DST_DIR)util $(TST_SRC_DIR)util.c $(OBJ_FILES) -pthread -I$(HEADERS_DIR)
