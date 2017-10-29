@@ -1,6 +1,10 @@
+#ifndef USER_C
+#define USER_C
+
 #include "dropboxServer.h"
 
 NODE *clients = NULL;
+int total_clients = 0;
 
 int comp_clients(void *c1,void *c2){
 /*
@@ -28,12 +32,20 @@ recupera os clientes de um arquivo!
 	if(!file_name)
 		return 1;
 
-	FILE *f = fopen(file_name,"r");
+	FILE *f = fopen(file_name,"rb");
 
 	if(!f)
 		return 1;
 
-	clients = mount_tree(f,comp_clients,sizeof(Client));
+	fseek(f, 0, SEEK_END); // seek to end of file
+	int size = ftell(f);
+	rewind(f);
+	if(size < sizeof(Client))
+		return 1;
+
+	fscanf(f,"%d\n",&total_clients);
+
+	clients = mount_tree(f,comp_clients,sizeof(Client),total_clients);
 
 	return 0;
 }
@@ -56,6 +68,7 @@ novos clientes tem 0 arquivos por definição!
 	for(i=0;i<2;i++)
 		new_c->devices[i] = 0; //0 é disponível
 	clients = insert_node(clients,(void*)new_c,comp_clients);
+	total_clients++;
 	return 0;
 }
 
@@ -87,9 +100,16 @@ aqui basicamente ocorre a ligação entre arquivo e cliente!
 
 	/*buscamos o tamanho do arquivo!*/
 	FILE *f = fopen(file_name,"r");
+	if(f == NULL)
+		return 1;
 	fseek(f, 0, SEEK_END); // seek to end of file
 	int size = ftell(f); // get current file pointer
 	fclose(f);
+
+	int i;
+	for(;i<c->n_files && strcmp(c->file_info[i].name,file_name);i++);
+	if(i != c->n_files)
+		return 1;
 
 	FileInfo *info = malloc(sizeof(FileInfo));
 	strcpy(info->name,file_name);
@@ -107,6 +127,7 @@ aqui basicamente ocorre a ligação entre arquivo e cliente!
 	/*aumentamos o número de arquivos do usuário*/
 	c->file_info[c->n_files] = *info;
 	c->n_files++;
+	free(info);
 
 	free(extention);
 	free(mod);
@@ -132,7 +153,9 @@ remoção da conexão do usuário com o arquivo alvo
 	básicamente um SHIFT com perda*/
 	while(i != c->n_files && (i+1 != MAXFILES)){
 		c->file_info[i] = c->file_info[i+1];
+		i++;
 	}
+	c->n_files--;
 	return 0;
 }
 int get_file_from_client(Client *c, char* file_name,char * buffer){
@@ -149,9 +172,34 @@ pegar conteudo de arquivo do usuário
 	if(i == c->n_files)
 		return 1;
 
-	char *temp_buffer;
-	read_file(&temp_buffer,file_name);
-	strcpy(buffer,temp_buffer);
-	free(temp_buffer);
+	FILE *f = fopen(file_name,"r");
+	int size;
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	rewind(f);
+	fclose(f);
+
+	read_file(buffer,size,file_name);
+
 	return 0;
 }
+
+int save_clients(char file_name[]){
+
+	if(file_name == NULL)
+		return 1;
+
+	FILE * f = fopen(file_name,"wb");
+
+	fprintf(f,"%d\n",total_clients);
+
+	if(f == NULL)
+		return 2;
+
+	int exec =  save_tree(f,clients,sizeof(Client));
+
+	fclose(f);
+		
+	return exec;
+}
+#endif

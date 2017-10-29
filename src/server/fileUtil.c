@@ -1,6 +1,6 @@
 #include "fileUtil.h"
 
-int read_file(char **content,char *file_name){
+int read_file(char *content,int size,char *file_name){
 
 	if(!file_name)
 		return EXIT_FAILURE;
@@ -9,13 +9,11 @@ int read_file(char **content,char *file_name){
 
 	stat(file_name,&sb);
 
-	*content = malloc(sizeof(sb.st_size));
-
 	FILE* f = fopen(file_name,"r");
 	if(!f)
 		return EXIT_FAILURE;
 
-	fread(*content,sb.st_size,1,f);
+	fread(content,size,1,f);
 
 	fclose(f);
 
@@ -44,7 +42,7 @@ int write_file(char *content,int size,char *file_name){
 	if(!f)
 		return EXIT_FAILURE;
 
-	fwrite(content,size,1,f);
+	fwrite(content,1,size,f);
 	fclose(f);
 
 	return EXIT_SUCCESS;
@@ -60,8 +58,10 @@ int get_file_extension(char *file_name,char **file_extension){
 
 	char *pc = strrchr(file_name,'.');
 	int location = pc-file_name+1;
-	if(!pc)
+	if(!pc){
+		*file_extension = strdup("");
 		return EXIT_FAILURE;
+	}
 
 	*file_extension = malloc(sizeof(size-location+1));
 	strncpy(*file_extension,file_name+location,size-location+1);

@@ -22,7 +22,7 @@ print de uma árvore caso ela seja inteira!
     int i=0;
     for(;i<depth;i++)
         printf("-");
-    printf("%d\n",*(int*)n->value);
+    printf("%p\n",(int*)n->value);
     print_int_tree(n->left,depth+1);
     print_int_tree(n->right,depth+1);
 }
@@ -73,7 +73,7 @@ NODE* insert_node(NODE *tree,void * new_item,int (*f)(void *,void*)){
     }
     return tree;
 }
-
+#include "dropboxServer.h"
 int save_tree(FILE* destiny,NODE *tree,int size){
     /*
     salva a árvore em um arquivo, NÃO CHECA se houve sucesso
@@ -81,22 +81,32 @@ int save_tree(FILE* destiny,NODE *tree,int size){
     if(!tree)
         return 0;
 
-    fwrite(tree->value,size,1,destiny);
+    if(!destiny)
+        return 1;
+
+    int bytes_escritos = fwrite(tree->value,1,size,destiny);
+    if( size != bytes_escritos)
+        return 1;
+
     int l = save_tree(destiny,tree->left,size);
     int r = save_tree(destiny,tree->right,size);
 
-    return l + r;
+    return (l + r)%2;
 }
 
-NODE * mount_tree(FILE* origin,int (*f)(void *,void*),int size){
+NODE * mount_tree(FILE* origin,int (*f)(void *,void*),int size,int n_nodes){
     /*
     leitura de arquivo para obter a árvore salva, com alocação!
     */
     NODE * tree = NULL;
-    while(!feof(origin)){
-        char * buffer = malloc(sizeof(size));
-        fread(buffer,size,1,origin);
-        tree = insert_node(tree,buffer,f);
+    while(n_nodes>0){
+        char * buffer = malloc(size);
+        if(size != fread(buffer,1,size,origin)){
+            fprintf(stderr, "leitura não possível de %d bytes",size);
+            exit(1);
+        }
+        tree = insert_node(tree,(void*)buffer,f);
+        n_nodes--;
     }
     return tree;
 }

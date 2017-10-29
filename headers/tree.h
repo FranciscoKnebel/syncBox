@@ -1,3 +1,5 @@
+#ifndef TREE_H
+#define TREE_H
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,5 +16,6 @@ void print_int_tree(NODE* n,int);
 void free_tree(NODE* n);
 NODE* insert_node(NODE *tree,void * new_item,int (*f)(void *,void*));
 int save_tree(FILE* destiny,NODE *tree,int size);
-NODE * mount_tree(FILE* origin,int (*f)(void *,void*),int size);
+NODE * mount_tree(FILE* origin,int (*f)(void *,void*),int size,int n_nodes);
 void* get_value(NODE *tree, void *target, int (*f)(void *,void*));
+#endif

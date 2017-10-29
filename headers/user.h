@@ -5,6 +5,7 @@
 #include "dropboxServer.h"
 #include "fileUtil.h"
 
+int save_clients(char file_name[]);
 int get_clients_from_file( char *file_name);
 struct client *get_client( char *client_name);
 int add_client( char *client_name);
