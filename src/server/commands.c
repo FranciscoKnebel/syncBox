@@ -7,20 +7,26 @@ void upload(int socket, Client* client){
 
   strcpy(buffer, S_NAME);
   status = write(socket, buffer, BUFFER_SIZE);
-  // TODO: check de status
+  if (status < 0) {
+	DEBUG_PRINT("ERROR writing to socket\n");
+  }
 
 
   status = read(socket, buffer, BUFFER_SIZE);
-  // TODO: check de status
-
+  if (status < 0) {
+	DEBUG_PRINT("ERROR reading from socket\n");
+  }
+  
+  
   getLastStringElement(filename, buffer, "/");
+  
+  char file[MAXNAME];
+  strcpy(file, filename);
 
-  sprintf(filename, "%s/%s/%s", serverInfo.folder, client->userid, buffer);
+  sprintf(filename, "%s/%s/%s", serverInfo.folder, client->userid, file);
 
-  pthread_mutex_lock(&mutex); // seção crítica
-  sockid_upload = socket;
-  receive_file(filename);
-  pthread_mutex_unlock (&mutex); // fim da seção crítica
+  receive_file(filename, socket);
+
 }
 
 void download(int socket, Client* client){
@@ -30,17 +36,18 @@ void download(int socket, Client* client){
 
   strcpy(buffer, S_NAME);
   status = write(socket, buffer, BUFFER_SIZE);
-  // TODO: check de status
+  if (status < 0) {
+	DEBUG_PRINT("ERROR writing to socket\n");
+  }
 
   status = read(socket, buffer, BUFFER_SIZE);
-  // TODO: check de status
+  if (status < 0) {
+	DEBUG_PRINT("ERROR reading from socket\n");
+  }
 
   sprintf(filename, "%s/%s/%s", serverInfo.folder, client->userid, buffer);
 
-  pthread_mutex_lock(&mutex); // seção crítica
-  sockid_download = socket;
-  send_file(filename);
-  pthread_mutex_unlock (&mutex); // fim da SC
+  send_file(filename, socket);
 }
 
 void list_server(int socket, Client* client){
@@ -48,44 +55,56 @@ void list_server(int socket, Client* client){
   int status = 0;
 
   sprintf(buffer, "%d", client->n_files);
-  //DEBUG_PRINT("number files: %d\n", atoi(buffer));
+  DEBUG_PRINT("number files: %d\n", atoi(buffer));
   status = write(socket, buffer, BUFFER_SIZE);
-  // TODO: check de status
+  if (status < 0) {
+	DEBUG_PRINT("ERROR writing to socket\n");
+  }
 
   for(int i = 0; i < client->n_files; i++) {
     sprintf(buffer, "%s Modification time: %s", client->file_info[i].name, client->file_info[i].last_modified);
     status = write(socket, buffer, BUFFER_SIZE);
-    // TODO: check de status
+    if (status < 0) {
+		DEBUG_PRINT("ERROR writing to socket\n");
+    }
   }
 }
 
-void delete(int socket, Client* client){
+void do_delete(int socket, Client* client){
     char buffer[BUFFER_SIZE]; // 1 KB buffer
     char filename[MAXNAME];
     int status = 0;
 
     strcpy(buffer, S_NAME);
     status = write(socket, buffer, BUFFER_SIZE);
-    // TODO: check de status
+    if (status < 0) {
+	DEBUG_PRINT("ERROR writing to socket\n");
+    }
 
     status = read(socket, buffer, BUFFER_SIZE);
-    // TODO: check de status
+    if (status < 0) {
+	DEBUG_PRINT("ERROR reading from socket\n");
+    }
 
     getLastStringElement(filename, buffer, "/");
+    char file[MAXNAME];
+    strcpy(file, filename);
 
-    sprintf(filename, "%s/%s/%s", serverInfo.folder, client->userid, buffer);
+    sprintf(filename, "%s/%s/%s", serverInfo.folder, client->userid, file);
     //DEBUG_PRINT("deletando arquivo %s\n", filename);
 
     if(fileExists(filename)) {
     	if(remove(filename) != 0) {
-      	DEBUG_PRINT("Erro ao deletar o arquivo %s\n", filename);
+      		DEBUG_PRINT("Erro ao deletar o arquivo %s\n", filename);
     	} else {
-        DEBUG_PRINT("Arquivo %s excluido!\n", filename);
-      }
+        	DEBUG_PRINT("Arquivo %s excluido!\n", filename);
+        }
 
-      strcpy(buffer, S_RPL_DELETE);
-    	status = write(socket, buffer, BUFFER_SIZE);
-      // TODO: check de status
+        strcpy(buffer, S_RPL_DELETE);
+        status = write(socket, buffer, BUFFER_SIZE);
+        if (status < 0) {
+		DEBUG_PRINT("ERROR writing to socket\n");
+	}
     }
 }
 
@@ -101,6 +120,6 @@ void select_commands(int socket, char buffer[], Client* client){
     list_server(socket, client);
   } else if(strcmp(buffer, S_REQ_DELETE) == 0){
     DEBUG_PRINT("\ndelete\n");
-    delete(socket, client);
+    do_delete(socket, client);
   }
 }

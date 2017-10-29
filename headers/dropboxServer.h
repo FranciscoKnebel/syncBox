@@ -36,6 +36,12 @@ typedef struct client
   int logged_in;
 } Client;
 
+typedef struct client_list
+{
+  Client client;
+  struct client_list *next;
+}ClientList;
+
 typedef struct server_info {
   char ip[sizeof(DEFAULT_ADDRESS) + 2];
   char folder[MAXNAME * 2];
@@ -48,21 +54,11 @@ typedef struct connection_info{
 } Connection;
 
 extern ServerInfo serverInfo;
-extern Client clients[MAX_CLIENTS];
 
-extern pthread_mutex_t mutex; 
-extern pthread_mutex_t mutex_sync; 
- 
-extern int sockid_upload; 
-extern int sockid_download; 
-extern int sockid_sync; 
- 
-extern Client* client_sync;
+void sync_server(int sockid_sync, Client* client_sync);
 
-void sync_server();
+void receive_file(char *file, int sockid_upload);
 
-void receive_file(char *file);
-
-void send_file(char *file);
+void send_file(char *file, int sockid_download);
 
 #endif

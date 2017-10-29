@@ -1,19 +1,13 @@
 #include "dropboxServer.h"
 
 ServerInfo serverInfo;
-Client clients[MAX_CLIENTS];
+
+ClientList* client_list;
+
 char buffer[BUFFER_SIZE];
 
-pthread_mutex_t mutex;
-pthread_mutex_t mutex_sync;
 
-int sockid_upload = 0;
-int sockid_download = 0;
-int sockid_sync = 0;
-
-Client* client_sync;
-
-void sync_server() {
+void sync_server(int sockid_sync, Client* client_sync) {
   // sincroniza o cliente com servidor e servidor com cliente
   int status = 0;
   char buffer[BUFFER_SIZE]; // 1 KB buffer
@@ -23,7 +17,9 @@ void sync_server() {
   char path[MAXNAME * 2];
 
   status = read(sockid_sync, buffer, BUFFER_SIZE);
-  // TODO: check de status
+  if (status < 0) {
+	DEBUG_PRINT("ERROR reading from socket\n");
+  }
 
   if(strcmp(buffer, S_SYNC) == 0) {
     DEBUG_PRINT("sincronizar!\n");
@@ -31,17 +27,25 @@ void sync_server() {
 
   sprintf(buffer, "%d", client_sync->n_files);
   status = write(sockid_sync, buffer, BUFFER_SIZE);
-  // TODO: check de status
+  if (status < 0) {
+	DEBUG_PRINT("ERROR writing to socket\n");
+  }
 
   for(int i = 0; i < client_sync->n_files; i++) {
 	    strcpy(buffer, client_sync->file_info[i].name);
 	    status = write(sockid_sync, buffer, BUFFER_SIZE);
-      // TODO: check de status
+      	    if (status < 0) {
+		DEBUG_PRINT("ERROR writing to socket\n");
+	    }
 	    strcpy(buffer, client_sync->file_info[i].last_modified);
 	    status = write(sockid_sync, buffer, BUFFER_SIZE);
-      // TODO: check de status
-      status = read(sockid_sync, buffer, BUFFER_SIZE);
-      // TODO: check de status
+            if (status < 0) {
+		DEBUG_PRINT("ERROR writing to socket\n");
+	    }
+            status = read(sockid_sync, buffer, BUFFER_SIZE);
+      	    if (status < 0) {
+	    	DEBUG_PRINT("ERROR reading from socket\n");
+	    }
 	    if(strcmp(buffer, S_DOWNLOAD) == 0){
 	    	download(sockid_sync, client_sync);
 	    }
@@ -49,30 +53,40 @@ void sync_server() {
 
     // sincroniza agora o servidor com o cliente
     status = read(sockid_sync, buffer, BUFFER_SIZE);
-    // TODO: check de status
+    if (status < 0) {
+	DEBUG_PRINT("ERROR reading from socket\n");
+    }
     number_files_client = atoi(buffer);
     printf("Number files client: %d\n", number_files_client);
     char last_modified_file_2[MAXNAME];
     for(int i = 0; i < number_files_client; i++){
       status = read(sockid_sync, buffer, BUFFER_SIZE);
-      // TODO: check de status
+      if (status < 0) {
+      	DEBUG_PRINT("ERROR reading from socket\n");
+      }
       strcpy(file_name, buffer);
       //printf("%s\n", file_name);
       status = read(sockid_sync, buffer, BUFFER_SIZE);
-      // TODO: check de status
+      if (status < 0) {
+	DEBUG_PRINT("ERROR reading from socket\n");
+      }
       strcpy(last_modified, buffer);
       //printf("ultima modificaçao server: %s\n", last_modified);
       sprintf(path, "%s/%s/%s", serverInfo.folder, client_sync->userid, file_name);
-      getFileModifiedTime(&path, &last_modified_file_2);
+      getFileModifiedTime(path, last_modified_file_2);
       //printf("ultima modificacao user: %s\n", last_modified_file_2);
-      if(!fileExists(path) || older_file(&last_modified, &last_modified_file_2) == 1){
+      if(!fileExists(path) || older_file(last_modified, last_modified_file_2) == 1){
         strcpy(buffer, S_GET);
         status = write(sockid_sync, buffer, BUFFER_SIZE);
-        // TODO: check de status
+        if (status < 0) {
+		DEBUG_PRINT("ERROR writing to socket\n");
+	}
         status = read(sockid_sync, buffer, BUFFER_SIZE);
-        // TODO: check de status
+        if (status < 0) {
+		DEBUG_PRINT("ERROR reading from socket\n");
+	}
         if(strcmp(buffer, S_UPLOAD) == 0) {
-          upload(sockid_sync, client_sync);
+                upload(sockid_sync, client_sync);
         }
   	} else {
   		strcpy(buffer, S_OK);
@@ -83,7 +97,7 @@ void sync_server() {
   DEBUG_PRINT("sincronizacao finalizada!\n");
 }
 
-void receive_file(char *file){
+void receive_file(char *file, int sockid_upload){
   int bytes_written = 0;
   int status = 0;
   int file_size = 0;
@@ -98,12 +112,18 @@ void receive_file(char *file){
     // requisita o arquivo file do cliente
     // recebe buffer do servidor
     status = read(sockid_upload, buffer, BUFFER_SIZE);
+    if (status < 0) {
+		printf("ERROR reading from socket\n");
+    }
     file_size = atoi(buffer);
 
     status = 0;
     int bytes_to_read = file_size;
     while(file_size > bytes_written) {
       status = read(sockid_upload, buffer, BUFFER_SIZE); // le no buffer
+      if (status < 0) {
+		printf("ERROR reading from socket\n");
+      }
       if(bytes_to_read > BUFFER_SIZE){ // se o tamanho do arquivo for maior, lê buffer completo
         fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
         bytes_written += sizeof(char) * BUFFER_SIZE;
@@ -122,7 +142,7 @@ void receive_file(char *file){
   }
 }
 
-void send_file(char *file) {
+void send_file(char *file, int sockid_download) {
   int file_size = 0;
   int bytes_read = 0;
   int status = 0;
@@ -136,7 +156,9 @@ void send_file(char *file) {
     DEBUG_PRINT("file size: %d\n", file_size);
     sprintf(buffer, "%d", file_size); // envia tamanho do arquivo para o cliente
     status = write(sockid_download, buffer, BUFFER_SIZE);
-    // TODO: check de status
+    if (status < 0) {
+	DEBUG_PRINT("ERROR writing to socket\n");
+    }
 
     if(file_size == 0) {
       fclose(pFile);
@@ -149,7 +171,9 @@ void send_file(char *file) {
 
         // enviar buffer para salvar no cliente
         status = write(sockid_download, buffer, BUFFER_SIZE);
-        // TODO: check de status
+        if (status < 0) {
+		DEBUG_PRINT("ERROR writing to socket\n");
+	}
     }
 
     fclose(pFile);
@@ -172,7 +196,8 @@ void parseArguments(int argc, char *argv[], char* address, int* port, struct soc
   }
 }
 
-void* continueClientProcess(Connection* connection) {
+void* continueClientProcess(void* connection_struct) {
+  Connection* connection = (Connection*) connection_struct;
   int socket = connection->socket_id;
   char* client_ip = connection->ip;
   char client_id[MAXNAME];
@@ -194,14 +219,11 @@ void* continueClientProcess(Connection* connection) {
 
   strcpy(buffer, S_CONNECTED);
 
-  int position = 0;
-  position = searchClient(client, client_id);
+  client = searchClient(client_id, client_list);
 
-  if(position == CLIENT_NOTFOUND) {
-    position = newClient(client_id, socket);
-    client = &clients[position];
+  if(client == NULL) {
+    client = newClient(client_id, socket, client_list);
   } else {
-    client = &clients[position];
     device = addDevice(client, socket);
 
     if(device == -1) {
@@ -209,9 +231,7 @@ void* continueClientProcess(Connection* connection) {
     }
   }
 
-  printf("socket: %d - position: %d - device: %d\n", socket, position, device);
-
-  //DEBUG_PRINT("\n%d number_files, %s arquivo 1, %s arquivo 2\n", client->n_files, client->file_info[0].name, client->file_info[1].name);
+  printf("socket: %d - device: %d\n", socket, device);
 
   if(device != -1) {
     char client_folder[2*MAXNAME +1];
@@ -220,7 +240,7 @@ void* continueClientProcess(Connection* connection) {
     if(!fileExists(client_folder)) {
       if(mkdir(client_folder, 0777) != 0) {
         printf("Error creating user folder in server '%s'.\n", client_folder);
-        return ERROR_CREATING_USER_FOLDER;
+        return NULL;
       }
     }
 
@@ -229,11 +249,9 @@ void* continueClientProcess(Connection* connection) {
 
     status = write(socket, buffer, BUFFER_SIZE);
 
-    pthread_mutex_lock(&mutex_sync); // seção crítica
-    sockid_sync = socket;
-    client_sync = client;
-    sync_server();
-    pthread_mutex_unlock (&mutex_sync); // fim da seção crítica
+    
+    sync_server(socket, client);
+   
 
     if (status < 0) {
       DEBUG_PRINT("ERROR writing to socket\n");
@@ -266,7 +284,7 @@ void* continueClientProcess(Connection* connection) {
       }
     } while(disconnected != 1);
 
-    printf("%s desconectou no dispositivo %d, socket %d!\n", client_id, removeDevice(client, device), socket);
+    printf("%s desconectou no dispositivo %d, socket %d!\n", client_id, removeDevice(client, device, client_list), socket);
   } else {
     // write
     status = write(socket, buffer, BUFFER_SIZE);
@@ -275,15 +293,15 @@ void* continueClientProcess(Connection* connection) {
       exit(1);
     }
   }
+  return 0;
 }
 
 int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
-  int status;
 
+  init_client_list(client_list);
   int port = DEFAULT_PORT;
   struct sockaddr_in server, client;
 
-  clearClients();
   char* address = malloc(strlen(DEFAULT_ADDRESS));
 
   /* Initialize socket structure */
@@ -341,7 +359,7 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
     connection->socket_id = new_client_socket;
     connection->ip = client_ip;
 
-    if(pthread_create(&thread_id, NULL, continueClientProcess, connection) < 0){
+    if(pthread_create(&thread_id, NULL, continueClientProcess, (void*) connection) < 0){
       printf("Error on create thread\n");
     }
   }

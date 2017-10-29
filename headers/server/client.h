@@ -1,11 +1,11 @@
 #include "dropboxServer.h"
 
-void clearClients();
-
-int newClient(char* userid, int socket);
-int searchClient(Client* client, char* userId);
+void init_client_list(ClientList* client_list);
+Client* newClient(char* userid, int socket, ClientList* client_list);
+Client* searchClient(char* userId, ClientList* client_list);
+int removeClient(Client* client, ClientList* client_list);
 
 int addDevice(Client* client, int socket);
-int removeDevice(Client* client, int device);
+int removeDevice(Client* client, int device, ClientList* client_list);
 
-void check_login_status(Client* client);
+void check_login_status(Client* client, ClientList* client_list);

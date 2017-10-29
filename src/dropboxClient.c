@@ -67,14 +67,12 @@ void close_connection() {
 	strcpy(buffer, S_REQ_DC);
 	status = write(sockid, buffer, BUFFER_SIZE);
 	if (status < 0) {
-		printf("ERROR writing to socket\n");
-		return;
+		DEBUG_PRINT("ERROR writing to socket\n");
 	}
 
 	status = read(sockid, buffer, BUFFER_SIZE);
 	if (status < 0) {
-		printf("ERROR reading from socket\n");
-		return;
+		DEBUG_PRINT("ERROR reading from socket\n");
 	}
 
 	if(strcmp(buffer, S_RPL_DC) == 0) {
@@ -114,15 +112,21 @@ void send_file(char *file) {
 	/* Request de upload */
 	strcpy(buffer, S_UPLOAD);
 	status = write(sockid, buffer, BUFFER_SIZE); // requisita upload
-	// TODO teste de status
+	if (status < 0) {
+		DEBUG_PRINT("ERROR writing to socket\n");
+	}
 
 	status = read(sockid, buffer, BUFFER_SIZE); // recebe resposta
-	// TODO teste de status
+	if (status < 0) {
+		DEBUG_PRINT("ERROR reading from socket\n");
+	}
 
 	if(strcmp(buffer, S_NAME) == 0) {
 		strcpy(buffer, file); // envia o nome do arquivo para o servidor
 		status = write(sockid, buffer, BUFFER_SIZE);
-		// TODO teste de status
+		if (status < 0) {
+			DEBUG_PRINT("ERROR writing to socket\n");
+		}
 	}
 
 	FILE* pFile;
@@ -132,7 +136,9 @@ void send_file(char *file) {
 
 		sprintf(buffer, "%d", file_size); // envia tamanho do arquivo para o servidor
 		status = write(sockid, buffer, BUFFER_SIZE);
-		// TODO teste de status
+		if (status < 0) {
+			DEBUG_PRINT("ERROR writing to socket\n");
+		}
 
 		if(file_size == 0) {
 			fclose(pFile);
@@ -145,14 +151,18 @@ void send_file(char *file) {
 
 			// enviar buffer para salvar no servidor
 			status = write(sockid, buffer, BUFFER_SIZE);
-			// TODO teste de status
+			if (status < 0) {
+				DEBUG_PRINT("ERROR writing to socket\n");
+			}
 			//status = read(sockid, buffer, BUFFER_SIZE);
 			//printf("recebido: %s", buffer);
 		}
 
 		fclose(pFile);
 		status = write(sockid, buffer, BUFFER_SIZE);
-		// TODO teste de status
+		if (status < 0) {
+			DEBUG_PRINT("ERROR writing to socket\n");
+	        }
 
 		printf("Arquivo %s enviado.\n", file);
 	} else {
@@ -168,10 +178,14 @@ void get_file(char *file) {
  	/* Request de download */
 	strcpy(buffer, S_DOWNLOAD);
 	status = write(sockid, buffer, BUFFER_SIZE);
-	// TODO teste de status
+	if (status < 0) {
+		DEBUG_PRINT("ERROR writing to socket\n");
+	}
 
 	status = read(sockid, buffer, BUFFER_SIZE); // recebe resposta
-	// TODO teste de status
+	if (status < 0) {
+		DEBUG_PRINT("ERROR reading from socket\n");
+	}
 
 	if(strcmp(buffer, S_NAME) == 0) { // envia o nome do arquivo para o servidor
 		DEBUG_PRINT("envia...\n");
@@ -188,7 +202,9 @@ void get_file(char *file) {
 	pFile = fopen(path, "wb");
 	if(pFile) {
 		status = read(sockid, buffer, BUFFER_SIZE); // recebe tamanho do arquivo
-		// TODO teste de status
+		if (status < 0) {
+			DEBUG_PRINT("ERROR reading from socket\n");
+	        }
 
 		file_size = atoi(buffer);
 		DEBUG_PRINT("tamanho: %d\n", file_size);
@@ -197,7 +213,9 @@ void get_file(char *file) {
 		bytes_to_read = file_size;
 		while(file_size > bytes_written) {
 			status = read(sockid, buffer, BUFFER_SIZE); // recebe arquivo no buffer
-			// TODO teste de status
+			if (status < 0) {
+				DEBUG_PRINT("ERROR reading from socket\n");
+			}
 
 			if(bytes_to_read > BUFFER_SIZE) { // se o tamanho do arquivo for maior, lê buffer completo
 				fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
@@ -242,16 +260,22 @@ void list_server() {
 	/* Request List Server */
 	strcpy(buffer, S_LS);
 	status = write(sockid, buffer, BUFFER_SIZE); // requisita list server
-	// TODO teste de status
+	if (status < 0) {
+		DEBUG_PRINT("ERROR writing to socket\n");
+	}
 
 	status = read(sockid, buffer, BUFFER_SIZE); // numero de arquivos no servidor
-	// TODO teste de status
+	if (status < 0) {
+		DEBUG_PRINT("ERROR reading from socket\n");
+	}
 
 	number_files = atoi(buffer);
 	printf("Number of files: %d\n", number_files);
 	for(int i = 0; i < number_files; i++) {
 		status = read(sockid, buffer, BUFFER_SIZE);
-		// TODO teste de status
+		if (status < 0) {
+			DEBUG_PRINT("ERROR reading from socket\n");
+		}
 		printf("%s\n", buffer);
 	}
 }
