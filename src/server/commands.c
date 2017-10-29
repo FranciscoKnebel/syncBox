@@ -25,6 +25,9 @@ void upload(int socket, Client* client){
   sprintf(path, "%s/%s", client_folder, filename);
 
   receive_file(path, socket);
+  client->n_files = get_dir_file_info(client_folder, client->file_info);
+  // TODO: alterar essa função para apenas incrementar n_files e adicionar para client.file_info o novo valor
+  // ao invés de refazer o cálculo para todo diretório.
 }
 
 void download(int socket, Client* client){
@@ -71,7 +74,9 @@ void list_server(int socket, Client* client){
 
 void delete(int socket, Client* client){
   char buffer[BUFFER_SIZE]; // 1 KB buffer
-  char filename[3*MAXNAME+1];
+  char filename[MAXNAME];
+  char path[3*MAXNAME+1];
+  char client_folder[MAXNAME*3];
   int status = 0;
 
   strcpy(buffer, S_NAME);
@@ -84,20 +89,22 @@ void delete(int socket, Client* client){
   if (status < 0) {
   	DEBUG_PRINT("ERROR reading from socket\n");
   }
-
   getLastStringElement(filename, buffer, "/");
-  char file[3*MAXNAME+1];
-  strcpy(file, filename);
 
-  sprintf(filename, "%s/%s/%s", serverInfo.folder, client->userid, file);
+  sprintf(client_folder, "%s/%s", serverInfo.folder, client->userid);
+  sprintf(path, "%s/%s", client_folder, filename);
   //DEBUG_PRINT("deletando arquivo %s\n", filename);
 
-  if(fileExists(filename)) {
-  	if(remove(filename) != 0) {
-  		DEBUG_PRINT("Erro ao deletar o arquivo %s\n", filename);
+  if(fileExists(path)) {
+  	if(remove(path) != 0) {
+  		DEBUG_PRINT("Erro ao deletar o arquivo %s\n", path);
   	} else {
-    	DEBUG_PRINT("Arquivo %s excluido!\n", filename);
+    	DEBUG_PRINT("Arquivo %s excluido!\n", path);
     }
+
+    client->n_files = get_dir_file_info(client_folder, client->file_info);
+    // TODO: alterar essa função para apenas decrementar n_files e remover de file_info o elemento
+    // ao invés de refazer o cálculo para todo diretório.
 
     strcpy(buffer, S_RPL_DELETE);
     status = write(socket, buffer, BUFFER_SIZE);

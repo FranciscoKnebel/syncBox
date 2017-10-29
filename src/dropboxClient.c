@@ -121,6 +121,10 @@ void send_file(char *file) {
 	}
 
 	if(strcmp(buffer, S_NAME) == 0) {
+		// TODO: remover todos elementos da path antes de enviar.
+		// Server não precisa saber /home/user/sync_dir_x/arquivo.ext, apenas arquivo.ext.
+		// Esse parsing está sendo feito no servidor, desperdício.
+
 		strcpy(buffer, file); // envia o nome do arquivo para o servidor
 		status = write(sockid, buffer, BUFFER_SIZE);
 		if (status < 0) {
@@ -188,6 +192,9 @@ void get_file(char *file) {
 
 	if(strcmp(buffer, S_NAME) == 0) { // envia o nome do arquivo para o servidor
 		DEBUG_PRINT("envia...\n");
+		// TODO: remover todos elementos da path antes de enviar.
+		// Server não precisa saber /home/user/sync_dir_x/arquivo.ext, apenas arquivo.ext.
+		// Esse parsing está sendo feito no servidor, desperdício.
 		strcpy(buffer, file);
 		status = write(sockid, buffer, BUFFER_SIZE);
 	}
@@ -242,6 +249,9 @@ void delete_file(char *file) {
 
   status = read(sockid, buffer, BUFFER_SIZE);
   if(strcmp(buffer, S_NAME) == 0){
+		// TODO: remover todos elementos da path antes de enviar.
+		// Server não precisa saber /home/user/sync_dir_x/arquivo.ext, apenas arquivo.ext.
+		// Esse parsing está sendo feito no servidor, desperdício.
   	strcpy(buffer, file);
   	status = write(sockid, buffer, BUFFER_SIZE);
   }
@@ -278,7 +288,7 @@ void list_server() {
 		printf("%s\n", buffer);
 	}
 	printf("Number of files: %d\n", number_files);
-	
+
 }
 
 int main(int argc, char *argv[]) {

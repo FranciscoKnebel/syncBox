@@ -80,11 +80,11 @@ int print_dir_content(char * path) {
 
   get_dir_content(path, files, &counter);
 
-  printf("ELEMENTS FOUND: %d\n", counter);
+  printf("Number of files: %d\n", counter);
   for (int i = 0; i < counter; i++) {
     printf("%s%s%s/%s\n", COLOR_YELLOW, files[i].path, COLOR_RESET, files[i].name);
   }
-  printf("ELEMENTS FOUND: %d\n", counter);
+  printf("Number of files: %d\n", counter);
 
   return 0;
 }
@@ -118,7 +118,7 @@ void getLastStringElement(char filename[], char* string, const char *separator) 
     		strcpy(filename, string);
     		string = strtok(NULL, separator);
 	}
-	
+
 }
 
 
@@ -143,12 +143,12 @@ time_t getTime(char* last_modified){
 
     return result;
   } else {
-    fprintf(stderr, "The input was not a valid time format\n");
+    fprintf(stderr, "The input was not a valid time format: %s\n", last_modified);
     return EXIT_FAILURE;
   }
 }
 
-int older_file(char* last_modified_file_1, char* last_modified_file_2){
+int older_file(char* last_modified_file_1, char* last_modified_file_2) {
 	time_t time_file_1 = getTime(last_modified_file_1);
   time_t time_file_2 = getTime(last_modified_file_2);
 
