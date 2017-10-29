@@ -1,98 +1,15 @@
 #include "dropboxServer.h"
 
 ServerInfo serverInfo;
-
 ClientList* client_list;
-
 char buffer[BUFFER_SIZE];
 
-
 void sync_server(int sockid_sync, Client* client_sync) {
-  // sincroniza o cliente com servidor e servidor com cliente
-  int status = 0;
-  char buffer[BUFFER_SIZE]; // 1 KB buffer
-  int number_files_client = 0;
-  char file_name[MAXNAME];
-  char last_modified[MAXNAME];
-  char path[MAXNAME * 2];
+  // sincronizar arquivos no dispositivo do cliente
+  syncronize_client(sockid_sync, client_sync);
 
-  status = read(sockid_sync, buffer, BUFFER_SIZE);
-  if (status < 0) {
-	DEBUG_PRINT("ERROR reading from socket\n");
-  }
-
-  if(strcmp(buffer, S_SYNC) == 0) {
-    DEBUG_PRINT("sincronizar!\n");
-  }
-
-  sprintf(buffer, "%d", client_sync->n_files);
-  status = write(sockid_sync, buffer, BUFFER_SIZE);
-  if (status < 0) {
-	DEBUG_PRINT("ERROR writing to socket\n");
-  }
-
-  for(int i = 0; i < client_sync->n_files; i++) {
-	    strcpy(buffer, client_sync->file_info[i].name);
-	    status = write(sockid_sync, buffer, BUFFER_SIZE);
-      	    if (status < 0) {
-		DEBUG_PRINT("ERROR writing to socket\n");
-	    }
-	    strcpy(buffer, client_sync->file_info[i].last_modified);
-	    status = write(sockid_sync, buffer, BUFFER_SIZE);
-            if (status < 0) {
-		DEBUG_PRINT("ERROR writing to socket\n");
-	    }
-            status = read(sockid_sync, buffer, BUFFER_SIZE);
-      	    if (status < 0) {
-	    	DEBUG_PRINT("ERROR reading from socket\n");
-	    }
-	    if(strcmp(buffer, S_DOWNLOAD) == 0){
-	    	download(sockid_sync, client_sync);
-	    }
-    }
-
-    // sincroniza agora o servidor com o cliente
-    status = read(sockid_sync, buffer, BUFFER_SIZE);
-    if (status < 0) {
-	DEBUG_PRINT("ERROR reading from socket\n");
-    }
-    number_files_client = atoi(buffer);
-    printf("Number files client: %d\n", number_files_client);
-    char last_modified_file_2[MAXNAME];
-    for(int i = 0; i < number_files_client; i++){
-      status = read(sockid_sync, buffer, BUFFER_SIZE);
-      if (status < 0) {
-      	DEBUG_PRINT("ERROR reading from socket\n");
-      }
-      strcpy(file_name, buffer);
-      //printf("%s\n", file_name);
-      status = read(sockid_sync, buffer, BUFFER_SIZE);
-      if (status < 0) {
-	DEBUG_PRINT("ERROR reading from socket\n");
-      }
-      strcpy(last_modified, buffer);
-      //printf("ultima modificaçao server: %s\n", last_modified);
-      sprintf(path, "%s/%s/%s", serverInfo.folder, client_sync->userid, file_name);
-      getFileModifiedTime(path, last_modified_file_2);
-      //printf("ultima modificacao user: %s\n", last_modified_file_2);
-      if(!fileExists(path) || older_file(last_modified, last_modified_file_2) == 1){
-        strcpy(buffer, S_GET);
-        status = write(sockid_sync, buffer, BUFFER_SIZE);
-        if (status < 0) {
-		DEBUG_PRINT("ERROR writing to socket\n");
-	}
-        status = read(sockid_sync, buffer, BUFFER_SIZE);
-        if (status < 0) {
-		DEBUG_PRINT("ERROR reading from socket\n");
-	}
-        if(strcmp(buffer, S_UPLOAD) == 0) {
-                upload(sockid_sync, client_sync);
-        }
-  	} else {
-  		strcpy(buffer, S_OK);
-  		status = write(sockid_sync, buffer, BUFFER_SIZE);
-  	}
-  }
+  // sincroniza agora o servidor com os arquivos do cliente
+  syncronize_server(sockid_sync, client_sync);
 
   DEBUG_PRINT("sincronizacao finalizada!\n");
 }
@@ -113,7 +30,7 @@ void receive_file(char *file, int sockid_upload){
     // recebe buffer do servidor
     status = read(sockid_upload, buffer, BUFFER_SIZE);
     if (status < 0) {
-		printf("ERROR reading from socket\n");
+      printf("ERROR reading from socket\n");
     }
     file_size = atoi(buffer);
 
@@ -122,15 +39,16 @@ void receive_file(char *file, int sockid_upload){
     while(file_size > bytes_written) {
       status = read(sockid_upload, buffer, BUFFER_SIZE); // le no buffer
       if (status < 0) {
-		printf("ERROR reading from socket\n");
+        printf("ERROR reading from socket\n");
       }
+
       if(bytes_to_read > BUFFER_SIZE){ // se o tamanho do arquivo for maior, lê buffer completo
         fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
         bytes_written += sizeof(char) * BUFFER_SIZE;
         bytes_to_read -= bytes_to_read;
-      } else{ // senão lê só o file_size
-         fwrite(buffer, sizeof(char), bytes_to_read, pFile);
-         bytes_written += sizeof(char) * bytes_to_read;
+      } else { // senão lê só o file_size
+        fwrite(buffer, sizeof(char), bytes_to_read, pFile);
+        bytes_written += sizeof(char) * bytes_to_read;
       }
       DEBUG_PRINT("leu\n");
     }
@@ -157,7 +75,7 @@ void send_file(char *file, int sockid_download) {
     sprintf(buffer, "%d", file_size); // envia tamanho do arquivo para o cliente
     status = write(sockid_download, buffer, BUFFER_SIZE);
     if (status < 0) {
-	DEBUG_PRINT("ERROR writing to socket\n");
+      DEBUG_PRINT("ERROR writing to socket\n");
     }
 
     if(file_size == 0) {
@@ -166,14 +84,14 @@ void send_file(char *file, int sockid_download) {
     }
 
     while(!feof(pFile)) {
-        fread(buffer, sizeof(char), BUFFER_SIZE, pFile);
-        bytes_read += sizeof(char) * BUFFER_SIZE;
+      fread(buffer, sizeof(char), BUFFER_SIZE, pFile);
+      bytes_read += sizeof(char) * BUFFER_SIZE;
 
-        // enviar buffer para salvar no cliente
-        status = write(sockid_download, buffer, BUFFER_SIZE);
-        if (status < 0) {
-		DEBUG_PRINT("ERROR writing to socket\n");
-	}
+      // enviar buffer para salvar no cliente
+      status = write(sockid_download, buffer, BUFFER_SIZE);
+      if (status < 0) {
+        DEBUG_PRINT("ERROR writing to socket\n");
+	    }
     }
 
     fclose(pFile);
@@ -183,7 +101,7 @@ void send_file(char *file, int sockid_download) {
   }
 }
 
-void parseArguments(int argc, char *argv[], char* address, int* port, struct sockaddr_in* server) {
+void parseArguments(int argc, char *argv[], char* address, int* port) {
   if(argc > 2) { // endereço e porta
     strcpy(address, argv[1]);
     *port = atoi(argv[2]);
@@ -231,7 +149,7 @@ void* continueClientProcess(void* connection_struct) {
     }
   }
 
-  printf("socket: %d - device: %d\n", socket, device);
+  DEBUG_PRINT("socket: %d - device: %d\n", socket, device);
 
   if(device != -1) {
     char client_folder[2*MAXNAME +1];
@@ -249,9 +167,7 @@ void* continueClientProcess(void* connection_struct) {
 
     status = write(socket, buffer, BUFFER_SIZE);
 
-    
     sync_server(socket, client);
-   
 
     if (status < 0) {
       DEBUG_PRINT("ERROR writing to socket\n");
@@ -284,7 +200,10 @@ void* continueClientProcess(void* connection_struct) {
       }
     } while(disconnected != 1);
 
-    printf("%s desconectou no dispositivo %d, socket %d!\n", client_id, removeDevice(client, device, client_list), socket);
+    printf("'%s%s%s' desconectou no dispositivo '%s%d%s', socket '%s%d%s'!\n",
+    COLOR_GREEN, client_id, COLOR_RESET,
+    COLOR_GREEN, removeDevice(client, device, client_list), COLOR_RESET,
+    COLOR_GREEN, socket, COLOR_RESET);
   } else {
     // write
     status = write(socket, buffer, BUFFER_SIZE);
@@ -297,7 +216,6 @@ void* continueClientProcess(void* connection_struct) {
 }
 
 int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
-
   init_client_list(client_list);
   int port = DEFAULT_PORT;
   struct sockaddr_in server, client;
@@ -307,12 +225,12 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
   /* Initialize socket structure */
   bzero((char *) &server, sizeof(server));
 
-  parseArguments(argc, argv, address, &port, &server);
+  parseArguments(argc, argv, address, &port);
   server.sin_family = AF_INET; // address format is host and port number
   server.sin_port = htons(port); // host to network short
   server.sin_addr.s_addr = inet_addr(address);
 
-  sprintf(serverInfo.folder, "%s/syncBox_users", getUserHome());
+  sprintf(serverInfo.folder, "%s/%s", getUserHome(), SERVER_FOLDER);
   strcpy(serverInfo.ip, address);
   serverInfo.port = port;
 

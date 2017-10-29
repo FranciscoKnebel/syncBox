@@ -7,6 +7,7 @@
 #define server_aux_h
   #include "server/client.h"
   #include "server/commands.h"
+  #include "server/sync.h"
 #endif
 
 #ifndef server_h
@@ -17,6 +18,8 @@
 #define DEFAULT_ADDRESS "127.0.0.1"
 #define MAX_CLIENTS 10
 #define SOCKET_BACKLOG 1
+
+#define SERVER_FOLDER "syncBox_users"
 
 /* ERROR CODES */
 #define ERROR_ON_BIND -9
@@ -40,7 +43,7 @@ typedef struct client_list
 {
   Client client;
   struct client_list *next;
-}ClientList;
+} ClientList;
 
 typedef struct server_info {
   char ip[sizeof(DEFAULT_ADDRESS) + 2];

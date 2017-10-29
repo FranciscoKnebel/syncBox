@@ -43,6 +43,7 @@ server-aux:
 	#$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/fileUtil.o -I$(HEADERS_DIR) $(SRC_DIR)server/fileUtil.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/client.o -I$(HEADERS_DIR) $(SRC_DIR)server/client.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/commands.o -I$(HEADERS_DIR) $(SRC_DIR)server/commands.c
+	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/sync.o -I$(HEADERS_DIR) $(SRC_DIR)server/sync.c
 
 SERVER_FILES = $(BIN_DIR)server/*.o
 server: $(SRC_DIR)dropboxServer.c util server-aux

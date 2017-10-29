@@ -8,7 +8,6 @@ int status;
 
 int connect_server (char *host, int port) {
 	struct sockaddr_in serverconn;
-
 	/* Create a socket point */
 	sockid = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockid < 0) {
@@ -162,9 +161,9 @@ void send_file(char *file) {
 		status = write(sockid, buffer, BUFFER_SIZE);
 		if (status < 0) {
 			DEBUG_PRINT("ERROR writing to socket\n");
-	        }
+    }
 
-		printf("Arquivo %s enviado.\n", file);
+		DEBUG_PRINT("Arquivo %s enviado.\n", file);
 	} else {
 		printf("Erro abrindo arquivo %s.\n", file);
 	}
@@ -204,7 +203,7 @@ void get_file(char *file) {
 		status = read(sockid, buffer, BUFFER_SIZE); // recebe tamanho do arquivo
 		if (status < 0) {
 			DEBUG_PRINT("ERROR reading from socket\n");
-	        }
+    }
 
 		file_size = atoi(buffer);
 		DEBUG_PRINT("tamanho: %d\n", file_size);
@@ -229,7 +228,7 @@ void get_file(char *file) {
 
 		fclose(pFile);
 
-		printf("Arquivo %s salvo.\n", path);
+		DEBUG_PRINT("Arquivo %s salvo.\n", path);
 	} else {
 		printf("Erro abrindo arquivo %s.\n", path);
 	}
@@ -278,6 +277,8 @@ void list_server() {
 		}
 		printf("%s\n", buffer);
 	}
+	printf("Number of files: %d\n", number_files);
+	
 }
 
 int main(int argc, char *argv[]) {
