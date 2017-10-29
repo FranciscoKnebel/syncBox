@@ -49,7 +49,7 @@ void sync_client();
 
 void send_file(char *file);
 
-void get_file(char *file);
+void get_file(char *file, char* alternatePath);
 
 void delete_file(char *file);
 

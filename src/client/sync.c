@@ -35,7 +35,7 @@ void syncronize_local(int sockid) {
 		getFileModifiedTime(path, last_modified_file_2);
 		//DEBUG_PRINT("ultima modificacao user: %s\n", last_modified_file_2);
 		if(!fileExists(path) || older_file(last_modified, last_modified_file_2) == 1) {
-			get_file(file_name);
+			get_file(file_name, NULL);
 		} else {
 			strcpy(buffer, S_OK);
 			status = write(sockid, buffer, BUFFER_SIZE);

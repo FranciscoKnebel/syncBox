@@ -5,7 +5,13 @@ void command_upload(char* path) {
 }
 
 void command_download(char* path) {
-  return get_file(path);
+  char cwd[MAXNAME*2];
+
+  if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    return get_file(path, cwd);
+  } else {
+    perror("getcwd() error");
+  }
 }
 
 void command_listserver() {

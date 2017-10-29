@@ -173,7 +173,7 @@ void send_file(char *file) {
 	}
 }
 
-void get_file(char *file) {
+void get_file(char *file, char* fileFolder) {
 	int bytes_to_read = 0;
 	int bytes_written = 0;
 	int file_size = 0;
@@ -191,7 +191,7 @@ void get_file(char *file) {
 	}
 
 	if(strcmp(buffer, S_NAME) == 0) { // envia o nome do arquivo para o servidor
-		DEBUG_PRINT("envia...\n");
+		DEBUG_PRINT("enviando nome do arquivo para servidor...\n");
 		// TODO: remover todos elementos da path antes de enviar.
 		// Server não precisa saber /home/user/sync_dir_x/arquivo.ext, apenas arquivo.ext.
 		// Esse parsing está sendo feito no servidor, desperdício.
@@ -201,8 +201,8 @@ void get_file(char *file) {
 	DEBUG_PRINT("nome: %s\n", file);
 
 	char path[MAXNAME*2 + 1];
-	sprintf(path, "%s/%s", user.folder, file);
-	DEBUG_PRINT("%s\n", path);
+	sprintf(path, "%s/%s", (fileFolder == NULL) ? user.folder : fileFolder, file);
+	DEBUG_PRINT("path: %s\n", path);
 
 	FILE* pFile;
 	pFile = fopen(path, "wb");
@@ -235,9 +235,9 @@ void get_file(char *file) {
 
 		fclose(pFile);
 
-		DEBUG_PRINT("Arquivo %s salvo.\n", path);
+		if(fileFolder) printf("Arquivo '%s%s%s' salvo.\n", COLOR_GREEN, path, COLOR_RESET);
 	} else {
-		printf("Erro abrindo arquivo %s.\n", path);
+		printf("Erro salvando arquivo '%s%s%s'.\n", COLOR_GREEN, path, COLOR_RESET);
 	}
 }
 
