@@ -1,14 +1,14 @@
 #include "dropboxClient.h"
 
 void command_upload(char* path) {
-  return send_file(path);
+  send_file(path, TRUE);
 }
 
 void command_download(char* path) {
   char cwd[MAXNAME*2];
 
   if (getcwd(cwd, sizeof(cwd)) != NULL) {
-    return get_file(path, cwd);
+    get_file(path, cwd);
   } else {
     perror("getcwd() error");
   }

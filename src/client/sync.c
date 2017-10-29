@@ -73,7 +73,7 @@ void syncronize_server(int sockid) {
 		// TODO: check de status
 		if(strcmp(buffer, S_GET) == 0) {
 			sprintf(path, "%s/%s", user.folder, localFiles[i].name);
-			send_file(path);
+			send_file(path, FALSE);
 		}
 	}
 }

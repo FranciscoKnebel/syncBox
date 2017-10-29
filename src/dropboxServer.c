@@ -14,7 +14,7 @@ void sync_server(int sockid_sync, Client* client_sync) {
   DEBUG_PRINT("sincronizacao finalizada!\n");
 }
 
-void receive_file(char *file, int sockid_upload){
+void receive_file(char *file, int sockid_upload) {
   int bytes_written = 0;
   int status = 0;
   int file_size = 0;
@@ -42,16 +42,18 @@ void receive_file(char *file, int sockid_upload){
         printf("ERROR reading from socket\n");
       }
 
-      if(bytes_to_read > BUFFER_SIZE){ // se o tamanho do arquivo for maior, lê buffer completo
+      if(bytes_to_read > BUFFER_SIZE) { // se o tamanho do arquivo for maior, lê buffer completo
         fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
         bytes_written += sizeof(char) * BUFFER_SIZE;
-        bytes_to_read -= bytes_to_read;
+        bytes_to_read -= sizeof(char) * BUFFER_SIZE;
       } else { // senão lê só o file_size
         fwrite(buffer, sizeof(char), bytes_to_read, pFile);
         bytes_written += sizeof(char) * bytes_to_read;
+        bytes_to_read -= sizeof(char) * bytes_to_read;
       }
-      DEBUG_PRINT("leu\n");
+      DEBUG_PRINT("leu buffer - Total: %d / Escritos: %d\n", file_size, bytes_written);
     }
+    DEBUG_PRINT("Terminou de escrever.\n");
     fclose(pFile);
 
     DEBUG_PRINT("Arquivo %s salvo.\n", file);

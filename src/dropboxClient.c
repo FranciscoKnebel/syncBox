@@ -104,7 +104,7 @@ void sync_client() {
 	}
 }
 
-void send_file(char *file) {
+void send_file(char *file, int response) {
 	int file_size = 0;
 	int bytes_read = 0;
 
@@ -167,7 +167,7 @@ void send_file(char *file) {
 			DEBUG_PRINT("ERROR writing to socket\n");
     }
 
-		DEBUG_PRINT("Arquivo %s enviado.\n", file);
+		if(response) printf("Arquivo %s enviado.\n", file);
 	} else {
 		printf("Erro abrindo arquivo %s.\n", file);
 	}
