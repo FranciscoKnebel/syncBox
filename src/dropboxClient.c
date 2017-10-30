@@ -174,7 +174,6 @@ void send_file(char *file, int response) {
 }
 
 void get_file(char *file, char* fileFolder) {
-	int bytes_to_read = 0;
 	int bytes_written = 0;
 	int file_size = 0;
 
@@ -216,23 +215,22 @@ void get_file(char *file, char* fileFolder) {
 		DEBUG_PRINT("tamanho: %d\n", file_size);
 
 		bytes_written = 0;
-		bytes_to_read = file_size;
 		while(file_size > bytes_written) {
 			status = read(sockid, buffer, BUFFER_SIZE); // recebe arquivo no buffer
 			if (status < 0) {
 				DEBUG_PRINT("ERROR reading from socket\n");
 			}
 
-			if(bytes_to_read > BUFFER_SIZE) { // se o tamanho do arquivo for maior, lê buffer completo
+			if((file_size - bytes_written) > BUFFER_SIZE) { // se o tamanho faltando for maior do que o buffer, lê apenas buffer
 				fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
 				bytes_written += sizeof(char) * BUFFER_SIZE;
-				bytes_to_read -= bytes_to_read;
-			} else { // senão lê só o bytes_to_read
-				fwrite(buffer, sizeof(char), bytes_to_read, pFile);
-				bytes_written += sizeof(char) * bytes_to_read;
+			} else { // senão lê os bytes que sobram
+				fwrite(buffer, sizeof(char), (file_size - bytes_written), pFile);
+				bytes_written += sizeof(char) * (file_size - bytes_written);
 			}
+			DEBUG_PRINT("leu buffer - Total: %d / Escritos: %d / Sobrando: %d\n", file_size, bytes_written, (file_size - bytes_written));
 		}
-
+		DEBUG_PRINT("Terminou de escrever.\n");
 		fclose(pFile);
 
 		if(fileFolder) printf("Arquivo '%s%s%s' salvo.\n", COLOR_GREEN, path, COLOR_RESET);

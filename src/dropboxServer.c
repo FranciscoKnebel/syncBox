@@ -34,24 +34,21 @@ void receive_file(char *file, int sockid_upload) {
     }
     file_size = atoi(buffer);
 
-    status = 0;
-    int bytes_to_read = file_size;
+    bytes_written = 0;
     while(file_size > bytes_written) {
       status = read(sockid_upload, buffer, BUFFER_SIZE); // le no buffer
       if (status < 0) {
         printf("ERROR reading from socket\n");
       }
 
-      if(bytes_to_read > BUFFER_SIZE) { // se o tamanho do arquivo for maior, lê buffer completo
+      if((file_size - bytes_written) > BUFFER_SIZE) { // se o tamanho faltando for maior do que o buffer, lê apenas buffer
         fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
         bytes_written += sizeof(char) * BUFFER_SIZE;
-        bytes_to_read -= sizeof(char) * BUFFER_SIZE;
-      } else { // senão lê só o file_size
-        fwrite(buffer, sizeof(char), bytes_to_read, pFile);
-        bytes_written += sizeof(char) * bytes_to_read;
-        bytes_to_read -= sizeof(char) * bytes_to_read;
+      } else { // senão lê os bytes que sobram
+        fwrite(buffer, sizeof(char), (file_size - bytes_written), pFile);
+        bytes_written += sizeof(char) * (file_size - bytes_written);
       }
-      DEBUG_PRINT("leu buffer - Total: %d / Escritos: %d\n", file_size, bytes_written);
+      DEBUG_PRINT("leu buffer - Total: %d / Escritos: %d / Sobrando: %d\n", file_size, bytes_written, (file_size - bytes_written));
     }
     DEBUG_PRINT("Terminou de escrever.\n");
     fclose(pFile);
