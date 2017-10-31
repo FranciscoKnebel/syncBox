@@ -127,7 +127,7 @@ void show_client_interface() {
 	show_intro_message();
 	print_commands();
 
-	int not_exited = is_not_exit_command(comando_solicitado);
+	int not_exited = TRUE;
 	while(not_exited) {
 		printf("\nDigite seu comando: ");
 

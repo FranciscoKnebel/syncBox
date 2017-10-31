@@ -1,9 +1,9 @@
 ## Flags pra compilar em produção. Se for compilar para uma arquitetura específica (ou usar em outra), trocar o valor native.
 ## Quando for usar, remover comentário da linha #CFLAGS += $(PRODUCTIONFLAGS)
-PRODUCTIONFLAGS = -Wextra -march=native -O2 -pipe
+PRODUCTIONFLAGS = -march=native -O2 -pipe #-Wextra
 
 CC = gcc
-CFLAGS = -Wall -g
+CFLAGS = -Wall -g -std=gnu11
 #CFLAGS += $(PRODUCTIONFLAGS)
 
 HEADERS_DIR = headers/

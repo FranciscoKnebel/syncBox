@@ -115,10 +115,9 @@ void getLastStringElement(char filename[], char* string, const char *separator) 
 	string = strtok(string, separator);
 
 	while (string) {
-    		strcpy(filename, string);
-    		string = strtok(NULL, separator);
+  	strcpy(filename, string);
+  	string = strtok(NULL, separator);
 	}
-
 }
 
 

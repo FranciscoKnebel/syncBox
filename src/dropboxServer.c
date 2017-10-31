@@ -27,7 +27,7 @@ void receive_file(char *file, int sockid_upload) {
   pFile = fopen(file, "wb");
   if(pFile) {
     // requisita o arquivo file do cliente
-    // recebe buffer do servidor
+    // recebe buffer do cliente
     status = read(sockid_upload, buffer, BUFFER_SIZE);
     if (status < 0) {
       printf("ERROR reading from socket\n");
@@ -132,7 +132,7 @@ void* continueClientProcess(void* connection_struct) {
   }
   // do stuff...
   strncpy(client_id, buffer, MAXNAME);
-  client_id[MAXNAME] = '\0';
+  client_id[MAXNAME - 1] = '\0';
 
   strcpy(buffer, S_CONNECTED);
 
@@ -219,7 +219,8 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
   int port = DEFAULT_PORT;
   struct sockaddr_in server, client;
 
-  char* address = malloc(strlen(DEFAULT_ADDRESS));
+  int addressLength = (argc > 1) ? strlen(argv[1]) : strlen(DEFAULT_ADDRESS);
+  char* address = malloc(addressLength + 1);
 
   /* Initialize socket structure */
   bzero((char *) &server, sizeof(server));
@@ -234,7 +235,7 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
   serverInfo.port = port;
 
   // Criação e nomeação de socket
-  int sockid = socket(PF_INET, SOCK_STREAM, 0);
+  int sockid = socket(AF_INET, SOCK_STREAM, 0);
   if(bind(sockid, (struct sockaddr *) &server, sizeof(server)) == -1) { // 0 = ok; -1 = erro, ele já faz o handle do erro
     perror("Falha na nomeação do socket");
     return ERROR_ON_BIND;

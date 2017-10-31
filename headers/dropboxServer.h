@@ -17,8 +17,6 @@
 #define DEFAULT_PORT 3000
 #define DEFAULT_ADDRESS "127.0.0.1"
 #define MAX_CLIENTS 10
-#define SOCKET_BACKLOG 1
-
 #define SERVER_FOLDER "syncBox_users"
 
 /* ERROR CODES */
@@ -46,7 +44,7 @@ typedef struct client_list
 } ClientList;
 
 typedef struct server_info {
-  char ip[sizeof(DEFAULT_ADDRESS) + 2];
+  char ip[sizeof(DEFAULT_ADDRESS) * 2];
   char folder[MAXNAME * 2];
   int port;
 } ServerInfo;

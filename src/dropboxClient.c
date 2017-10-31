@@ -27,7 +27,7 @@ int connect_server (char *host, int port) {
 		return 1;
 	}
 
-	bzero(buffer, BUFFER_SIZE);
+	bzero(buffer, BUFFER_SIZE-1);
 	strcpy(buffer, user.id);
 
 	// write to socket
@@ -121,11 +121,8 @@ void send_file(char *file, int response) {
 	}
 
 	if(strcmp(buffer, S_NAME) == 0) {
-		// TODO: remover todos elementos da path antes de enviar.
-		// Server não precisa saber /home/user/sync_dir_x/arquivo.ext, apenas arquivo.ext.
-		// Esse parsing está sendo feito no servidor, desperdício.
+		getLastStringElement(buffer, file, "/"); // envia o nome do arquivo para o servidor
 
-		strcpy(buffer, file); // envia o nome do arquivo para o servidor
 		status = write(sockid, buffer, BUFFER_SIZE);
 		if (status < 0) {
 			DEBUG_PRINT("ERROR writing to socket\n");
@@ -191,10 +188,8 @@ void get_file(char *file, char* fileFolder) {
 
 	if(strcmp(buffer, S_NAME) == 0) { // envia o nome do arquivo para o servidor
 		DEBUG_PRINT("enviando nome do arquivo para servidor...\n");
-		// TODO: remover todos elementos da path antes de enviar.
-		// Server não precisa saber /home/user/sync_dir_x/arquivo.ext, apenas arquivo.ext.
-		// Esse parsing está sendo feito no servidor, desperdício.
-		strcpy(buffer, file);
+		getLastStringElement(buffer, file, "/");
+
 		status = write(sockid, buffer, BUFFER_SIZE);
 	}
 	DEBUG_PRINT("nome: %s\n", file);
@@ -247,10 +242,8 @@ void delete_file(char *file) {
 
   status = read(sockid, buffer, BUFFER_SIZE);
   if(strcmp(buffer, S_NAME) == 0){
-		// TODO: remover todos elementos da path antes de enviar.
-		// Server não precisa saber /home/user/sync_dir_x/arquivo.ext, apenas arquivo.ext.
-		// Esse parsing está sendo feito no servidor, desperdício.
-  	strcpy(buffer, file);
+		getLastStringElement(buffer, file, "/"); // envia o nome do arquivo para o servidor
+
   	status = write(sockid, buffer, BUFFER_SIZE);
   }
 
@@ -311,7 +304,7 @@ int main(int argc, char *argv[]) {
 		return MAXNAMESIZE_REACHED;
 	}
 
-	endereco = malloc(sizeof(argv[2]));
+	endereco = malloc(strlen(argv[2]));
 	strcpy(endereco, argv[2]);
 
 	porta = atoi(argv[3]);

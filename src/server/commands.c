@@ -18,8 +18,7 @@ void upload(int socket, Client* client){
   }
 
   char filename[MAXNAME];
-  getLastStringElement(path, buffer, "/");
-  strcpy(filename, path);
+  strcpy(filename, buffer);
 
   sprintf(client_folder, "%s/%s", serverInfo.folder, client->userid);
   sprintf(path, "%s/%s", client_folder, filename);
@@ -89,7 +88,7 @@ void delete(int socket, Client* client){
   if (status < 0) {
   	DEBUG_PRINT("ERROR reading from socket\n");
   }
-  getLastStringElement(filename, buffer, "/");
+  strcpy(filename, buffer);
 
   sprintf(client_folder, "%s/%s", serverInfo.folder, client->userid);
   sprintf(path, "%s/%s", client_folder, filename);
