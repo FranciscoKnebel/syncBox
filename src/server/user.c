@@ -2,6 +2,18 @@
 #define USER_C
 
 #include "dropboxServer.h"
+#include <semaphore.h> 
+ 
+sem_t mutex; 
+sem_t acess_tree; 
+ 
+int leitores = 0; 
+ 
+void startSem(){ 
+  //inicializa os semáforos de modo apropriado 
+  sem_init(&mutex, 0, 1); 
+  sem_init(&acess_tree, 0, 1); 
+} 
 
 NODE *clients = NULL;
 int total_clients = 0;
@@ -44,8 +56,12 @@ recupera os clientes de um arquivo!
 		return 1;
 
 	fscanf(f,"%d\n",&total_clients);
+	
+	sem_wait(&acess_tree);
 
 	clients = mount_tree(f,comp_clients,sizeof(Client),total_clients);
+
+	sem_post(&acess_tree);
 
 	return 0;
 }
@@ -67,8 +83,12 @@ novos clientes tem 0 arquivos por definição!
 	int i=0;
 	for(i=0;i<2;i++)
 		new_c->devices[i] = 0; //0 é disponível
+
+	sem_wait(&acess_tree);
 	clients = insert_node(clients,(void*)new_c,comp_clients);
 	total_clients++;
+	sem_post(&acess_tree);
+
 	return 0;
 }
 
@@ -80,7 +100,22 @@ busca o cliente na árvore de clientes, utiliza a função definida bem acima pa
 
 	if(!client_name)
 		return NULL;
+	sem_wait(&mutex);
+	leitores++;
+	if(leitores == 1){
+		sem_wait(&acess_tree);
+	}
+	sem_post(&mutex);
+
 	void *res_search = get_value(clients,(void*)client_name,is_client);
+	
+	sem_wait(&mutex);
+	leitores--;
+	if(leitores == 0){
+		sem_post(&acess_tree);
+	}
+	sem_post(&mutex);
+
 	if(res_search == NULL)
 		return NULL;
 	else
@@ -196,7 +231,21 @@ int save_clients(char file_name[]){
 	if(f == NULL)
 		return 2;
 
+	sem_wait(&mutex);
+	leitores++;
+	if(leitores == 1){
+		sem_wait(&acess_tree);
+	}
+	sem_post(&mutex);
+
 	int exec =  save_tree(f,clients,sizeof(Client));
+
+	sem_wait(&mutex);
+	leitores--;
+	if(leitores == 0){
+		sem_post(&acess_tree);
+	}
+	sem_post(&mutex);
 
 	fclose(f);
 		

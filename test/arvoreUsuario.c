@@ -28,6 +28,8 @@ int ambiente(){
 	char c0[] = "cliente 1",c1[] = "cliente 2",c2[] = "cliente 3";
 	int resultado;
 
+	startSem();
+
 	remove_file(f_name);
 
 	resultado = get_clients_from_file(f_name);

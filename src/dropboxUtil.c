@@ -55,8 +55,8 @@ int get_dir_content_file_info(char * path, FileInfo files[]) {
   struct d_file dfiles[MAXFILES];
   int counter = 0;
   get_dir_content(path, dfiles, &counter);
-  
-  for(int i = 0; i < counter; i++){
+  int i;  
+  for(i = 0; i < counter; i++){
   	strcpy(files[i].name, dfiles[i].name);
 	getFileCreationTime(dfiles[i].path, files[i].name);
 	getFileSize(dfiles[i].path, &files[i].size);
@@ -79,7 +79,8 @@ int print_dir_content(char * path) {
   get_dir_content(path, files, &counter);
 
   printf("ELEMENTS FOUND: %d\n", counter);
-  for (int i = 0; i < counter; i++) {
+  int i;
+  for (i = 0; i < counter; i++) {
     printf("%s%s%s/%s\n", ANSI_COLOR_YELLOW, files[i].path, ANSI_COLOR_RESET, files[i].name);
   }
   printf("ELEMENTS FOUND: %d\n", counter);

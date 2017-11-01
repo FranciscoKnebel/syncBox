@@ -44,7 +44,8 @@ void parseArguments(int argc, char *argv[], char* address, int* port, struct soc
 }
 
 void clearClients(){
-	for(int i = 0; i < MAX_CLIENTS; i++){
+	int i;
+	for(i = 0; i < MAX_CLIENTS; i++){
 		clients[i].logged_in = 0;	
 	}
 }
@@ -93,6 +94,7 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
   printf("Porta do servidor: %s%d%s\n", ANSI_COLOR_GREEN, serverInfo.port, ANSI_COLOR_RESET);
 
   //leitura da árvore de usuários já existentes!
+  startSem();
   char arquivo_de_persistencia[MAXNAME*3];
   sprintf(arquivo_de_persistencia,"%s/%s",serverInfo.folder,DEFAULT_USER_METADATA_FILE);
 
