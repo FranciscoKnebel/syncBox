@@ -105,9 +105,12 @@ void sync_client() {
 }
 
 void send_file(char *file, int response) {
+	char filename[MAXNAME];
 	int file_size = 0;
 	int bytes_read = 0;
+	sprintf(filename, "%s", file);
 
+	DEBUG_PRINT("Requisita upload\n");
 	/* Request de upload */
 	strcpy(buffer, S_UPLOAD);
 	status = write(sockid, buffer, BUFFER_SIZE); // requisita upload
@@ -121,8 +124,8 @@ void send_file(char *file, int response) {
 	}
 
 	if(strcmp(buffer, S_NAME) == 0) {
-		getLastStringElement(buffer, file, "/"); // envia o nome do arquivo para o servidor
-
+		getLastStringElement(buffer, filename, "/"); // envia o nome do arquivo para o servidor
+		DEBUG_PRINT("Nome enviado: %s\n", buffer);
 		status = write(sockid, buffer, BUFFER_SIZE);
 		if (status < 0) {
 			DEBUG_PRINT("ERROR writing to socket\n");
@@ -142,30 +145,30 @@ void send_file(char *file, int response) {
 
 		if(file_size == 0) {
 			fclose(pFile);
-			return;
-		}
+		} else{
+			DEBUG_PRINT("Comeca a Enviar...\n");
+			while(bytes_read < file_size) {
+				fread(buffer, sizeof(char), BUFFER_SIZE, pFile);
+				bytes_read += sizeof(char) * BUFFER_SIZE;
 
-		while(!feof(pFile)) {
-			fread(buffer, sizeof(char), BUFFER_SIZE, pFile);
-			bytes_read += sizeof(char) * BUFFER_SIZE;
-
-			// enviar buffer para salvar no servidor
-			status = write(sockid, buffer, BUFFER_SIZE);
-			if (status < 0) {
-				DEBUG_PRINT("ERROR writing to socket\n");
+				// enviar buffer para salvar no servidor
+				status = write(sockid, buffer, BUFFER_SIZE);
+				DEBUG_PRINT("Enviando...\n");
+				if (status < 0) {
+					DEBUG_PRINT("ERROR writing to socket\n");
+				}
 			}
-			//status = read(sockid, buffer, BUFFER_SIZE);
-			//printf("recebido: %s", buffer);
+				//status = read(sockid, buffer, BUFFER_SIZE);
+				//printf("recebido: %s", buffer);
+			fclose(pFile);
 		}
 
-		fclose(pFile);
-		status = write(sockid, buffer, BUFFER_SIZE);
-		if (status < 0) {
-			DEBUG_PRINT("ERROR writing to socket\n");
-    }
 
-		if(response) printf("Arquivo %s enviado.\n", file);
-	} else {
+		if(response) {
+			printf("Arquivo %s enviado.\n", file);
+		}
+
+} else {
 		printf("Erro abrindo arquivo %s.\n", file);
 	}
 }
@@ -237,19 +240,20 @@ void get_file(char *file, char* fileFolder) {
 void delete_file(char *file) {
   // avisa servidor para remover arquivo file
   /* Request de delete */
+  char filename[MAXNAME];
   strcpy(buffer, S_REQ_DELETE);
   status = write(sockid, buffer, BUFFER_SIZE);
 
   status = read(sockid, buffer, BUFFER_SIZE);
   if(strcmp(buffer, S_NAME) == 0){
-		getLastStringElement(buffer, file, "/"); // envia o nome do arquivo para o servidor
-
+	getLastStringElement(buffer, file, "/"); // envia o nome do arquivo para o servidor
+	sprintf(filename, "%s", buffer);
   	status = write(sockid, buffer, BUFFER_SIZE);
   }
 
   status = read(sockid, buffer, BUFFER_SIZE);
   if(strcmp(buffer, S_RPL_DELETE) == 0){
-    printf("Arquivo %s deletado!\n", file);
+    printf("Arquivo %s deletado!\n", filename);
   }
   // recebe confirmação de que arquivo foi removido
 }

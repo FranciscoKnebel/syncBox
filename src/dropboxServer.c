@@ -174,8 +174,10 @@ void* continueClientProcess(void* connection_struct) {
     }
 
     int disconnected = 0;
+
+    bzero(buffer, BUFFER_SIZE);
+
     do {
-      bzero(buffer, BUFFER_SIZE);
 
       // read
       status = read(socket, buffer, BUFFER_SIZE);
@@ -183,6 +185,7 @@ void* continueClientProcess(void* connection_struct) {
         DEBUG_PRINT("ERROR reading from socket");
         exit(1);
       }
+      DEBUG_PRINT("Lido: %s\n", buffer);
 
       if(strcmp(buffer, S_REQ_DC) == 0) {
         strcpy(buffer, S_RPL_DC);
@@ -195,6 +198,7 @@ void* continueClientProcess(void* connection_struct) {
 
         disconnected = 1;
       } else {
+	//DEBUG_PRINT("Select commands \n");
         select_commands(socket, buffer, client);
       }
     } while(disconnected != 1);
