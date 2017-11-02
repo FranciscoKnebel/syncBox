@@ -33,8 +33,15 @@ void command_getsyncdir() {
     }
   }
 
+  char buffer[BUFFER_SIZE];
+  strcpy(buffer, S_GETSYNCDIR);
+  write(sockid, buffer, BUFFER_SIZE);
+
   // sincroniza pasta local com o servidor
-  sync_client();
+  syncronize_local(sockid);
+
+  // sincroniza servidor com pasta local
+  //syncronize_server(sockid);
 }
 
 void command_help(char* command) {

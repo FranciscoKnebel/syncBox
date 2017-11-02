@@ -21,3 +21,4 @@
 #define S_RPL_DELETE "deleted"
 #define S_SYNC "sync"
 #define S_GET "get"
+#define S_GETSYNCDIR "sync dir"

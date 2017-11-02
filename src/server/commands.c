@@ -113,6 +113,10 @@ void delete(int socket, Client* client){
   }
 }
 
+void sync_dir(int socket, Client* client) {
+  syncronize_client(socket, client);
+}
+
 void select_commands(int socket, char buffer[], Client* client){
   if(strcmp(buffer, S_UPLOAD) == 0){
     DEBUG_PRINT("\nupload\n");
@@ -126,5 +130,8 @@ void select_commands(int socket, char buffer[], Client* client){
   } else if(strcmp(buffer, S_REQ_DELETE) == 0){
     DEBUG_PRINT("\ndelete\n");
     delete(socket, client);
+  } else if(strcmp(buffer, S_GETSYNCDIR) == 0) {
+    DEBUG_PRINT("\nget_sync_dir\n");
+    sync_dir(socket, client);
   }
 }

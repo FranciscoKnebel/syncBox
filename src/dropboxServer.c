@@ -185,7 +185,7 @@ void* continueClientProcess(void* connection_struct) {
         DEBUG_PRINT("ERROR reading from socket");
         exit(1);
       }
-      DEBUG_PRINT("Lido: %s\n", buffer);
+      DEBUG_PRINT("Comando do usuário: %s\n", buffer);
 
       if(strcmp(buffer, S_REQ_DC) == 0) {
         strcpy(buffer, S_RPL_DC);
@@ -198,7 +198,7 @@ void* continueClientProcess(void* connection_struct) {
 
         disconnected = 1;
       } else {
-	//DEBUG_PRINT("Select commands \n");
+	      DEBUG_PRINT("Select commands... \n");
         select_commands(socket, buffer, client);
       }
     } while(disconnected != 1);

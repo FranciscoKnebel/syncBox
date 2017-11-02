@@ -12,9 +12,6 @@ void syncronize_local(int sockid) {
   strcpy(buffer, S_SYNC);
 	status = write(sockid, buffer, BUFFER_SIZE);
 	// TODO: check de status
-  if(status > 0) {
-    //printf("coiso");
-  }
 
 	status = read(sockid, buffer, BUFFER_SIZE);
 	// TODO: check de status

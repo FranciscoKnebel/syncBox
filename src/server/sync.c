@@ -4,16 +4,20 @@ void syncronize_client(int sockid_sync, Client* client_sync) {
   char buffer[BUFFER_SIZE]; // 1 KB buffer
   int status = 0;
 
+  DEBUG_PRINT("Iniciando sincronização do cliente...\n");
+
   status = read(sockid_sync, buffer, BUFFER_SIZE);
   if (status < 0) {
     DEBUG_PRINT("ERROR reading from socket\n");
   }
 
+  DEBUG_PRINT("COMMAND: %s\n", buffer);
   if(strcmp(buffer, S_SYNC) == 0) {
     DEBUG_PRINT("sincronizar!\n");
   }
 
   sprintf(buffer, "%d", client_sync->n_files);
+  DEBUG_PRINT("Client number of files: %d.\n", client_sync->n_files);
   status = write(sockid_sync, buffer, BUFFER_SIZE);
   if (status < 0) {
     DEBUG_PRINT("ERROR writing to socket\n");
@@ -50,6 +54,8 @@ void syncronize_server(int sockid_sync, Client* client_sync) {
   char file_name[MAXNAME];
   int  status = 0;
   int  number_files_client = 0;
+
+  DEBUG_PRINT("Iniciando sincronização do servidor...\n");
 
   status = read(sockid_sync, buffer, BUFFER_SIZE);
   if (status < 0) {

@@ -42,6 +42,7 @@ typedef struct user_info {
 } UserInfo;
 
 extern UserInfo user;
+extern int sockid;
 
 int connect_server(char *host, int port);
 
