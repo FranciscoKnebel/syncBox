@@ -4,7 +4,7 @@ void syncronize_client(int sockid_sync, Client* client_sync) {
   char buffer[BUFFER_SIZE]; // 1 KB buffer
   int status = 0;
 
-  DEBUG_PRINT("Iniciando sincronização do cliente...\n");
+  DEBUG_PRINT("Iniciando sincronização do cliente.\n");
 
   status = read(sockid_sync, buffer, BUFFER_SIZE);
   if (status < 0) {
@@ -45,6 +45,8 @@ void syncronize_client(int sockid_sync, Client* client_sync) {
       download(sockid_sync, client_sync);
     }
   }
+
+  DEBUG_PRINT("Encerrando sincronização do cliente.\n");
 }
 
 void syncronize_server(int sockid_sync, Client* client_sync) {
@@ -55,7 +57,7 @@ void syncronize_server(int sockid_sync, Client* client_sync) {
   int  status = 0;
   int  number_files_client = 0;
 
-  DEBUG_PRINT("Iniciando sincronização do servidor...\n");
+  DEBUG_PRINT("Iniciando sincronização do servidor.\n");
 
   status = read(sockid_sync, buffer, BUFFER_SIZE);
   if (status < 0) {
@@ -101,4 +103,6 @@ void syncronize_server(int sockid_sync, Client* client_sync) {
   		status = write(sockid_sync, buffer, BUFFER_SIZE);
   	}
   }
+
+  DEBUG_PRINT("Encerrando sincronização do servidor.\n");
 }

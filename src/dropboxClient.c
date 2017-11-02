@@ -107,8 +107,8 @@ void sync_client() {
 void send_file(char *file, int response) {
 	char filename[MAXNAME];
 	int file_size = 0;
-	int bytes_read = 0;
-	sprintf(filename, "%s", file);
+	int bytes_sent = 0;
+	strcpy(filename, file);
 
 	DEBUG_PRINT("Requisita upload\n");
 	/* Request de upload */
@@ -145,30 +145,34 @@ void send_file(char *file, int response) {
 
 		if(file_size == 0) {
 			fclose(pFile);
-		} else{
-			DEBUG_PRINT("Comeca a Enviar...\n");
-			while(bytes_read < file_size) {
-				fread(buffer, sizeof(char), BUFFER_SIZE, pFile);
-				bytes_read += sizeof(char) * BUFFER_SIZE;
+		} else {
+			DEBUG_PRINT("Começando a enviar arquivo de %d bytes.\n", file_size);
+      bytes_sent = 0;
+      while(bytes_sent < file_size) {
+	      if((file_size - bytes_sent) > BUFFER_SIZE) {
+	        fread(buffer, sizeof(char), BUFFER_SIZE, pFile);
+	        bytes_sent += sizeof(char) * BUFFER_SIZE;
+	      } else { // senão lê os bytes que sobram
+	        fread(buffer, sizeof(char), (file_size - bytes_sent), pFile);
+	        bytes_sent += sizeof(char) * (file_size - bytes_sent);
+	      }
 
 				// enviar buffer para salvar no servidor
 				status = write(sockid, buffer, BUFFER_SIZE);
-				DEBUG_PRINT("Enviando...\n");
+				DEBUG_PRINT("enviou buffer - Total: %d / Enviados: %d / Sobrando: %d\n", file_size, bytes_sent, (file_size - bytes_sent));
 				if (status < 0) {
 					DEBUG_PRINT("ERROR writing to socket\n");
 				}
 			}
-				//status = read(sockid, buffer, BUFFER_SIZE);
-				//printf("recebido: %s", buffer);
+			//status = read(sockid, buffer, BUFFER_SIZE);
+			//printf("recebido: %s", buffer);
 			fclose(pFile);
 		}
-
 
 		if(response) {
 			printf("Arquivo %s enviado.\n", file);
 		}
-
-} else {
+	} else {
 		printf("Erro abrindo arquivo %s.\n", file);
 	}
 }
@@ -190,7 +194,7 @@ void get_file(char *file, char* fileFolder) {
 	}
 
 	if(strcmp(buffer, S_NAME) == 0) { // envia o nome do arquivo para o servidor
-		DEBUG_PRINT("enviando nome do arquivo para servidor...\n");
+		DEBUG_PRINT("enviando nome do arquivo para servidor\t%s\n", file);
 		getLastStringElement(buffer, file, "/");
 
 		status = write(sockid, buffer, BUFFER_SIZE);

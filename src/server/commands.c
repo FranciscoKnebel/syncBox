@@ -119,19 +119,14 @@ void sync_dir(int socket, Client* client) {
 
 void select_commands(int socket, char buffer[], Client* client){
   if(strcmp(buffer, S_UPLOAD) == 0){
-    DEBUG_PRINT("\nupload\n");
     upload(socket, client);
   } else if(strcmp(buffer, S_DOWNLOAD) == 0){
-    DEBUG_PRINT("\ndownload\n");
     download(socket, client);
   } else if(strcmp(buffer, S_LS) == 0){
-    DEBUG_PRINT("\nlist_server\n");
     list_server(socket, client);
   } else if(strcmp(buffer, S_REQ_DELETE) == 0){
-    DEBUG_PRINT("\ndelete\n");
     delete(socket, client);
   } else if(strcmp(buffer, S_GETSYNCDIR) == 0) {
-    DEBUG_PRINT("\nget_sync_dir\n");
     sync_dir(socket, client);
   }
 }

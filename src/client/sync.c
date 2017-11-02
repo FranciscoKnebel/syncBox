@@ -9,6 +9,8 @@ void syncronize_local(int sockid) {
 
   int status;
 
+  DEBUG_PRINT("Iniciando sincronização local.\n");
+
   strcpy(buffer, S_SYNC);
 	status = write(sockid, buffer, BUFFER_SIZE);
 	// TODO: check de status
@@ -39,6 +41,8 @@ void syncronize_local(int sockid) {
 			// TODO: check de status
 		}
 	}
+
+  DEBUG_PRINT("Encerrando sincronização local.\n");
 }
 
 void syncronize_server(int sockid) {
@@ -48,6 +52,8 @@ void syncronize_server(int sockid) {
   int number_files_client = 0;
 
   int status;
+
+  DEBUG_PRINT("Iniciando sincronização do servidor.\n");
 
   number_files_client = get_dir_file_info(user.folder, localFiles);
 	sprintf(buffer, "%d", number_files_client);
@@ -73,4 +79,6 @@ void syncronize_server(int sockid) {
 			send_file(path, FALSE);
 		}
 	}
+
+  DEBUG_PRINT("Encerrando sincronização do servidor.\n");
 }

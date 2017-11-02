@@ -178,7 +178,6 @@ void* continueClientProcess(void* connection_struct) {
     bzero(buffer, BUFFER_SIZE);
 
     do {
-
       // read
       status = read(socket, buffer, BUFFER_SIZE);
       if (status < 0) {
@@ -198,7 +197,6 @@ void* continueClientProcess(void* connection_struct) {
 
         disconnected = 1;
       } else {
-	      DEBUG_PRINT("Select commands... \n");
         select_commands(socket, buffer, client);
       }
     } while(disconnected != 1);

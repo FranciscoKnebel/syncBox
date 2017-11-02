@@ -51,7 +51,7 @@ int older_file(char* last_modified_file_1, char* last_modified_file_2);
 int cprintf(char* ansicode, char* string);
 
 #ifdef DEBUG
-  #define DEBUG_PRINT(fmt, args...) fprintf(stderr, fmt, ## args)
+  #define DEBUG_PRINT(fmt, args...) fprintf(stderr, "DEBUG:\t"fmt, ## args)
 #else
   #define DEBUG_PRINT(fmt, args...) /* Don't do anything in release builds */
 #endif
