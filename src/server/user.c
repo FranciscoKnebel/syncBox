@@ -7,7 +7,7 @@
 sem_t mutex; 
 sem_t acess_tree; 
  
-int leitores = 0; 
+static int leitores = 0; 
  
 void startSem(){ 
   //inicializa os semáforos de modo apropriado 
@@ -15,8 +15,8 @@ void startSem(){
   sem_init(&acess_tree, 0, 1); 
 } 
 
-NODE *clients = NULL;
-int total_clients = 0;
+static NODE *clients = NULL;
+static int total_clients = 0;
 
 int comp_clients(void *c1,void *c2){
 /*
@@ -33,6 +33,16 @@ encontrar o alvo!
 */
 
 	return 0==strcmp(((Client*)c1)->userid,(char*)c2);
+}
+
+void startSemInTree(NODE *node){
+//recursivamente inicia os semáforos!!!
+	if(node != NULL){
+		sem_init(&(((Client*)node->value)->exclusive),0, 1);
+		startSemInTree(node->left);
+		startSemInTree(node->right);
+	}
+
 }
 
 
@@ -60,6 +70,7 @@ recupera os clientes de um arquivo!
 	sem_wait(&acess_tree);
 
 	clients = mount_tree(f,comp_clients,sizeof(Client),total_clients);
+	startSemInTree(clients);
 
 	sem_post(&acess_tree);
 
@@ -85,6 +96,7 @@ novos clientes tem 0 arquivos por definição!
 		new_c->devices[i] = 0; //0 é disponível
 
 	sem_wait(&acess_tree);
+	sem_init(&(new_c->exclusive), 0, 1);
 	clients = insert_node(clients,(void*)new_c,comp_clients);
 	total_clients++;
 	sem_post(&acess_tree);
@@ -141,10 +153,16 @@ aqui basicamente ocorre a ligação entre arquivo e cliente!
 	int size = ftell(f); // get current file pointer
 	fclose(f);
 
+	sem_wait(&(c->exclusive));
+
 	int i;
 	for(;i<c->n_files && strcmp(c->file_info[i].name,file_name);i++);
-	if(i != c->n_files)
+	if(i != c->n_files){
+		sem_post(&(c->exclusive));
 		return 1;
+	}
+
+
 
 	FileInfo *info = malloc(sizeof(FileInfo));
 	strcpy(info->name,file_name);
@@ -162,10 +180,13 @@ aqui basicamente ocorre a ligação entre arquivo e cliente!
 	/*aumentamos o número de arquivos do usuário*/
 	c->file_info[c->n_files] = *info;
 	c->n_files++;
-	free(info);
 
+	sem_post(&(c->exclusive));
+
+	free(info);
 	free(extention);
 	free(mod);
+
 
 	return 0;
 }
@@ -179,10 +200,16 @@ remoção da conexão do usuário com o arquivo alvo
 
 	/*for para encontrar o arquivo i no usuário e
 	 fazer com que o valor de i seja equivalente a sua posição*/
+
+	sem_wait(&(c->exclusive));
+
 	int i=0;
 	for(;i<c->n_files && strcmp(c->file_info[i].name,file_name);i++);
-	if(i == c->n_files)
+	if(i == c->n_files){
+		sem_post(&(c->exclusive));
 		return 1;
+	}
+
 	/*sobre-escreve o arquivo a ser deletado com os outros
 	para evitar buracos no array
 	básicamente um SHIFT com perda*/
@@ -191,6 +218,9 @@ remoção da conexão do usuário com o arquivo alvo
 		i++;
 	}
 	c->n_files--;
+
+	sem_post(&(c->exclusive));
+
 	return 0;
 }
 int get_file_from_client(Client *c, char* file_name,char * buffer){
@@ -202,10 +232,16 @@ pegar conteudo de arquivo do usuário
 	if(!c || !file_name || !buffer)
 		return 1;
 
+	
+	sem_wait(&(c->exclusive));
+
 	/*utiliza o for para encontrar o arquivo que se deseja ler, posição em i*/
 	for(;i<c->n_files && strcmp(c->file_info[i].name,file_name);i++);
-	if(i == c->n_files)
+	if(i == c->n_files){
+		sem_post(&(c->exclusive));
 		return 1;
+	}
+
 
 	FILE *f = fopen(file_name,"r");
 	int size;
@@ -215,6 +251,8 @@ pegar conteudo de arquivo do usuário
 	fclose(f);
 
 	read_file(buffer,size,file_name);
+
+	sem_post(&(c->exclusive));
 
 	return 0;
 }

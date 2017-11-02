@@ -2,6 +2,7 @@
 #define DROPBOXSERVER_H
 #include "dropboxUtil.h"
 #include "user.h"
+#include <semaphore.h> 
 
 /* CONSTANTS */
 #define DEFAULT_PORT 3000
@@ -24,6 +25,7 @@ typedef struct client
   FileInfo file_info[MAXFILES];
   int n_files;
   int logged_in;
+  sem_t exclusive;
 } Client;
 
 typedef struct server_info {
