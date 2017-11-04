@@ -9,7 +9,7 @@ int status;
 int connect_server (char *host, int port) {
 	struct sockaddr_in serverconn;
 	/* Create a socket point */
-	sockid = socket(AF_INET, SOCK_STREAM, 0);
+	sockid = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sockid < 0) {
 		printf("ERROR opening socket\n");
 		return 1;
@@ -249,9 +249,9 @@ void delete_file(char *file) {
   status = write(sockid, buffer, BUFFER_SIZE);
 
   status = read(sockid, buffer, BUFFER_SIZE);
-  if(strcmp(buffer, S_NAME) == 0){
-	getLastStringElement(buffer, file, "/"); // envia o nome do arquivo para o servidor
-	sprintf(filename, "%s", buffer);
+  if(strcmp(buffer, S_NAME) == 0) {
+		getLastStringElement(buffer, file, "/"); // envia o nome do arquivo para o servidor
+		sprintf(filename, "%s", buffer);
   	status = write(sockid, buffer, BUFFER_SIZE);
   }
 

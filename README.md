@@ -40,26 +40,6 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
       <a href="https://github.com/FranciscoKnebel/syncBox/commits?author=lzancan">Contributions</a> by lzancan
     </td>
   </tr>
-  <tr>
-    <td>
-      <img src="https://avatars.githubusercontent.com/Gldpittol?s=75" style="width: 75px;">
-      <br>
-      <a href="https://github.com/Gldpittol">Gabriel Pittol</a>
-    </td>
-    <td>
-      <a href="https://github.com/FranciscoKnebel/syncBox/commits?author=Gldpittol">Contributions</a> by Gldpittol
-    </td>
-  </tr>
-  <tr>
-    <td>
-      <img src="https://avatars.githubusercontent.com/m-krause?s=75" style="width: 75px;">
-      <br>
-      <a href="https://github.com/m-krause">Matheus Krause</a>
-    </td>
-    <td>
-      <a href="https://github.com/FranciscoKnebel/syncBox/commits?author=m-krause">Contributions</a> by m-krause
-    </td>
-  </tr>
 </table>
 
 See also the full list of [contributors](https://github.com/FranciscoKnebel/syncBox/contributors) who participated in this project.

@@ -7,11 +7,11 @@ void command_upload(char* path) {
 void command_download(char* path) {
   char cwd[MAXNAME*2];
 
-  if (getcwd(cwd, sizeof(cwd)) != NULL) {
-    get_file(path, cwd);
-  } else {
+  if (getcwd(cwd, sizeof(cwd)) == NULL) {
     perror("getcwd() error");
   }
+
+  get_file(path, cwd);
 }
 
 void command_listserver() {
@@ -67,7 +67,7 @@ void command_help(char* command) {
 }
 
 void command_credits() {
-  printf("Trabalho original por:\n");
-  printf("\nFrancisco Knebel \t Gabriel Pittol\nLuciano Zancan   \t Matheus Krause\n");
+  printf("Trabalho original por:\n \
+  Francisco Knebel\nLuciano Zancan\n");
   cprintf(COLOR_MAGENTA, "\nsyncBox - 2017\n");
 }

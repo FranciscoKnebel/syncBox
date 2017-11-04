@@ -2,7 +2,6 @@
 
 ServerInfo serverInfo;
 ClientList* client_list;
-char buffer[BUFFER_SIZE];
 
 void sync_server(int sockid_sync, Client* client_sync) {
   // sincronizar arquivos no dispositivo do cliente
@@ -113,8 +112,10 @@ void parseArguments(int argc, char *argv[], char* address, int* port) {
   }
 }
 
-void* continueClientProcess(void* connection_struct) {
+void* clientThread(void* connection_struct) {
   Connection* connection = (Connection*) connection_struct;
+  char buffer[BUFFER_SIZE];
+
   int socket = connection->socket_id;
   char* client_ip = connection->ip;
   char client_id[MAXNAME];
@@ -135,22 +136,20 @@ void* continueClientProcess(void* connection_struct) {
   client_id[MAXNAME - 1] = '\0';
 
   strcpy(buffer, S_CONNECTED);
-  DEBUG_PRINT("Buscando client!\n");
+  DEBUG_PRINT("Cliente conectado: '%s%s%s'.\n", COLOR_GREEN, client_id, COLOR_RESET);
   client = searchClient(client_id, client_list);
-  DEBUG_PRINT("Terminou search client!\n");
+  DEBUG_PRINT("Cliente '%s%s%s' encontrado: %s.\n",
+  COLOR_GREEN, client_id, COLOR_RESET,
+  client == NULL ? "FALSE" : "TRUE");
+
   if(client == NULL) {
-    DEBUG_PRINT("Novo Client!\n");
+    DEBUG_PRINT("Criando novo cliente.\n");
     client_list = newClient(client_id, socket, client_list);
     client = searchClient(client_id, client_list);
   } else {
-    DEBUG_PRINT("Achou cliente! Add device...\n");
+    DEBUG_PRINT("Adicionando device ao cliente encontrado.\n");
     device = addDevice(client, socket);
-
-    if(device == -1) {
-      strcpy(buffer, S_EXCESS_DEVICES);
-    }
   }
-
   DEBUG_PRINT("socket: %d - device: %d\n", socket, device);
 
   if(device != -1) {
@@ -168,20 +167,15 @@ void* continueClientProcess(void* connection_struct) {
     COLOR_GREEN, client_id, COLOR_RESET, COLOR_GREEN, client_ip, COLOR_RESET);
 
     status = write(socket, buffer, BUFFER_SIZE);
-
-    sync_server(socket, client);
-
     if (status < 0) {
       DEBUG_PRINT("ERROR writing to socket\n");
       exit(1);
     }
+    sync_server(socket, client);
 
     int disconnected = 0;
-
     bzero(buffer, BUFFER_SIZE);
-
     do {
-      // read
       status = read(socket, buffer, BUFFER_SIZE);
       if (status < 0) {
         DEBUG_PRINT("ERROR reading from socket");
@@ -191,11 +185,9 @@ void* continueClientProcess(void* connection_struct) {
 
       if(strcmp(buffer, S_REQ_DC) == 0) {
         strcpy(buffer, S_RPL_DC);
-        // write
         status = write(socket, buffer, BUFFER_SIZE);
         if (status < 0) {
           printf("ERROR writing to socket\n");
-          exit(1);
         }
 
         disconnected = 1;
@@ -210,7 +202,11 @@ void* continueClientProcess(void* connection_struct) {
     COLOR_GREEN, socket, COLOR_RESET);
     client_list = check_login_status(client, client_list);
   } else {
-    // write
+    DEBUG_PRINT("Muitas conexões simultâneas de '%s%s%s' em '%s%s%s'. Acesso negado.\n",
+    COLOR_GREEN, client_id, COLOR_RESET,
+    COLOR_GREEN, client_ip, COLOR_RESET);
+
+    strcpy(buffer, S_EXCESS_DEVICES);
     status = write(socket, buffer, BUFFER_SIZE);
     if (status < 0) {
       DEBUG_PRINT("ERROR writing to socket\n");
@@ -220,7 +216,7 @@ void* continueClientProcess(void* connection_struct) {
   return 0;
 }
 
-int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
+int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
   int port = DEFAULT_PORT;
   struct sockaddr_in server, client;
 
@@ -240,7 +236,7 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
   serverInfo.port = port;
 
   // Criação e nomeação de socket
-  int sockid = socket(AF_INET, SOCK_STREAM, 0);
+  int sockid = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if(bind(sockid, (struct sockaddr *) &server, sizeof(server)) == -1) { // 0 = ok; -1 = erro, ele já faz o handle do erro
     perror("Falha na nomeação do socket");
     return ERROR_ON_BIND;
@@ -273,7 +269,7 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
     int new_client_socket = accept(sockid, (struct sockaddr *) &client, &cliLen);
 
     if(new_client_socket < 0) {
-	     printf("Error on accept\n");
+      printf("Error on accept\n");
     }
 
     char *client_ip = inet_ntoa(client.sin_addr); // inet_ntoa converte o IP de numeros e pontos para uma struct in_addr
@@ -282,7 +278,7 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
     connection->socket_id = new_client_socket;
     connection->ip = client_ip;
 
-    if(pthread_create(&thread_id, NULL, continueClientProcess, (void*) connection) < 0){
+    if(pthread_create(&thread_id, NULL, clientThread, (void*) connection) < 0){
       printf("Error on create thread\n");
     }
   }
