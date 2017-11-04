@@ -135,12 +135,15 @@ void* continueClientProcess(void* connection_struct) {
   client_id[MAXNAME - 1] = '\0';
 
   strcpy(buffer, S_CONNECTED);
-
+  DEBUG_PRINT("Buscando client!\n");
   client = searchClient(client_id, client_list);
-
+  DEBUG_PRINT("Terminou search client!\n");
   if(client == NULL) {
-    client = newClient(client_id, socket, client_list);
+    DEBUG_PRINT("Novo Client!\n");
+    client_list = newClient(client_id, socket, client_list);
+    client = searchClient(client_id, client_list);
   } else {
+    DEBUG_PRINT("Achou cliente! Add device...\n");
     device = addDevice(client, socket);
 
     if(device == -1) {
@@ -205,6 +208,7 @@ void* continueClientProcess(void* connection_struct) {
     COLOR_GREEN, client_id, COLOR_RESET,
     COLOR_GREEN, removeDevice(client, device, client_list), COLOR_RESET,
     COLOR_GREEN, socket, COLOR_RESET);
+    client_list = check_login_status(client, client_list);
   } else {
     // write
     status = write(socket, buffer, BUFFER_SIZE);
@@ -217,7 +221,6 @@ void* continueClientProcess(void* connection_struct) {
 }
 
 int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
-  init_client_list(client_list);
   int port = DEFAULT_PORT;
   struct sockaddr_in server, client;
 

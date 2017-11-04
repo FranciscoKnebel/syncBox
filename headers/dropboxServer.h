@@ -39,7 +39,7 @@ typedef struct client
 
 typedef struct client_list
 {
-  Client client;
+  Client* client;
   struct client_list *next;
 } ClientList;
 

@@ -13,21 +13,30 @@ void syncronize_local(int sockid) {
 
   strcpy(buffer, S_SYNC);
 	status = write(sockid, buffer, BUFFER_SIZE);
-	// TODO: check de status
+  if (status < 0) {
+    DEBUG_PRINT("ERROR writing to socket\n");
+  }
 
 	status = read(sockid, buffer, BUFFER_SIZE);
-	// TODO: check de status
+  if (status < 0) {
+    DEBUG_PRINT("ERROR reading from socket\n");
+  }
+
 	number_files_server = atoi(buffer);
 	//DEBUG_PRINT("%d arquivos no servidor\n", number_files_server);
 
 	char last_modified_file_2[MAXNAME];
 	for(int i = 0; i < number_files_server; i++) {
 		status = read(sockid, buffer, BUFFER_SIZE);
-		// TODO: check de status
+    if (status < 0) {
+      DEBUG_PRINT("ERROR reading from socket\n");
+    }
 		strcpy(file_name, buffer);
 
 		status = read(sockid, buffer, BUFFER_SIZE);
-		// TODO: check de status
+    if (status < 0) {
+      DEBUG_PRINT("ERROR reading from socket\n");
+    }
 		strcpy(last_modified, buffer);
 
 		sprintf(path, "%s/%s", user.folder, file_name);
@@ -38,7 +47,9 @@ void syncronize_local(int sockid) {
 		} else {
 			strcpy(buffer, S_OK);
 			status = write(sockid, buffer, BUFFER_SIZE);
-			// TODO: check de status
+      if (status < 0) {
+        DEBUG_PRINT("ERROR writing to socket\n");
+      }
 		}
 	}
 
@@ -58,22 +69,27 @@ void syncronize_server(int sockid) {
   number_files_client = get_dir_file_info(user.folder, localFiles);
 	sprintf(buffer, "%d", number_files_client);
 	status = write(sockid, buffer, BUFFER_SIZE);
-	// TODO: check de status
-  if(status > 0 ) {
-    //printf("coiso");
+  if (status < 0) {
+    DEBUG_PRINT("ERROR writing to socket\n");
   }
 
 	for(int i = 0; i < number_files_client; i++) {
 		strcpy(buffer, localFiles[i].name);
 		status = write(sockid, buffer, BUFFER_SIZE);
-		// TODO: check de status
+    if (status < 0) {
+      DEBUG_PRINT("ERROR writing to socket\n");
+    }
 
 		strcpy(buffer, localFiles[i].last_modified);
 		status = write(sockid, buffer, BUFFER_SIZE);
-		// TODO: check de status
+    if (status < 0) {
+      DEBUG_PRINT("ERROR writing to socket\n");
+    }
 
 		status = read(sockid, buffer, BUFFER_SIZE);
-		// TODO: check de status
+    if (status < 0) {
+      DEBUG_PRINT("ERROR reading from socket\n");
+    }
 		if(strcmp(buffer, S_GET) == 0) {
 			sprintf(path, "%s/%s", user.folder, localFiles[i].name);
 			send_file(path, FALSE);
