@@ -192,6 +192,7 @@ void get_file(char *file, char* fileFolder) {
 	if (status < 0) {
 		DEBUG_PRINT("ERROR reading from socket\n");
 	}
+	DEBUG_PRINT("Resposta recebida: %s \n", buffer);
 
 	if(strcmp(buffer, S_NAME) == 0) { // envia o nome do arquivo para o servidor
 		DEBUG_PRINT("enviando nome do arquivo para servidor\t%s\n", file);
