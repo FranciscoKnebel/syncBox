@@ -60,6 +60,7 @@ int cprintf(char* ansicode, char* string);
 int getFilesize(FILE* pFile);
 int fileExists_stat(char* pathname, struct stat* st);
 int fileExists(char* pathname);
+int getFileIndex(char* filename, FileInfo file_info[]);
 
 /* System */
 char* getUserName();

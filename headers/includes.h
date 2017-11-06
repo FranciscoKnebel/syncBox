@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <pwd.h>
+#include <semaphore.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>

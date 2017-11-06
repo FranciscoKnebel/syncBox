@@ -3,9 +3,8 @@
 ServerInfo serverInfo;
 ClientList* client_list;
 
-int CLIENTS_CONNECTED = 0;
+sem_t semaphore;
 
-pthread_mutex_t mutex_connection;
 
 void sync_server(int sockid_sync, Client* client_sync) {
   // sincronizar arquivos no dispositivo do cliente
@@ -193,9 +192,8 @@ void* clientThread(void* connection_struct) {
         if (status < 0) {
           printf("ERROR writing to socket\n");
         }
-        pthread_mutex_lock(&mutex_connection);
-        CLIENTS_CONNECTED -= 1;
-        pthread_mutex_unlock(&mutex_connection);
+
+        sem_post(&semaphore);
 
         disconnected = 1;
       } else {
@@ -225,11 +223,9 @@ void* clientThread(void* connection_struct) {
 
 int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
   int port = DEFAULT_PORT;
-  int status = 0;
-  char buffer[BUFFER_SIZE]; // 1 KB buffer
   struct sockaddr_in server, client;
 
-  pthread_mutex_init (&mutex_connection, NULL); // inicializa mutex de conexão
+  sem_init(&semaphore, 0, MAX_CLIENTS);
 
   int addressLength = (argc > 1) ? strlen(argv[1]) : strlen(DEFAULT_ADDRESS);
   char* address = malloc(addressLength + 1);
@@ -282,21 +278,9 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
       printf("Error on accept\n");
     }
 
-    if(CLIENTS_CONNECTED == MAX_CLIENTS){
-      sprintf(buffer, "%s", S_FULL_CLIENTS);
-      status = write(new_client_socket, buffer, BUFFER_SIZE);
-      if (status < 0) {
-    		printf("ERROR writing to socket\n");
-     	}
-    } else{
-      sprintf(buffer, "%s", S_OK);
-      status = write(new_client_socket, buffer, BUFFER_SIZE);
-      if (status < 0) {
-    		printf("ERROR writing to socket\n");
-     	}
-      pthread_mutex_lock(&mutex_connection);
-      CLIENTS_CONNECTED += 1; // incrementa CLIENTS_CONNECTED
-      pthread_mutex_unlock(&mutex_connection);
+      DEBUG_PRINT("semaforo: %d\n", sem_wait(&semaphore));
+      //sem_wait(&semaphore);
+
       char *client_ip = inet_ntoa(client.sin_addr); // inet_ntoa converte o IP de numeros e pontos para uma struct in_addr
 
       Connection *connection = malloc(sizeof(*connection));
@@ -307,8 +291,6 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
         printf("Error on create thread\n");
       }
     }
-    //pthread_mutex_unlock(&mutex_connection);
-  }
 
   return 0;
 

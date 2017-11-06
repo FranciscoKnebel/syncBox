@@ -20,10 +20,14 @@ void upload(int socket, Client* client){
   char filename[MAXNAME];
   strcpy(filename, buffer);
 
+
   sprintf(client_folder, "%s/%s", serverInfo.folder, client->userid);
   sprintf(path, "%s/%s", client_folder, filename);
 
+  int index = getFileIndex(filename, client->file_info);
+  pthread_mutex_lock(&client->mutex_files[index]);
   receive_file(path, socket);
+  pthread_mutex_unlock(&client->mutex_files[index]);
   client->n_files = get_dir_file_info(client_folder, client->file_info);
   // TODO: alterar essa função para apenas incrementar n_files e adicionar para client.file_info o novo valor
   // ao invés de refazer o cálculo para todo diretório.
@@ -46,7 +50,13 @@ void download(int socket, Client* client){
   }
 
   sprintf(filename, "%s/%s/%s", serverInfo.folder, client->userid, buffer);
+
+  int index = getFileIndex(buffer, client->file_info);
+  pthread_mutex_lock(&client->mutex_files[index]);
+
   send_file(filename, socket);
+
+  pthread_mutex_unlock(&client->mutex_files[index]);
 }
 
 void list_server(int socket, Client* client){
@@ -94,6 +104,9 @@ void delete(int socket, Client* client){
   sprintf(path, "%s/%s", client_folder, filename);
   //DEBUG_PRINT("deletando arquivo %s\n", filename);
 
+  int index = getFileIndex(filename, client->file_info);
+  pthread_mutex_lock(&client->mutex_files[index]);
+
   if(fileExists(path)) {
   	if(remove(path) != 0) {
   		DEBUG_PRINT("Erro ao deletar o arquivo %s\n", path);
@@ -111,6 +124,8 @@ void delete(int socket, Client* client){
       DEBUG_PRINT("ERROR writing to socket\n");
     }
   }
+
+  pthread_mutex_unlock(&client->mutex_files[index]);
 }
 
 void sync_dir(int socket, Client* client) {

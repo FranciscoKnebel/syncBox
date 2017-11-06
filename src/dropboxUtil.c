@@ -184,6 +184,17 @@ int fileExists(char* pathname) {
 	return fileExists_stat(pathname, &st);
 }
 
+int getFileIndex(char* filename, FileInfo file_info[]){
+  int index = 0;
+  for(int i = 0; i < MAXFILES; i++){
+    if(strcmp(filename, file_info[i].name) == 0){
+      index = i;
+      return index;
+    }
+  }
+  return index;
+}
+
 char* getUserName() {
   uid_t uid = geteuid();
   struct passwd *pw = getpwuid(uid);

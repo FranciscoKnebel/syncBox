@@ -15,6 +15,11 @@ ClientList* newClient(char* userid, int socket, ClientList* client_list) {
 	client->n_files = get_dir_file_info(client_folder, client->file_info);
 	client->logged_in = 1;
 
+	// init mutex_files
+	for(int i = 0; i < MAXFILES; i++){
+		pthread_mutex_init (&client->mutex_files[i], NULL);
+	}
+
 	if(client_list == NULL){
 		DEBUG_PRINT("Inicializando fila de clientes.\n");
 		client_list = (ClientList*) malloc(sizeof(ClientList));

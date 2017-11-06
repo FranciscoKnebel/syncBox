@@ -29,17 +29,6 @@ int connect_server (char *host, int port) {
 
 	bzero(buffer, BUFFER_SIZE-1);
 
-	status = read(sockid, buffer, BUFFER_SIZE);
-	if (status < 0) {
-		printf("ERROR reading from socket\n");
-		return 0;
-	}
-	DEBUG_PRINT("Recebido: %s\n", buffer);
-	if(strcmp(buffer, S_FULL_CLIENTS) == 0){
-		printf("Servidor sobrecarregado! Tente mais tarde.\n");
-		return 0;
-	} else{
-
 		strcpy(buffer, user.id);
 
 		// write to socket
@@ -66,7 +55,6 @@ int connect_server (char *host, int port) {
 		}
 
 		return 0;
-	}
 }
 
 void close_connection() {

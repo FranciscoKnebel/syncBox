@@ -33,6 +33,7 @@ typedef struct client
   int devices[2];
   char userid[MAXNAME];
   FileInfo file_info[MAXFILES];
+  pthread_mutex_t mutex_files[MAXFILES];
   int n_files;
   int logged_in;
 } Client;
