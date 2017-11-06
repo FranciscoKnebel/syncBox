@@ -14,7 +14,7 @@
 #ifndef client_h
 #define client_h
 
-#define INTRO_MESSAGE "v0.0.1 - 03/11/2017\n"
+#define INTRO_MESSAGE "v0.0.1 - 08/11/2017\n"
 
 // COMMANDS
 #define COMMAND_UPLOAD "upload"

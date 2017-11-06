@@ -24,36 +24,49 @@ int connect_server (char *host, int port) {
 	status = connect(sockid, (struct sockaddr *) &serverconn, sizeof(serverconn));
 	if(status < 0){
 		printf("\nConnection Error\n");
-		return 1;
+		return 0;
 	}
 
 	bzero(buffer, BUFFER_SIZE-1);
-	strcpy(buffer, user.id);
 
-	// write to socket
-	status = write(sockid, buffer, BUFFER_SIZE);
-	if (status < 0) {
-		printf("ERROR writing to socket\n");
-		return 1;
- 	}
-
-	// read server response
-	bzero(buffer, BUFFER_SIZE);
 	status = read(sockid, buffer, BUFFER_SIZE);
 	if (status < 0) {
 		printf("ERROR reading from socket\n");
-		return 1;
+		return 0;
 	}
+	DEBUG_PRINT("Recebido: %s\n", buffer);
+	if(strcmp(buffer, S_FULL_CLIENTS) == 0){
+		printf("Servidor sobrecarregado! Tente mais tarde.\n");
+		return 0;
+	} else{
 
-	if(strcmp(buffer, S_EXCESS_DEVICES) == 0){
-		printf("Muitas conexões simultâneas do mesmo usuário.\n");
+		strcpy(buffer, user.id);
+
+		// write to socket
+		status = write(sockid, buffer, BUFFER_SIZE);
+		if (status < 0) {
+			printf("ERROR writing to socket\n");
+			return 0;
+	 	}
+
+		// read server response
+		bzero(buffer, BUFFER_SIZE);
+		status = read(sockid, buffer, BUFFER_SIZE);
+		if (status < 0) {
+			printf("ERROR reading from socket\n");
+			return 1;
+		}
+
+		if(strcmp(buffer, S_EXCESS_DEVICES) == 0){
+			printf("Muitas conexões simultâneas do mesmo usuário.\n");
+		}
+
+		if(strcmp(buffer, S_CONNECTED) == 0){
+			return 1;
+		}
+
+		return 0;
 	}
-
-	if(strcmp(buffer, S_CONNECTED) == 0){
-		return 1;
-	}
-
-	return 0;
 }
 
 void close_connection() {
