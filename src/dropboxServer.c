@@ -372,7 +372,7 @@ void* continueClientProcess(Connection* connection) {
               if( 0 != get_file_from_client(client,complete_path,buffer)){
                 printf("pedido de arquivo que não existe\n");
                 bzero(buffer,BUFFER_SIZE);
-                sprintf(buffer,"%s",FILE_DONT_EXIST);
+                sprintf(buffer,"%s",FILE_DOENST_EXIST);
                 status = write(socket, buffer, BUFFER_SIZE);
                    if (status < 0) {
                     printf("ERROR writing to socket\n");
@@ -384,6 +384,34 @@ void* continueClientProcess(Connection* connection) {
               send_file(complete_path,socket);
             }
             break;
+          case WANTS_DELETE:
+            status = read(socket, buffer, BUFFER_SIZE);
+            if(status < 0){
+              printf("ERROR reading from socket\n");
+              exit(1);
+            }
+            printf("client wants to remove file %s\n",buffer);
+
+            {
+              char complete_path[MAXNAME];
+              complete_path[0]='\0';
+              strcat(complete_path,server_new_client_folder);
+              strcat(complete_path,buffer);
+
+              strcpy(buffer,"not possible");
+              if(0 == remove_file_from_client(client,complete_path)){
+                remove(complete_path);
+                bzero(buffer,BUFFER_SIZE);
+                strcpy(buffer,DELETED);
+              }
+              status = write(socket, buffer, BUFFER_SIZE);
+                   if (status < 0) {
+                    printf("ERROR writing to socket\n");
+                     exit(1);
+              }
+            }
+            break;
+
           default:
             printf("unknown wish\n");
         }

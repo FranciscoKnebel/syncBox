@@ -193,14 +193,14 @@ void get_file(char *file) {
 				printf("Error sending the name of the file!\n");
 				return;
 			}
-			sleep(1);
+
 			bzero(buffer, BUFFER_SIZE);
 			int bytes_read = read(sockid, buffer, BUFFER_SIZE);
 			if(bytes_read < 0){
 			   printf("error reading from socket\n");
 			   return;
 			 }
-			 if(strcmp(buffer,FILE_DONT_EXIST) == 0){
+			 if(strcmp(buffer,FILE_DOENST_EXIST) == 0){
 			 	printf("arquivo não existe\n");
 			 	return;
 			 }
@@ -239,6 +239,40 @@ void get_file(char *file) {
 void delete_file(char *file) {
 	// avisa servidor para remover arquivo file
 	// recebe confirmação de que arquivo foi removido
+	bzero(buffer, BUFFER_SIZE);
+	sprintf(buffer,"%c",WANTS_DELETE);
+	if( 0 > write(sockid, buffer, BUFFER_SIZE)){
+		printf("Error sending the type of the operation!\n");
+		return;
+	}
+
+	int offset = strlen(file);
+	for(;offset>0;offset--)
+		if(file[offset] == '/' ){
+			offset ++;
+			break;
+		}
+	bzero(buffer, BUFFER_SIZE);
+	sprintf(buffer,"/%s",file+offset);
+	if(0 > write(sockid, buffer, BUFFER_SIZE)){
+		printf("Error sending the name of the file!\n");
+		return;
+	}
+
+	bzero(buffer, BUFFER_SIZE);
+	int bytes_read = read(sockid, buffer, BUFFER_SIZE);
+	if(0 > bytes_read){
+		printf("Error reading result\n");
+		return;
+	}
+
+	if(strcmp(buffer,DELETED) == 0){
+		puts("arquivo removido com sucesso");
+	}
+	else{
+		puts("falha ao remover arquivo");
+	}
+
 }
 
 void close_connection() {

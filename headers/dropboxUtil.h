@@ -6,7 +6,9 @@
 #define MAXFILES 128
 #define WANTS_SEND 's'
 #define WANTS_RECEIVE 'r'
-#define FILE_DONT_EXIST "$$$#"
+#define WANTS_DELETE 'd'
+#define FILE_DOENST_EXIST "doens't exist"
+#define DELETED "deleted"
 
 #define DIRECTORY_FILE 0;
 #define REGULAR_FILE 1;
