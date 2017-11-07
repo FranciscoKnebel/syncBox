@@ -51,23 +51,6 @@ int get_dir_content(char * path, struct d_file files[], int* counter) {
   return 0;
 }
 
-int get_dir_file_info(char * path, FileInfo files[]) {
-  struct d_file dfiles[MAXFILES];
-  char path_file[MAXNAME*2 + 1];
-  int counter = 0;
-  get_dir_content(path, dfiles, &counter);
-
-  for(int i = 0; i < counter; i++) {
-  	strcpy(files[i].name, dfiles[i].name);
-    sprintf(path_file, "%s/%s", dfiles[i].path, dfiles[i].name);
-  	getFileModifiedTime((char*) &path_file, (char*) &files[i].last_modified);
-    getFileExtension(dfiles[i].name, (char*) &files[i].extension);
-  	files[i].size = getFileSize(dfiles[i].path);
-  }
-
-  return counter;
-}
-
 int get_all_entries(char * path, struct d_file files[]) {
   int counter = 0;
 
@@ -87,6 +70,23 @@ int print_dir_content(char * path) {
   printf("Number of files: %d\n", counter);
 
   return 0;
+}
+
+int get_dir_file_info(char * path, FileInfo files[]) {
+  struct d_file dfiles[MAXFILES];
+  char path_file[MAXNAME*2 + 1];
+  int counter = 0;
+  get_dir_content(path, dfiles, &counter);
+
+  for(int i = 0; i < counter; i++) {
+  	strcpy(files[i].name, dfiles[i].name);
+    sprintf(path_file, "%s/%s", dfiles[i].path, dfiles[i].name);
+  	getFileModifiedTime((char*) &path_file, (char*) &files[i].last_modified);
+    getFileExtension(dfiles[i].name, (char*) &files[i].extension);
+  	files[i].size = getFileSize(dfiles[i].path);
+  }
+
+  return counter;
 }
 
 void getFileModifiedTime(char *path, char* last_modified) {
@@ -119,7 +119,6 @@ void getLastStringElement(char filename[], char* string, const char *separator) 
   	string = strtok(NULL, separator);
 	}
 }
-
 
 time_t getTime(char* last_modified){
   time_t result = 0;

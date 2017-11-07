@@ -52,6 +52,13 @@ void help_credits() {
   puts("Informações de autoria.");
 }
 
+void help_clear() {
+  printf("COMANDO: \n %s ", COMMAND_CLEAR);
+
+  puts("\nDESCRIÇÃO: ");
+  puts("Limpa o terminal.");
+}
+
 void help_exit() {
   printf("COMANDO: \n %s ", COMMAND_EXIT);
 

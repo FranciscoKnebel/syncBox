@@ -17,6 +17,7 @@ void print_commands() {
 	cprintf(COLOR_GREEN, "command\n");
 
 	puts("\tcredits");
+	puts("\tclear");
 
 	cprintf(COLOR_RED, "\texit");
 }
@@ -44,7 +45,8 @@ int is_valid_command(char* command) {
 		strncmp(command, COMMAND_LC, strlen(COMMAND_LC)) == 0 ||
 		strncmp(command, COMMAND_SYNC, strlen(COMMAND_SYNC)) == 0 ||
 		strncmp(command, COMMAND_HELP, strlen(COMMAND_HELP)) == 0 ||
-		strncmp(command, COMMAND_CREDITS, strlen(COMMAND_EXIT)) == 0 ||
+		strncmp(command, COMMAND_CREDITS, strlen(COMMAND_CREDITS)) == 0 ||
+		strncmp(command, COMMAND_CLEAR, strlen(COMMAND_CLEAR)) == 0 ||
 		strncmp(command, COMMAND_EXIT, strlen(COMMAND_EXIT)) == 0;
 }
 
@@ -77,6 +79,8 @@ void callCommand(char* command, char* attribute, int check) {
 		command_getsyncdir();
 	else if(strcmp(command, COMMAND_CREDITS) == 0)
 		command_credits();
+	else if(strcmp(command, COMMAND_CLEAR) == 0)
+		command_clear();
 	else {
 		if(check == COMMAND_WITH_ARGUMENTS) {
 			command_help(attribute);

@@ -16,16 +16,6 @@
 
 #define INTRO_MESSAGE "v0.0.1 - 08/11/2017\n"
 
-// COMMANDS
-#define COMMAND_UPLOAD "upload"
-#define COMMAND_DOWNLOAD "download"
-#define COMMAND_LS "list_server"
-#define COMMAND_LC "list_client"
-#define COMMAND_SYNC "get_sync_dir"
-#define COMMAND_HELP "help"
-#define COMMAND_CREDITS "credits"
-#define COMMAND_EXIT "exit"
-
 // RETURN CODES
 #define MAXNAMESIZE_REACHED -1
 

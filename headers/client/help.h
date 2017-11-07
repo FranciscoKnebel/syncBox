@@ -5,5 +5,6 @@ void help_listserver();
 void help_listclient();
 void help_sync();
 void help_credits();
+void help_clear();
 void help_exit();
 void help_undef(char* command);

@@ -21,12 +21,14 @@ all: util client server
 	@echo "All files compiled!"
 
 util:	$(SRC_DIR)dropboxUtil.c
+	@echo "\nCompilando módulos utilitários..."
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)dropboxUtil.o -I$(HEADERS_DIR) $(SRC_DIR)dropboxUtil.c
 
 OBJ_FILES = $(BIN_DIR)dropboxUtil.o
 
 ## CLIENT COMMANDS
-client-aux: $(SRC_DIR)client/interface.c $(SRC_DIR)client/commands.c $(SRC_DIR)client/help.c $(SRC_DIR)client/watcher.c
+client-aux: $(SRC_DIR)client/interface.c $(SRC_DIR)client/commands.c $(SRC_DIR)client/help.c $(SRC_DIR)client/sync.c $(SRC_DIR)client/watcher.c
+	@echo "\nCompilando módulos do cliente..."
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/interface.o -I$(HEADERS_DIR) $(SRC_DIR)client/interface.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/commands.o -I$(HEADERS_DIR) $(SRC_DIR)client/commands.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/help.o -I$(HEADERS_DIR) $(SRC_DIR)client/help.c
@@ -35,22 +37,23 @@ client-aux: $(SRC_DIR)client/interface.c $(SRC_DIR)client/commands.c $(SRC_DIR)c
 
 CLIENT_FILES = $(BIN_DIR)client/*.o
 client:	$(SRC_DIR)dropboxClient.c util client-aux
+	@echo "Linkando objetos e compilando aplicação do cliente."
 	$(CC) $(CFLAGS) -o $(CLI_DIR)dropboxClient $(SRC_DIR)dropboxClient.c $(OBJ_FILES) $(CLIENT_FILES) -pthread -I$(HEADERS_DIR)
 
 ## SERVER COMMANDS
 server-aux:
-	#$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/connection.o -I$(HEADERS_DIR) $(SRC_DIR)server/connection.c
-	#$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/fileUtil.o -I$(HEADERS_DIR) $(SRC_DIR)server/fileUtil.c
+	@echo "\nCompilando módulos do servidor..."
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/client.o -I$(HEADERS_DIR) $(SRC_DIR)server/client.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/commands.o -I$(HEADERS_DIR) $(SRC_DIR)server/commands.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)server/sync.o -I$(HEADERS_DIR) $(SRC_DIR)server/sync.c
 
 SERVER_FILES = $(BIN_DIR)server/*.o
 server: $(SRC_DIR)dropboxServer.c util server-aux
+	@echo "Linkando objetos e compilando aplicação do servidor."
 	$(CC) $(CFLAGS) -o $(SVR_DIR)dropboxServer $(SRC_DIR)dropboxServer.c $(OBJ_FILES) $(SERVER_FILES) -pthread -I$(HEADERS_DIR)
 
 ## TEST
-test: test_dropboxUtil test_util test_clientwatcher
+test: test_dropboxUtil test_util
 	@echo "All tests finished."
 
 test_util: util

@@ -10,6 +10,11 @@ Aplicação desenvolvida como projeto da disciplina de Sistemas Operacionais II 
 
 Link do Relatório: https://docs.google.com/document/d/1oecFbi0hCt_8Ax5vFzYKOlbkrzjiL77_sUPwPz9WHIQ/edit?usp=sharing
 
+## Using
+
+
+## Building
+
 
 ## Versioning
 

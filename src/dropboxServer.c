@@ -8,10 +8,10 @@ sem_t semaphore;
 
 void sync_server(int sockid_sync, Client* client_sync) {
   // sincronizar arquivos no dispositivo do cliente
-  syncronize_client(sockid_sync, client_sync);
+  synchronize_client(sockid_sync, client_sync);
 
   // sincroniza agora o servidor com os arquivos do cliente
-  syncronize_server(sockid_sync, client_sync);
+  synchronize_server(sockid_sync, client_sync);
 
   DEBUG_PRINT("sincronizacao finalizada!\n");
 }

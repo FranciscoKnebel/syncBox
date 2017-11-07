@@ -129,7 +129,7 @@ void delete(int socket, Client* client){
 }
 
 void sync_dir(int socket, Client* client) {
-  syncronize_client(socket, client);
+  synchronize_client(socket, client);
 }
 
 void select_commands(int socket, char buffer[], Client* client){

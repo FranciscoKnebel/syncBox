@@ -38,10 +38,14 @@ void command_getsyncdir() {
   write(sockid, buffer, BUFFER_SIZE);
 
   // sincroniza pasta local com o servidor
-  syncronize_local(sockid);
+  synchronize_local(sockid);
 
   // sincroniza servidor com pasta local
-  //syncronize_server(sockid);
+  //synchronize_server(sockid);
+}
+
+void command_clear() {
+  system("clear");
 }
 
 void command_help(char* command) {
@@ -67,7 +71,6 @@ void command_help(char* command) {
 }
 
 void command_credits() {
-  printf("Trabalho original por:\n \
-  Francisco Knebel\nLuciano Zancan\n");
+  printf("Trabalho original por:\n\tFrancisco Knebel\n\texLuciano Zancan\n");
   cprintf(COLOR_MAGENTA, "\nsyncBox - 2017\n");
 }

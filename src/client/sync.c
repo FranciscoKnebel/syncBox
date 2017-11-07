@@ -1,6 +1,6 @@
 #include "dropboxClient.h"
 
-void syncronize_local(int sockid) { // executa primeiro
+void synchronize_local(int sockid) { // executa primeiro
   char path[MAXNAME * 3 + 1];
   char buffer[BUFFER_SIZE];
   char file_name[MAXNAME];
@@ -61,7 +61,7 @@ void syncronize_local(int sockid) { // executa primeiro
   DEBUG_PRINT("Encerrando sincronização local.\n");
 }
 
-void syncronize_server(int sockid) {
+void synchronize_server(int sockid) {
   FileInfo localFiles[MAXFILES];
   char path[MAXNAME * 3 + 1];
   char buffer[BUFFER_SIZE];

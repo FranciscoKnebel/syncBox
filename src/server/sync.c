@@ -1,6 +1,6 @@
 #include "dropboxServer.h"
 
-void syncronize_client(int sockid_sync, Client* client_sync) { // executa primeiro
+void synchronize_client(int sockid_sync, Client* client_sync) { // executa primeiro
   char buffer[BUFFER_SIZE]; // 1 KB buffer
   int status = 0;
 
@@ -50,7 +50,7 @@ void syncronize_client(int sockid_sync, Client* client_sync) { // executa primei
   DEBUG_PRINT("Encerrando sincronização do cliente.\n");
 }
 
-void syncronize_server(int sockid_sync, Client* client_sync) {
+void synchronize_server(int sockid_sync, Client* client_sync) {
   char buffer[BUFFER_SIZE]; // 1 KB buffer
   char path[MAXNAME * 3 + 1];
   char last_modified[MAXNAME];

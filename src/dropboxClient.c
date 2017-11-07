@@ -93,10 +93,10 @@ void sync_client() {
 	}
 
 	// sincroniza pasta local com o servidor
-	syncronize_local(sockid);
+	synchronize_local(sockid);
 
 	// sincroniza servidor com pasta local
-	syncronize_server(sockid);
+	synchronize_server(sockid);
 
 	// cria thread para manter a sincronização local
 	int rc;
