@@ -43,9 +43,9 @@ extern ServerInfo serverInfo;
 
 void sync_server();
 
-void receive_file(char *file);
+void receive_file(char *file,int socket_id);
 
-void send_file(char *file);
+void send_file(char *file,int socket_id);
 
 void startServer();
 

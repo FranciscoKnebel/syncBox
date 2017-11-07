@@ -3,20 +3,98 @@
 ServerInfo serverInfo;
 Client clients[MAX_CLIENTS];
 
+
+char buffer[BUFFER_SIZE];
+
 void sync_server() {
   return;
 }
 
-void receive_file(char *file) {
+void receive_file(char *file,int socket) {
+
+  char buffer[BUFFER_SIZE]; 
+
+  int bytes_read = read(socket, buffer, BUFFER_SIZE);
+  if(bytes_read < 0){
+    printf("error reading from socket\n");
+    return;
+  }
+  int file_size = atoi(buffer);
+
+  FILE *f = fopen(file,"wb");
+  if(f == NULL){
+    printf("error creating file %s\n",file);
+    return;
+  }
+  int total_bytes = 0;
+  while(file_size > total_bytes){
+    bytes_read = read(socket, buffer, BUFFER_SIZE);
+    if(bytes_read < 0){
+      printf("error reading from socket\n");
+      return;
+    }
+    total_bytes += bytes_read;
+    if(file_size < total_bytes)
+      fwrite(buffer,sizeof(char),file_size % BUFFER_SIZE,f);
+    else
+      fwrite(buffer,sizeof(char),bytes_read,f);
+  }
+  fclose(f);
+
+  printf("arquivo recebido com sucesso!\n");
   return;
 }
 
-void send_file(char *file) {
-  return;
+void send_file(char *file,int sockid) {
+  int file_size = 0;
+  int bytes_read = 0;
+
+  FILE* pFile;
+  char buffer[BUFFER_SIZE]; // 1 KB buffer
+
+  pFile = fopen(file, "rb");
+  if(pFile) {
+    file_size = getFilesize(pFile);
+
+    if(file_size == 0) {
+      fclose(pFile);
+      return;
+    }
+
+    bzero(buffer, BUFFER_SIZE);
+    sprintf(buffer,"%d",file_size);
+    if(0 > write(sockid, buffer, BUFFER_SIZE)){
+      printf("Error sending the size of the file!\n");
+      return;
+    }
+    printf("envio de arquivo de %d bytes\n",file_size);
+
+    int sent_bytes;
+    while(!feof(pFile)) {
+
+        
+        bytes_read += fread(buffer, sizeof(char), BUFFER_SIZE, pFile);
+
+        sent_bytes = write(sockid, buffer, BUFFER_SIZE);
+          if (sent_bytes < 0) {
+              printf("ERROR writing to socket\n");
+              exit(1);
+          }
+          char *buffer_offset = buffer;
+          while(sent_bytes != BUFFER_SIZE){
+            buffer_offset = buffer + sent_bytes;
+            sent_bytes += write(sockid, buffer_offset, BUFFER_SIZE);
+          }
+    }
+
+    fclose(pFile);
+    printf("arquivo %s enviado.\n", file);
+  } else {
+    printf("erro na abertura do arquivo %s.\n", file);
+  }
 }
 
 
-char buffer[BUFFER_SIZE];
 
 void clearBuffer() {
   int i;
@@ -98,7 +176,7 @@ int main(int argc, char *argv[]){ // ./dropboxServer endereço porta
   char arquivo_de_persistencia[MAXNAME*3];
   sprintf(arquivo_de_persistencia,"%s/%s",serverInfo.folder,DEFAULT_USER_METADATA_FILE);
 
-  printf("arquivo de persistência de dados:%s",arquivo_de_persistencia);
+  printf("arquivo de persistência de dados:%s\n",arquivo_de_persistencia);
 
   int op_mod = get_clients_from_file(arquivo_de_persistencia);
   if(op_mod == 0)
@@ -251,14 +329,72 @@ void* continueClientProcess(Connection* connection) {
 	     	// write
 	     	status = write(socket, buffer, BUFFER_SIZE);
 	     	if (status < 0) {
-		  printf("ERROR writing to socket\n");
-		  exit(1);
-		}
+    		  printf("ERROR writing to socket\n");
+    		  exit(1);
+		    }
+
+        //mapeando o que o cliente deseja
+        switch(buffer[0]){
+          case WANTS_SEND:
+            status = read(socket, buffer, BUFFER_SIZE);
+            if(status < 0){
+              printf("ERROR reading from socket\n");
+              exit(1);
+            }
+            printf("client is sending file %s\n",buffer);
+
+            {
+              char complete_path[MAXNAME];
+              complete_path[0]='\0';
+              strcat(complete_path,server_new_client_folder);
+              strcat(complete_path,buffer);
+
+              receive_file(complete_path,socket);
+              if( 0 != get_file_from_client(client,complete_path,buffer)){
+                add_file_to_client(client,complete_path);
+              }
+            }
+            break;
+          case WANTS_RECEIVE:
+            status = read(socket, buffer, BUFFER_SIZE);
+            if(status < 0){
+              printf("ERROR reading from socket\n");
+              exit(1);
+            }
+            printf("client wants file %s\n",buffer);
+            
+            {
+              char complete_path[MAXNAME];
+              complete_path[0]='\0';
+              strcat(complete_path,server_new_client_folder);
+              strcat(complete_path,buffer);
+
+              if( 0 != get_file_from_client(client,complete_path,buffer)){
+                printf("pedido de arquivo que não existe\n");
+                bzero(buffer,BUFFER_SIZE);
+                sprintf(buffer,"%s",FILE_DONT_EXIST);
+                status = write(socket, buffer, BUFFER_SIZE);
+                   if (status < 0) {
+                    printf("ERROR writing to socket\n");
+                    exit(1);
+                   }
+
+                break;
+             }else
+              send_file(complete_path,socket);
+            }
+            break;
+          default:
+            printf("unknown wish\n");
+        }
 
 	    }
 	  } while(disconnected != 1);
 	  
 	  printf("%s desconectou no dispositivo %d!\n", client_id, removeDevice(client, device));
+    char arquivo_de_persistencia[MAXNAME*3];
+    sprintf(arquivo_de_persistencia,"%s/%s",serverInfo.folder,DEFAULT_USER_METADATA_FILE);
+    save_clients(arquivo_de_persistencia);
   } else{
     	   // write
 	   status = write(socket, buffer, BUFFER_SIZE);

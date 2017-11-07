@@ -4,6 +4,9 @@
 #define MAXNAME 64
 #define MAXPATH 256
 #define MAXFILES 128
+#define WANTS_SEND 's'
+#define WANTS_RECEIVE 'r'
+#define FILE_DONT_EXIST "$$$#"
 
 #define DIRECTORY_FILE 0;
 #define REGULAR_FILE 1;

@@ -98,7 +98,6 @@ void send_file(char *file) {
 	int bytes_read = 0;
 
 	FILE* pFile;
-	char buffer[BUFFER_SIZE]; // 1 KB buffer
 
 	pFile = fopen(file, "rb");
 	if(pFile) {
@@ -109,9 +108,51 @@ void send_file(char *file) {
 			return;
 		}
 
+		bzero(buffer, BUFFER_SIZE);
+		sprintf(buffer,"%c",WANTS_SEND);
+		if( 0 > write(sockid, buffer, BUFFER_SIZE)){
+			printf("Error sending the type of the operation!\n");
+			return;
+		}
+
+		bzero(buffer, BUFFER_SIZE);
+		int offset = strlen(file);
+		for(;offset>0;offset--)
+			if(file[offset] == '/' ){
+				offset ++;
+				break;
+			}
+
+		sprintf(buffer,"/%s",file+offset);
+		if(0 > write(sockid, buffer, BUFFER_SIZE)){
+			printf("Error sending the name of the file!\n");
+			return;
+		}
+
+		bzero(buffer, BUFFER_SIZE);
+		sprintf(buffer,"%d",file_size);
+		if(0 > write(sockid, buffer, BUFFER_SIZE)){
+			printf("Error sending the size of the file!\n");
+			return;
+		}
+		printf("envio de arquivo de %d bytes\n",file_size);
+
+		int sent_bytes;
 		while(!feof(pFile)) {
+
 				fread(buffer, sizeof(char), BUFFER_SIZE, pFile);
 				bytes_read += sizeof(char) * BUFFER_SIZE;
+
+				sent_bytes = write(sockid, buffer, BUFFER_SIZE);
+  				if (sent_bytes < 0) {
+      				printf("ERROR writing to socket\n");
+      				exit(1);
+   				}
+   				char *buffer_offset = buffer;
+   				while(sent_bytes != BUFFER_SIZE){
+   					buffer_offset = buffer + sent_bytes;
+   					sent_bytes += write(sockid, buffer_offset, BUFFER_SIZE);
+   				}
 
 				// enviar buffer para salvar no servidor
 		}
@@ -127,17 +168,66 @@ void get_file(char *file) {
 	int bytes_written = 0;
 
 	FILE* pFile;
-	char buffer[BUFFER_SIZE]; // 1 KB buffer
 
 	pFile = fopen(file, "wb");
 	if(pFile) {
 		// requisita arquivo file para o servidor
 		// recebe buffer do servidor
 
-		// while( faltam bytes para escrever ) {
-			fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
-			bytes_written += sizeof(char) * BUFFER_SIZE;
-		// }
+			bzero(buffer, BUFFER_SIZE);
+			sprintf(buffer,"%c",WANTS_RECEIVE);
+			if( 0 > write(sockid, buffer, BUFFER_SIZE)){
+				printf("Error sending the type of the operation!\n");
+				return;
+			}
+
+			int offset = strlen(file);
+			for(;offset>0;offset--)
+				if(file[offset] == '/' ){
+					offset ++;
+					break;
+				}
+			bzero(buffer, BUFFER_SIZE);
+			sprintf(buffer,"/%s",file+offset);
+			if(0 > write(sockid, buffer, BUFFER_SIZE)){
+				printf("Error sending the name of the file!\n");
+				return;
+			}
+			sleep(1);
+			bzero(buffer, BUFFER_SIZE);
+			int bytes_read = read(sockid, buffer, BUFFER_SIZE);
+			if(bytes_read < 0){
+			   printf("error reading from socket\n");
+			   return;
+			 }
+			 if(strcmp(buffer,FILE_DONT_EXIST) == 0){
+			 	printf("arquivo não existe\n");
+			 	return;
+			 }
+			 
+			int file_size = atoi(buffer);
+			printf("arquivo de %d bytes encontrado\n",file_size);
+
+		int received_bytes = 0;
+		while(bytes_written < file_size){
+
+			received_bytes = read(sockid, buffer, BUFFER_SIZE);
+  			if (received_bytes < 0) {
+      			printf("ERROR reading from socket\n");
+      			exit(1);
+   			}
+   			char *buffer_offset = buffer;
+   			while(received_bytes != BUFFER_SIZE){
+   				buffer_offset = buffer + received_bytes;
+   				received_bytes += read(sockid, buffer_offset, BUFFER_SIZE);
+   			}
+			bytes_written += received_bytes;
+
+			if(bytes_written < file_size)
+				fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
+			else
+				fwrite(buffer, sizeof(char), file_size % BUFFER_SIZE, pFile);
+		 }
 		fclose(pFile);
 
 		printf("Arquivo %s salvo.\n", file);
@@ -164,13 +254,12 @@ void close_connection() {
       		printf("ERROR writing to socket\n");
       		exit(1);
    	}
-
+   	bzero(buffer, BUFFER_SIZE);
   	status = read(sockid, buffer, BUFFER_SIZE);
   	if (status < 0) {
      		printf("ERROR reading from socket\n");
      		exit(1);
   	}
-
   	if(strcmp(buffer, "disconnected") == 0){
     		printf("\nDesconectado!\n");
 		close(sockid);
