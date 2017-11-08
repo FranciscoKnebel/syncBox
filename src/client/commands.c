@@ -71,6 +71,6 @@ void command_help(char* command) {
 }
 
 void command_credits() {
-  printf("Trabalho original por:\n\tFrancisco Knebel\n\texLuciano Zancan\n");
+  printf("Trabalho original por:\n\tFrancisco Knebel\n\tLuciano Zancan\n");
   cprintf(COLOR_MAGENTA, "\nsyncBox - 2017\n");
 }
