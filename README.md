@@ -10,10 +10,29 @@ Aplicação desenvolvida como projeto da disciplina de Sistemas Operacionais II 
 
 Link do Relatório: https://docs.google.com/document/d/1oecFbi0hCt_8Ax5vFzYKOlbkrzjiL77_sUPwPz9WHIQ/edit?usp=sharing
 
-## Using
-
 
 ## Building
+
+```
+make util
+Builds the utility objects, used by both the server and the client.
+```
+
+```
+make client
+Builds the client module objects, bundling them into a binary file dst/dropboxClient.
+```
+
+```
+make server
+Builds the server module objects, bundling them into a binary file dst/dropboxServer.
+```
+
+Running `make` will build all the project files and generate both the client and server applications.
+
+## Using
+After building the application, both applications will be stored in the `dst` folder.
+Arguments for both applications are explained on execution.
 
 
 ## Versioning

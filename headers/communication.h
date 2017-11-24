@@ -23,3 +23,5 @@
 #define S_SYNC "sync"
 #define S_GET "get"
 #define S_GETSYNCDIR "sync dir"
+
+#define S_MODTIME "file modtime"

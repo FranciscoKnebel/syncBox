@@ -42,7 +42,8 @@ void help_sync() {
   printf("COMANDO: \n %s ", COMMAND_SYNC);
 
   puts("\nDESCRIÇÃO: ");
-  puts("Cria o diretório 'sync_dir_<nomeusuário>' no /home do usuário.");
+  puts("Força sincronização local do device atual.");
+  puts("Depreciado desde a versão 0.0.2.");
 }
 
 void help_credits() {

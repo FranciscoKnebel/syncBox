@@ -26,7 +26,7 @@ void command_listclient() {
   }
 }
 
-void command_getsyncdir() {
+void command_getsyncdir() { // DEPRECATED get_sync_dir
   if(!fileExists(user.folder)) {
     if(mkdir(user.folder, 0777) != 0) {
       printf("Error creating user folder '%s'.\n", user.folder);
@@ -37,8 +37,11 @@ void command_getsyncdir() {
   strcpy(buffer, S_GETSYNCDIR);
   write(sockid, buffer, BUFFER_SIZE);
 
+  printf("%sComando GET SYNC DIR depreciado na versão 0.0.2.%s\n", COLOR_RED, COLOR_RESET);
+
   // sincroniza pasta local com o servidor
   synchronize_local(sockid);
+  printf("Sincronização finalizada.%s\n");
 
   // sincroniza servidor com pasta local
   //synchronize_server(sockid);

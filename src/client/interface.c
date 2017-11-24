@@ -11,7 +11,10 @@ void print_commands() {
 
 	puts("\tlist_server");
 	puts("\tlist_client");
-	puts("\tget_sync_dir");
+
+	printf("\tget_sync_dir ");
+	cprintf(COLOR_RED, "(DEPRECATED)\n");
+
 
 	printf("\thelp ");
 	cprintf(COLOR_GREEN, "command\n");

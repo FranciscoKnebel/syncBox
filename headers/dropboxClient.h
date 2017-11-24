@@ -14,7 +14,7 @@
 #ifndef client_h
 #define client_h
 
-#define INTRO_MESSAGE "v0.0.1 - 08/11/2017\n"
+#define INTRO_MESSAGE "v0.0.2 - xx/12/2017\n"
 
 // RETURN CODES
 #define MAXNAMESIZE_REACHED -1
