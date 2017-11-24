@@ -45,6 +45,7 @@ void getFileExtension(const char *filename, char* extension);
 int  getFileSize(char *path);
 void getLastStringElement(char filename[], char* string, const char *separator);
 time_t getTime(char* last_modified);
+int setModTime(char* path, time_t mod_time);
 int older_file(char* last_modified_file_1, char* last_modified_file_2);
 
 /* Interface */

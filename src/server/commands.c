@@ -20,14 +20,28 @@ void upload(int socket, Client* client){
   char filename[MAXNAME];
   strcpy(filename, buffer);
 
-
   sprintf(client_folder, "%s/%s", serverInfo.folder, client->userid);
   sprintf(path, "%s/%s", client_folder, filename);
 
+  strcpy(buffer, S_MODTIME);
+  status = write(socket, buffer, BUFFER_SIZE);
+  if (status < 0) {
+    DEBUG_PRINT("ERROR writing to socket\n");
+  }
+  status = read(socket, buffer, BUFFER_SIZE);
+  if (status < 0) {
+    DEBUG_PRINT("ERROR reading from socket\n");
+  }
+  time_t last_modified = getTime(buffer);
+  DEBUG_PRINT("MT do arquivo: %s.\n", buffer);
+
   int index = getFileIndex(filename, client->file_info);
+
   pthread_mutex_lock(&client->mutex_files[index]);
   receive_file(path, socket);
+  setModTime(path, last_modified);
   pthread_mutex_unlock(&client->mutex_files[index]);
+
   client->n_files = get_dir_file_info(client_folder, client->file_info);
   // TODO: alterar essa função para apenas incrementar n_files e adicionar para client.file_info o novo valor
   // ao invés de refazer o cálculo para todo diretório.
@@ -53,9 +67,7 @@ void download(int socket, Client* client){
 
   int index = getFileIndex(buffer, client->file_info);
   pthread_mutex_lock(&client->mutex_files[index]);
-
   send_file(filename, socket);
-
   pthread_mutex_unlock(&client->mutex_files[index]);
 }
 

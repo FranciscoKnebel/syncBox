@@ -42,14 +42,16 @@ void synchronize_local(int sockid) { // executa primeiro
 
 		sprintf(path, "%s/%s", user.folder, file_name);
 		getFileModifiedTime(path, last_modified_file_2);
+    DEBUG_PRINT("Last modified local: %s\n", last_modified_file_2);
 
 		if(!fileExists(path)) {
 		    get_file(file_name, NULL);
         DEBUG_PRINT("Arquivo %s nao existe... baixando\n", file_name);
-		} else if (older_file(last_modified, last_modified_file_2) == 1){
+		} else if (older_file(last_modified, last_modified_file_2) == 1) {
         get_file(file_name, NULL);
         DEBUG_PRINT("Arquivo %s mais velho... baixando\n", file_name);
     } else {
+      DEBUG_PRINT("Download desnecessário do arquivo %s.\n\n", file_name);
 			strcpy(buffer, S_OK);
 			status = write(sockid, buffer, BUFFER_SIZE);
       if (status < 0) {
@@ -86,7 +88,7 @@ void synchronize_server(int sockid) {
       DEBUG_PRINT("ERROR writing to socket\n");
     }
 		strcpy(buffer, localFiles[i].last_modified);
-    DEBUG_PRINT("Last modified: %s\n", localFiles[i].last_modified);
+    DEBUG_PRINT("Last modified enviado: %s\n", localFiles[i].last_modified);
 		status = write(sockid, buffer, BUFFER_SIZE); // envia last modified para o servidor
     if (status < 0) {
       DEBUG_PRINT("ERROR writing to socket\n");

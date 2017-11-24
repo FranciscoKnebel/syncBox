@@ -146,14 +146,28 @@ time_t getTime(char* last_modified){
   }
 }
 
+int setModTime(char* path, time_t mod_time) {
+  struct utimbuf fileTimes;
+  fileTimes.actime = mod_time;
+  fileTimes.modtime = mod_time;
+
+  return utime(path, &fileTimes);
+}
+
 int older_file(char* last_modified_file_1, char* last_modified_file_2) {
 	time_t time_file_1 = getTime(last_modified_file_1);
   time_t time_file_2 = getTime(last_modified_file_2);
 
   // return 1 if file2 is older than the modified date of file 1
-	if(difftime(time_file_1, time_file_2) > 0) {
+  double difference = difftime(time_file_1, time_file_2);
+  DEBUG_PRINT("Dif: %f - FILE1: %ld - FILE2: %ld\n", difference, time_file_1, time_file_2);
+	if(difference > 0) {
+    DEBUG_PRINT("File2 is older than File1.\n");
 		return 1;
-	}
+	} else if (difference == 0) {
+    DEBUG_PRINT("File1 is the same age as File2.\n");
+    return -1;
+  }
   return 0;
 }
 

@@ -50,7 +50,7 @@ void receive_file(char *file, int sockid_upload) {
         fwrite(buffer, sizeof(char), (file_size - bytes_written), pFile);
         bytes_written += sizeof(char) * (file_size - bytes_written);
       }
-      DEBUG_PRINT("leu buffer - Total: %d / Escritos: %d / Sobrando: %d\n", file_size, bytes_written, (file_size - bytes_written));
+      //DEBUG_PRINT("leu buffer - Total: %d / Escritos: %d / Sobrando: %d\n", file_size, bytes_written, (file_size - bytes_written));
     }
     DEBUG_PRINT("Terminou de escrever.\n");
     fclose(pFile);
@@ -82,6 +82,12 @@ void send_file(char *file, int sockid_download) {
     if(file_size == 0) {
       fclose(pFile);
       return;
+    }
+
+    getFileModifiedTime(file, buffer);
+    status = write(sockid_download, buffer, BUFFER_SIZE);
+    if (status < 0) {
+      DEBUG_PRINT("ERROR writing to socket\n");
     }
 
     while(!feof(pFile)) {
@@ -222,6 +228,7 @@ void* clientThread(void* connection_struct) {
 }
 
 int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
+  setlocale(LC_ALL, "pt_BR");
   int port = DEFAULT_PORT;
   struct sockaddr_in server, client;
 
@@ -278,8 +285,8 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
       printf("Error on accept\n");
     }
 
-      DEBUG_PRINT("semaforo: %d\n", sem_wait(&semaphore));
-      //sem_wait(&semaphore);
+      //DEBUG_PRINT("semaforo: %d\n", sem_wait(&semaphore)); // zancan, não dá pra deixar dentro do debug código. Se tirar do debug, isso não vai executar
+      sem_wait(&semaphore);
 
       char *client_ip = inet_ntoa(client.sin_addr); // inet_ntoa converte o IP de numeros e pontos para uma struct in_addr
 

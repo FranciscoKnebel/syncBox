@@ -133,6 +133,20 @@ void send_file(char *file, int response) {
 		}
 	}
 
+	status = read(sockid, buffer, BUFFER_SIZE);
+	if (status < 0) {
+		DEBUG_PRINT("ERROR reading from socket\n");
+	}
+
+	if(strcmp(buffer, S_MODTIME) == 0) {
+		getFileModifiedTime(filename, buffer);
+		DEBUG_PRINT("MT enviado: %s\n", buffer);
+		status = write(sockid, buffer, BUFFER_SIZE);
+		if (status < 0) {
+			DEBUG_PRINT("ERROR writing to socket\n");
+		}
+	}
+
 	FILE* pFile;
 	pFile = fopen(file, "rb");
 	if(pFile) {
@@ -160,7 +174,7 @@ void send_file(char *file, int response) {
 
 				// enviar buffer para salvar no servidor
 				status = write(sockid, buffer, BUFFER_SIZE);
-				DEBUG_PRINT("enviou buffer - Total: %d / Enviados: %d / Sobrando: %d\n", file_size, bytes_sent, (file_size - bytes_sent));
+				//DEBUG_PRINT("enviou buffer - Total: %d / Enviados: %d / Sobrando: %d\n", file_size, bytes_sent, (file_size - bytes_sent));
 				if (status < 0) {
 					DEBUG_PRINT("ERROR writing to socket\n");
 				}
@@ -196,7 +210,7 @@ void get_file(char *file, char* fileFolder) {
 	DEBUG_PRINT("Resposta recebida: %s \n", buffer);
 
 	if(strcmp(buffer, S_NAME) == 0) { // envia o nome do arquivo para o servidor
-		DEBUG_PRINT("enviando nome do arquivo para servidor\t%s\n", file);
+		DEBUG_PRINT("enviando nome do arquivo para servidor\t\n");
 		getLastStringElement(buffer, file, "/");
 
 		status = write(sockid, buffer, BUFFER_SIZE);
@@ -218,6 +232,15 @@ void get_file(char *file, char* fileFolder) {
 		file_size = atoi(buffer);
 		DEBUG_PRINT("tamanho: %d\n", file_size);
 
+		//recebe Modified Time do arquivo
+		status = read(sockid, buffer, BUFFER_SIZE);
+		if (status < 0) {
+			DEBUG_PRINT("ERROR reading from socket\n");
+		}
+
+		time_t modified_time = getTime(buffer);
+		DEBUG_PRINT("MT: %s\n", buffer);
+
 		bytes_written = 0;
 		while(file_size > bytes_written) {
 			status = read(sockid, buffer, BUFFER_SIZE); // recebe arquivo no buffer
@@ -236,6 +259,7 @@ void get_file(char *file, char* fileFolder) {
 		}
 		DEBUG_PRINT("Terminou de escrever.\n");
 		fclose(pFile);
+		setModTime(path, modified_time);
 
 		if(fileFolder) printf("Arquivo '%s%s%s' salvo.\n", COLOR_GREEN, path, COLOR_RESET);
 	} else {
@@ -293,6 +317,7 @@ void list_server() {
 }
 
 int main(int argc, char *argv[]) {
+	setlocale(LC_ALL, "pt_BR");
 	if (argc != 4) {
 		puts("Argumentos Insuficientes.");
 		puts("Formato esperado: './dropboxClient user endereço porta'");

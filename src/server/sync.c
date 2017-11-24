@@ -31,7 +31,7 @@ void synchronize_client(int sockid_sync, Client* client_sync) { // executa prime
       DEBUG_PRINT("ERROR writing to socket\n");
     }
     strcpy(buffer, client_sync->file_info[i].last_modified);
-    DEBUG_PRINT("Last modified: %s\n", client_sync->file_info[i].last_modified);
+    DEBUG_PRINT("enviando Last modified: %s\n", client_sync->file_info[i].last_modified);
     status = write(sockid_sync, buffer, BUFFER_SIZE); // envia data de ultima modificacao do arquivo
     if (status < 0) {
       DEBUG_PRINT("ERROR writing to socket\n");
@@ -85,6 +85,7 @@ void synchronize_server(int sockid_sync, Client* client_sync) {
 
     sprintf(path, "%s/%s/%s", serverInfo.folder, client_sync->userid, file_name);
     getFileModifiedTime(path, last_modified_file_2);
+    DEBUG_PRINT("Last modified local: %s\n", last_modified_file_2);
 
     if(!fileExists(path) || older_file(last_modified, last_modified_file_2) == 1) {
       strcpy(buffer, S_GET);
@@ -97,12 +98,13 @@ void synchronize_server(int sockid_sync, Client* client_sync) {
       if (status < 0) {
         DEBUG_PRINT("ERROR reading from socket\n");
       }
-      DEBUG_PRINT("Recebido: %s\n", buffer);
+      DEBUG_PRINT("Resposta recebida: %s\n", buffer);
 
       if(strcmp(buffer, S_UPLOAD) == 0) {
         upload(sockid_sync, client_sync);
       }
   	} else {
+      DEBUG_PRINT("Upload desnecessário do arquivo %s.\n\n", file_name);
   		strcpy(buffer, S_OK);
   		status = write(sockid_sync, buffer, BUFFER_SIZE); // envia ok
       if (status < 0) {
