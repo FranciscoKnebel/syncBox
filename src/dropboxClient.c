@@ -106,10 +106,8 @@ void sync_client() {
 }
 
 void send_file(char *file, int response) {
-	char filename[MAXNAME];
 	int file_size = 0;
 	int bytes_sent = 0;
-	strcpy(filename, file);
 
 	DEBUG_PRINT("Requisita upload\n");
 	/* Request de upload */
@@ -125,7 +123,7 @@ void send_file(char *file, int response) {
 	}
 
 	if(strcmp(buffer, S_NAME) == 0) {
-		getLastStringElement(buffer, filename, "/"); // envia o nome do arquivo para o servidor
+		getLastStringElement(buffer, file, "/"); // envia o nome do arquivo para o servidor
 		DEBUG_PRINT("Nome enviado: %s\n", buffer);
 		status = write(sockid, buffer, BUFFER_SIZE);
 		if (status < 0) {
@@ -181,6 +179,7 @@ void send_file(char *file, int response) {
 			}
 			//status = read(sockid, buffer, BUFFER_SIZE);
 			//printf("recebido: %s", buffer);
+			DEBUG_PRINT("Terminou de enviar arquivo.\n");
 			fclose(pFile);
 		}
 
@@ -215,7 +214,7 @@ void get_file(char *file, char* fileFolder) {
 
 		status = write(sockid, buffer, BUFFER_SIZE);
 	}
-	DEBUG_PRINT("nome: %s\n", file);
+	DEBUG_PRINT("nome: %s\n", buffer);
 
 	char path[MAXNAME*2 + 1];
 	sprintf(path, "%s/%s", (fileFolder == NULL) ? user.folder : fileFolder, file);
@@ -255,7 +254,7 @@ void get_file(char *file, char* fileFolder) {
 				fwrite(buffer, sizeof(char), (file_size - bytes_written), pFile);
 				bytes_written += sizeof(char) * (file_size - bytes_written);
 			}
-			DEBUG_PRINT("leu buffer - Total: %d / Escritos: %d / Sobrando: %d\n", file_size, bytes_written, (file_size - bytes_written));
+			//DEBUG_PRINT("leu buffer - Total: %d / Escritos: %d / Sobrando: %d\n", file_size, bytes_written, (file_size - bytes_written));
 		}
 		DEBUG_PRINT("Terminou de escrever.\n");
 		fclose(pFile);

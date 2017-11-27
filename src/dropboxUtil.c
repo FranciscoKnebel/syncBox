@@ -92,7 +92,15 @@ int get_dir_file_info(char * path, FileInfo files[]) {
 void getFileModifiedTime(char *path, char* last_modified) {
   struct stat attr;
   stat(path, &attr);
-  strftime(last_modified, MAXNAME, "%Y.%m.%d %H:%M:%S", localtime(&(attr.st_mtime)));
+
+  time_t mod_time = attr.st_mtime;
+
+  struct tm *timeptr = localtime(&mod_time);
+  if(timeptr->tm_isdst > 0) { // is daylight saving time
+    mod_time -= 3600; // - 1 hour
+  }
+
+  strftime(last_modified, MAXNAME, "%Y.%m.%d %H:%M:%S", localtime(&mod_time));
 }
 
 int getFileSize(char *path) {
@@ -112,11 +120,14 @@ void getFileExtension(const char *filename, char* extension) {
 }
 
 void getLastStringElement(char filename[], char* string, const char *separator) {
-	string = strtok(string, separator);
+  char* str = malloc(sizeof(char) * MAXNAME);
+  strcpy(str, string);
 
-	while (string) {
-  	strcpy(filename, string);
-  	string = strtok(NULL, separator);
+	str = strtok(str, separator);
+
+	while (str) {
+  	strcpy(filename, str);
+  	str = strtok(NULL, separator);
 	}
 }
 
@@ -137,7 +148,7 @@ time_t getTime(char* last_modified){
       fprintf(stderr, "Could not convert time input to time_t\n");
       return EXIT_FAILURE;
     }
-    DEBUG_PRINT("Time transformado: %s\n", ctime(&result));
+    //DEBUG_PRINT("Time transformado: %s", ctime(&result));
     return result;
   } else {
     fprintf(stderr, "The input was not a valid time format: %s\n", last_modified);

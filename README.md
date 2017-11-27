@@ -20,12 +20,12 @@ Builds the utility objects, used by both the server and the client.
 
 ```
 make client
-Builds the client module objects, bundling them into a binary file dst/dropboxClient.
+Builds the client module objects, bundling them into binary file "dst/dropboxClient".
 ```
 
 ```
 make server
-Builds the server module objects, bundling them into a binary file dst/dropboxServer.
+Builds the server module objects, bundling them into binary file "dst/dropboxServer".
 ```
 
 Running `make` will build all the project files and generate both the client and server applications.
