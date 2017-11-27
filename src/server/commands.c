@@ -40,11 +40,22 @@ void upload(int socket, Client* client){
   pthread_mutex_lock(&client->mutex_files[index]);
   receive_file(path, socket);
   setModTime(path, last_modified);
-  pthread_mutex_unlock(&client->mutex_files[index]);
 
   client->n_files = get_dir_file_info(client_folder, client->file_info);
   // TODO: alterar essa função para apenas incrementar n_files e adicionar para client.file_info o novo valor
   // ao invés de refazer o cálculo para todo diretório.
+  pthread_mutex_unlock(&client->mutex_files[index]);
+
+  // envia o arquivo para o possível cliente conectado no outro dispositivo
+  if(client->devices[0] == socket){ // envia para o dispositivo 1
+    if(client->devices[1] != -1){
+      sync_device_upload(client->devices[1], filename);
+    }
+  } else if(client->devices[1] == socket){ // envia para o dispositivo 0
+      if(client->devices[0] != -1){
+        sync_device_upload(client->devices[0], filename);
+      }
+  }
 }
 
 void download(int socket, Client* client){
@@ -138,7 +149,27 @@ void delete(int socket, Client* client){
   }
 
   pthread_mutex_unlock(&client->mutex_files[index]);
+
+  if(client->devices[0] == socket){ // envia para o dispositivo 1
+    if(client->devices[1] != -1){
+      sync_device_delete(client->devices[1], filename);
+    }
+  } else if(client->devices[1] == socket){ // envia para o dispositivo 0
+      if(client->devices[0] != -1){
+        sync_device_delete(client->devices[0], filename);
+      }
+  }
+
 }
+
+void sync_device_upload(int socket, char* filename){ //TODO
+
+}
+
+void sync_device_delete(int socket, char* filename){ // TODO
+
+}
+
 
 void sync_dir(int socket, Client* client) {
   synchronize_client(socket, client);

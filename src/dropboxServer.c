@@ -2,6 +2,7 @@
 
 ServerInfo serverInfo;
 ClientList* client_list;
+pthread_mutex_t mutex_clientes;
 
 sem_t semaphore;
 
@@ -153,11 +154,15 @@ void* clientThread(void* connection_struct) {
 
   if(client == NULL) {
     DEBUG_PRINT("Criando novo cliente.\n");
+    pthread_mutex_lock(&mutex_clientes);
     client_list = newClient(client_id, socket, client_list);
+    pthread_mutex_unlock(&mutex_clientes);
     client = searchClient(client_id, client_list);
   } else {
     DEBUG_PRINT("Adicionando device ao cliente encontrado.\n");
+    pthread_mutex_lock(&mutex_clientes);
     device = addDevice(client, socket);
+    pthread_mutex_unlock(&mutex_clientes);
   }
   DEBUG_PRINT("socket: %d - device: %d\n", socket, device);
 
@@ -207,11 +212,14 @@ void* clientThread(void* connection_struct) {
       }
     } while(disconnected != 1);
 
+    pthread_mutex_lock(&mutex_clientes);
     printf("'%s%s%s' desconectou no dispositivo '%s%d%s', socket '%s%d%s'!\n",
     COLOR_GREEN, client_id, COLOR_RESET,
     COLOR_GREEN, removeDevice(client, device, client_list), COLOR_RESET,
     COLOR_GREEN, socket, COLOR_RESET);
     client_list = check_login_status(client, client_list);
+    pthread_mutex_unlock(&mutex_clientes);
+
   } else {
     DEBUG_PRINT("Muitas conexões simultâneas de '%s%s%s' em '%s%s%s'. Acesso negado.\n",
     COLOR_GREEN, client_id, COLOR_RESET,
@@ -231,6 +239,8 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
   setlocale(LC_ALL, "pt_BR");
   int port = DEFAULT_PORT;
   struct sockaddr_in server, client;
+
+  pthread_mutex_init (&mutex_clientes, NULL); // inicializa mutex da fila de clientes
 
   sem_init(&semaphore, 0, MAX_CLIENTS);
 

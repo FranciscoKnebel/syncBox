@@ -41,7 +41,7 @@ void command_getsyncdir() { // DEPRECATED get_sync_dir
 
   // sincroniza pasta local com o servidor
   synchronize_local(sockid);
-  printf("Sincronização finalizada.%s\n");
+  printf("Sincronização finalizada.\n");
 
   // sincroniza servidor com pasta local
   //synchronize_server(sockid);

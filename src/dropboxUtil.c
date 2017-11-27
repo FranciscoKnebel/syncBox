@@ -92,7 +92,7 @@ int get_dir_file_info(char * path, FileInfo files[]) {
 void getFileModifiedTime(char *path, char* last_modified) {
   struct stat attr;
   stat(path, &attr);
-  strftime(last_modified, 20, "%Y.%m.%d %H:%M:%S", localtime(&(attr.st_mtime)));
+  strftime(last_modified, MAXNAME, "%Y.%m.%d %H:%M:%S", localtime(&(attr.st_mtime)));
 }
 
 int getFileSize(char *path) {
@@ -122,7 +122,6 @@ void getLastStringElement(char filename[], char* string, const char *separator) 
 
 time_t getTime(char* last_modified){
   time_t result = 0;
-
   int year = 0, month = 0, day = 0, hour = 0, min = 0, sec = 0;
 
   if (sscanf(last_modified, "%4d.%2d.%2d %2d:%2d:%2d", &year, &month, &day, &hour, &min, &sec) == 6) {
@@ -138,7 +137,7 @@ time_t getTime(char* last_modified){
       fprintf(stderr, "Could not convert time input to time_t\n");
       return EXIT_FAILURE;
     }
-
+    DEBUG_PRINT("Time transformado: %s\n", ctime(&result));
     return result;
   } else {
     fprintf(stderr, "The input was not a valid time format: %s\n", last_modified);

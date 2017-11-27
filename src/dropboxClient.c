@@ -139,7 +139,7 @@ void send_file(char *file, int response) {
 	}
 
 	if(strcmp(buffer, S_MODTIME) == 0) {
-		getFileModifiedTime(filename, buffer);
+		getFileModifiedTime(file, buffer);
 		DEBUG_PRINT("MT enviado: %s\n", buffer);
 		status = write(sockid, buffer, BUFFER_SIZE);
 		if (status < 0) {
