@@ -37,11 +37,13 @@ void *watcher_thread(void* ptr_path) {
             if (fileExists(path) && (event->name[0] != '.')) {
               DEBUG_PRINT("\nRequest upload: %s\n", path);
               send_file(path, FALSE);
+              DEBUG_PRINT("Enviou!\n");
             }
           } else if (event->mask & (IN_DELETE | IN_DELETE_SELF | IN_MOVED_FROM)) {
             if (event->name[0] != '.') {
               DEBUG_PRINT("\nRequest delete: %s\n", path);
               delete_file(path);
+              DEBUG_PRINT("Deletou!\n");
             }
           }
         }

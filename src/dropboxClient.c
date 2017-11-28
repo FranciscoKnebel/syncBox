@@ -117,7 +117,7 @@ void send_file(char *file, int response) {
 		DEBUG_PRINT("ERROR writing to socket\n");
 	}
 
-	status = read(sockid, buffer, BUFFER_SIZE); // recebe resposta
+	status = read(sockid, buffer, BUFFER_SIZE); // recebe resposta "name"
 	if (status < 0) {
 		DEBUG_PRINT("ERROR reading from socket\n");
 	}
@@ -131,15 +131,16 @@ void send_file(char *file, int response) {
 		}
 	}
 
-	status = read(sockid, buffer, BUFFER_SIZE);
+	status = read(sockid, buffer, BUFFER_SIZE); // le palavra "timestamp"
 	if (status < 0) {
 		DEBUG_PRINT("ERROR reading from socket\n");
 	}
+	DEBUG_PRINT("recebido: %s\n", buffer);
 
-	if(strcmp(buffer, S_MODTIME) == 0) {
+	if(strcmp(buffer, S_MODTIME) == 0) { // se palavra for igual a "timestamp"
 		getFileModifiedTime(file, buffer);
 		DEBUG_PRINT("MT enviado: %s\n", buffer);
-		status = write(sockid, buffer, BUFFER_SIZE);
+		status = write(sockid, buffer, BUFFER_SIZE); // envia o timestamp
 		if (status < 0) {
 			DEBUG_PRINT("ERROR writing to socket\n");
 		}
@@ -188,6 +189,11 @@ void send_file(char *file, int response) {
 		}
 	} else {
 		printf("Erro abrindo arquivo %s.\n", file);
+		strcpy(buffer, S_ERRO_ARQUIVO);
+		status = write(sockid, buffer, BUFFER_SIZE); // envia o timestamp
+		if (status < 0) {
+			DEBUG_PRINT("ERROR writing to socket\n");
+		}
 	}
 }
 
@@ -202,7 +208,7 @@ void get_file(char *file, char* fileFolder) {
 		DEBUG_PRINT("ERROR writing to socket\n");
 	}
 
-	status = read(sockid, buffer, BUFFER_SIZE); // recebe resposta
+	status = read(sockid, buffer, BUFFER_SIZE); // recebe resposta "name"
 	if (status < 0) {
 		DEBUG_PRINT("ERROR reading from socket\n");
 	}
@@ -213,6 +219,9 @@ void get_file(char *file, char* fileFolder) {
 		getLastStringElement(buffer, file, "/");
 
 		status = write(sockid, buffer, BUFFER_SIZE);
+		if (status < 0) {
+			DEBUG_PRINT("ERROR writing to socket\n");
+		}
 	}
 	DEBUG_PRINT("nome: %s\n", buffer);
 
@@ -220,49 +229,53 @@ void get_file(char *file, char* fileFolder) {
 	sprintf(path, "%s/%s", (fileFolder == NULL) ? user.folder : fileFolder, file);
 	DEBUG_PRINT("path: %s\n", path);
 
-	FILE* pFile;
-	pFile = fopen(path, "wb");
-	if(pFile) {
-		status = read(sockid, buffer, BUFFER_SIZE); // recebe tamanho do arquivo
-		if (status < 0) {
-			DEBUG_PRINT("ERROR reading from socket\n");
-    }
+	status = read(sockid, buffer, BUFFER_SIZE); // recebe tamanho do arquivo ou mensagem de erro
+	if (status < 0) {
+		DEBUG_PRINT("ERROR reading from socket\n");
+	}
+	if(strcmp(buffer, S_ERRO_ARQUIVO) != 0){
+		FILE* pFile;
+		pFile = fopen(path, "wb");
+		if(pFile) {
 
-		file_size = atoi(buffer);
-		DEBUG_PRINT("tamanho: %d\n", file_size);
+			file_size = atoi(buffer);
+			DEBUG_PRINT("tamanho: %d\n", file_size);
 
-		//recebe Modified Time do arquivo
-		status = read(sockid, buffer, BUFFER_SIZE);
-		if (status < 0) {
-			DEBUG_PRINT("ERROR reading from socket\n");
-		}
-
-		time_t modified_time = getTime(buffer);
-		DEBUG_PRINT("MT: %s\n", buffer);
-
-		bytes_written = 0;
-		while(file_size > bytes_written) {
-			status = read(sockid, buffer, BUFFER_SIZE); // recebe arquivo no buffer
+			//recebe Modified Time do arquivo
+			status = read(sockid, buffer, BUFFER_SIZE);
 			if (status < 0) {
 				DEBUG_PRINT("ERROR reading from socket\n");
 			}
 
-			if((file_size - bytes_written) > BUFFER_SIZE) { // se o tamanho faltando for maior do que o buffer, lê apenas buffer
-				fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
-				bytes_written += sizeof(char) * BUFFER_SIZE;
-			} else { // senão lê os bytes que sobram
-				fwrite(buffer, sizeof(char), (file_size - bytes_written), pFile);
-				bytes_written += sizeof(char) * (file_size - bytes_written);
-			}
-			//DEBUG_PRINT("leu buffer - Total: %d / Escritos: %d / Sobrando: %d\n", file_size, bytes_written, (file_size - bytes_written));
-		}
-		DEBUG_PRINT("Terminou de escrever.\n");
-		fclose(pFile);
-		setModTime(path, modified_time);
+			time_t modified_time = getTime(buffer);
+			DEBUG_PRINT("MT: %s\n", buffer);
 
-		if(fileFolder) printf("Arquivo '%s%s%s' salvo.\n", COLOR_GREEN, path, COLOR_RESET);
-	} else {
-		printf("Erro salvando arquivo '%s%s%s'.\n", COLOR_GREEN, path, COLOR_RESET);
+			bytes_written = 0;
+			while(file_size > bytes_written) {
+				status = read(sockid, buffer, BUFFER_SIZE); // recebe arquivo no buffer
+				if (status < 0) {
+					DEBUG_PRINT("ERROR reading from socket\n");
+				}
+
+				if((file_size - bytes_written) > BUFFER_SIZE) { // se o tamanho faltando for maior do que o buffer, lê apenas buffer
+					fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
+					bytes_written += sizeof(char) * BUFFER_SIZE;
+				} else { // senão lê os bytes que sobram
+					fwrite(buffer, sizeof(char), (file_size - bytes_written), pFile);
+					bytes_written += sizeof(char) * (file_size - bytes_written);
+				}
+				//DEBUG_PRINT("leu buffer - Total: %d / Escritos: %d / Sobrando: %d\n", file_size, bytes_written, (file_size - bytes_written));
+			}
+			DEBUG_PRINT("Terminou de escrever.\n");
+			fclose(pFile);
+			setModTime(path, modified_time);
+
+			if(fileFolder) printf("Arquivo '%s%s%s' salvo.\n", COLOR_GREEN, path, COLOR_RESET);
+		} else {
+			printf("Erro salvando arquivo '%s%s%s'.\n", COLOR_GREEN, path, COLOR_RESET);
+		}
+	} else{
+		printf("Erro ao receber arquivo do servidor '%s%s%s'.\n", COLOR_GREEN, path, COLOR_RESET);
 	}
 }
 
@@ -272,12 +285,20 @@ void delete_file(char *file) {
   char filename[MAXNAME];
   strcpy(buffer, S_REQ_DELETE);
   status = write(sockid, buffer, BUFFER_SIZE);
-
-  status = read(sockid, buffer, BUFFER_SIZE);
+	if (status < 0) {
+  	DEBUG_PRINT("ERROR writing to socket\n");
+  }
+  status = read(sockid, buffer, BUFFER_SIZE); //recebe "name"
+	if (status < 0) {
+  	DEBUG_PRINT("ERROR reading from socket\n");
+  }
   if(strcmp(buffer, S_NAME) == 0) {
 		getLastStringElement(buffer, file, "/"); // envia o nome do arquivo para o servidor
 		sprintf(filename, "%s", buffer);
-  	status = write(sockid, buffer, BUFFER_SIZE);
+  	status = write(sockid, buffer, BUFFER_SIZE); // envia nome do arquivo
+		if (status < 0) {
+	  	DEBUG_PRINT("ERROR writing to socket\n");
+	  }
   }
 
   status = read(sockid, buffer, BUFFER_SIZE);

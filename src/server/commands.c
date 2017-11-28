@@ -12,10 +12,11 @@ void upload(int socket, Client* client){
   	DEBUG_PRINT("ERROR writing to socket\n");
   }
 
-  status = read(socket, buffer, BUFFER_SIZE);
+  status = read(socket, buffer, BUFFER_SIZE); // recebe nome do arquivo
   if (status < 0) {
   	DEBUG_PRINT("ERROR reading from socket\n");
   }
+  DEBUG_PRINT("Nome recebido: %s\n", buffer);
 
   char filename[MAXNAME];
   strcpy(filename, buffer);
@@ -24,11 +25,11 @@ void upload(int socket, Client* client){
   sprintf(path, "%s/%s", client_folder, filename);
 
   strcpy(buffer, S_MODTIME);
-  status = write(socket, buffer, BUFFER_SIZE);
+  status = write(socket, buffer, BUFFER_SIZE); // envia palavra "timestamp"
   if (status < 0) {
     DEBUG_PRINT("ERROR writing to socket\n");
   }
-  status = read(socket, buffer, BUFFER_SIZE);
+  status = read(socket, buffer, BUFFER_SIZE); // le o timestamp
   if (status < 0) {
     DEBUG_PRINT("ERROR reading from socket\n");
   }
@@ -112,12 +113,12 @@ void delete(int socket, Client* client){
   int status = 0;
 
   strcpy(buffer, S_NAME);
-  status = write(socket, buffer, BUFFER_SIZE);
+  status = write(socket, buffer, BUFFER_SIZE); // envia "name"
   if (status < 0) {
   	DEBUG_PRINT("ERROR writing to socket\n");
   }
 
-  status = read(socket, buffer, BUFFER_SIZE);
+  status = read(socket, buffer, BUFFER_SIZE); // le nome do arquivo
   if (status < 0) {
   	DEBUG_PRINT("ERROR reading from socket\n");
   }
@@ -142,7 +143,7 @@ void delete(int socket, Client* client){
     // ao invés de refazer o cálculo para todo diretório.
 
     strcpy(buffer, S_RPL_DELETE);
-    status = write(socket, buffer, BUFFER_SIZE);
+    status = write(socket, buffer, BUFFER_SIZE); // envia "deletado"
     if (status < 0) {
       DEBUG_PRINT("ERROR writing to socket\n");
     }

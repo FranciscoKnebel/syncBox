@@ -15,6 +15,7 @@
 
 /* Commands */
 #define S_NAME "name"
+#define S_ERRO_ARQUIVO "erro ao abrir"
 #define S_DOWNLOAD "download"
 #define S_UPLOAD "upload"
 #define S_LS "list server"

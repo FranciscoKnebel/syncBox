@@ -27,39 +27,41 @@ void receive_file(char *file, int sockid_upload) {
   FILE* pFile;
   char buffer[BUFFER_SIZE]; // 1 KB buffer
 
-  pFile = fopen(file, "wb");
-  if(pFile) {
-    // requisita o arquivo file do cliente
-    // recebe buffer do cliente
-    status = read(sockid_upload, buffer, BUFFER_SIZE);
-    if (status < 0) {
-      printf("ERROR reading from socket\n");
-    }
-    file_size = atoi(buffer);
-
-    bytes_written = 0;
-    while(file_size > bytes_written) {
-      status = read(sockid_upload, buffer, BUFFER_SIZE); // le no buffer
-      if (status < 0) {
-        printf("ERROR reading from socket\n");
-      }
-
-      if((file_size - bytes_written) > BUFFER_SIZE) { // se o tamanho faltando for maior do que o buffer, lê apenas buffer
-        fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
-        bytes_written += sizeof(char) * BUFFER_SIZE;
-      } else { // senão lê os bytes que sobram
-        fwrite(buffer, sizeof(char), (file_size - bytes_written), pFile);
-        bytes_written += sizeof(char) * (file_size - bytes_written);
-      }
-      //DEBUG_PRINT("leu buffer - Total: %d / Escritos: %d / Sobrando: %d\n", file_size, bytes_written, (file_size - bytes_written));
-    }
-    DEBUG_PRINT("Terminou de escrever.\n");
-    fclose(pFile);
-
-    DEBUG_PRINT("Arquivo %s salvo.\n", file);
-  } else {
-    DEBUG_PRINT("Erro abrindo arquivo %s.\n", file);
+  status = read(sockid_upload, buffer, BUFFER_SIZE); //recebe tamanho do arquivo ou "erro no arquivo"
+  if (status < 0) {
+    printf("ERROR reading from socket\n");
   }
+  if(strcmp(buffer, S_ERRO_ARQUIVO) != 0){
+    pFile = fopen(file, "wb");
+    if(pFile) {
+      file_size = atoi(buffer);
+
+      bytes_written = 0;
+      while(file_size > bytes_written) {
+        status = read(sockid_upload, buffer, BUFFER_SIZE); // le no buffer
+        if (status < 0) {
+          printf("ERROR reading from socket\n");
+        }
+
+        if((file_size - bytes_written) > BUFFER_SIZE) { // se o tamanho faltando for maior do que o buffer, lê apenas buffer
+          fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
+          bytes_written += sizeof(char) * BUFFER_SIZE;
+        } else { // senão lê os bytes que sobram
+          fwrite(buffer, sizeof(char), (file_size - bytes_written), pFile);
+          bytes_written += sizeof(char) * (file_size - bytes_written);
+        }
+        //DEBUG_PRINT("leu buffer - Total: %d / Escritos: %d / Sobrando: %d\n", file_size, bytes_written, (file_size - bytes_written));
+      }
+      DEBUG_PRINT("Terminou de escrever.\n");
+      fclose(pFile);
+
+      DEBUG_PRINT("Arquivo %s salvo.\n", file);
+    } else {
+        DEBUG_PRINT("Erro abrindo arquivo %s.\n", file);
+      }
+    } else{
+      DEBUG_PRINT("Erro abrindo no cliente %s.\n", file);
+    }
 }
 
 void send_file(char *file, int sockid_download) {
@@ -106,6 +108,11 @@ void send_file(char *file, int sockid_download) {
     DEBUG_PRINT("Arquivo %s enviado.\n", file);
   } else {
     DEBUG_PRINT("Erro abrindo arquivo %s.\n", file);
+    strcpy(buffer, S_ERRO_ARQUIVO);
+    status = write(sockid_download, buffer, BUFFER_SIZE);
+    if (status < 0) {
+      DEBUG_PRINT("ERROR writing to socket\n");
+    }
   }
 }
 
