@@ -40,7 +40,7 @@ int get_dir_content(char * path, struct d_file files[], int* counter);
 int get_dir_file_info(char * path, FileInfo files[]);
 int get_all_entries(char * path, struct d_file files[]);
 int print_dir_content(char * path);
-void getFileModifiedTime(char *path, char* last_modified);
+int getFileModifiedTime(char *path, char* last_modified);
 void getFileExtension(const char *filename, char* extension);
 int  getFileSize(char *path);
 void getLastStringElement(char filename[], char* string, const char *separator);

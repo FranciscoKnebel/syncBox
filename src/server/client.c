@@ -125,7 +125,7 @@ int removeDevice(Client* client, int device, ClientList* client_list) {
 ClientList* check_login_status(Client* client, ClientList* client_list) {
 	if(client->devices[0] == -1 && client->devices[1] == -1) {
 		client->logged_in = 0;
-		printf("Cliente '%s' logged out!\n", client->userid);
+		printf("Cliente '%s%s%s' desconectou todos dispositivos!\n", COLOR_GREEN, client->userid, COLOR_RESET);
 
 		return removeClient(client, client_list);
 	}	else return client_list;

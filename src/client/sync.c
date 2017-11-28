@@ -94,6 +94,7 @@ void synchronize_server(int sockid) {
       DEBUG_PRINT("ERROR writing to socket\n");
     }
 
+    leitura:
 		status = read(sockid, buffer, BUFFER_SIZE); // le resposta do servidor
     if (status < 0) {
       DEBUG_PRINT("ERROR reading from socket\n");
@@ -103,7 +104,10 @@ void synchronize_server(int sockid) {
 			sprintf(path, "%s/%s", user.folder, localFiles[i].name);
 			send_file(path, FALSE);
       DEBUG_PRINT("Enviando arquivo %s\n", path);
-		}
+		} else {
+      DEBUG_PRINT("NÃO RECEBEU O S_GET ESPERADO, CAGOU TUDO.\n");
+      goto leitura;
+    }
 	}
 
   DEBUG_PRINT("Encerrando sincronização do servidor.\n");

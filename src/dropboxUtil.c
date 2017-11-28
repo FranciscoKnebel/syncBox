@@ -89,18 +89,21 @@ int get_dir_file_info(char * path, FileInfo files[]) {
   return counter;
 }
 
-void getFileModifiedTime(char *path, char* last_modified) {
+int getFileModifiedTime(char *path, char* last_modified) {
   struct stat attr;
-  stat(path, &attr);
+  int status = stat(path, &attr);
+  if(status != 0) {
+    return status;
+  }
 
   time_t mod_time = attr.st_mtime;
-
   struct tm *timeptr = localtime(&mod_time);
   if(timeptr->tm_isdst > 0) { // is daylight saving time
     mod_time -= 3600; // - 1 hour
   }
 
   strftime(last_modified, MAXNAME, "%Y.%m.%d %H:%M:%S", localtime(&mod_time));
+  return 0;
 }
 
 int getFileSize(char *path) {

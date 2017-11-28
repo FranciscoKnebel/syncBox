@@ -83,17 +83,31 @@ void synchronize_server(int sockid_sync, Client* client_sync) {
     strcpy(last_modified, buffer);
     DEBUG_PRINT("Last modified recebido: %s\n", last_modified);
 
-    sprintf(path, "%s/%s/%s", serverInfo.folder, client_sync->userid, file_name);
-    getFileModifiedTime(path, last_modified_file_2);
-    DEBUG_PRINT("Last modified local: %s\n", last_modified_file_2);
+    int needToUpload = FALSE;
+    if(!fileExists(path)) {
+      DEBUG_PRINT("Arquivo não existe, então pedindo upload para o servidor.\n");
+      needToUpload = TRUE;
+    } else {
+      DEBUG_PRINT("Arquivo existe, então buscando o MT local para comparar.\n");
+      sprintf(path, "%s/%s/%s", serverInfo.folder, client_sync->userid, file_name);
+      getFileModifiedTime(path, last_modified_file_2);
+      DEBUG_PRINT("Last modified local: %s\n", last_modified_file_2);
 
-    if(!fileExists(path) || older_file(last_modified, last_modified_file_2) == 1) {
+      if(older_file(last_modified, last_modified_file_2) == 1) {
+        DEBUG_PRINT("Arquivo é mais velho, pedindo upload da versão mais recente.\n");
+        needToUpload = TRUE;
+      }
+    }
+
+    if(needToUpload) {
+      DEBUG_PRINT("Arquivo precisa ser trazido do cliente. Pedindo arquivo.\n");
       strcpy(buffer, S_GET);
       status = write(sockid_sync, buffer, BUFFER_SIZE);
       if (status < 0) {
         DEBUG_PRINT("ERROR writing to socket\n");
       }
 
+      lednv1:
       status = read(sockid_sync, buffer, BUFFER_SIZE); // le resposta do cliente
       if (status < 0) {
         DEBUG_PRINT("ERROR reading from socket\n");
@@ -102,7 +116,7 @@ void synchronize_server(int sockid_sync, Client* client_sync) {
 
       if(strcmp(buffer, S_UPLOAD) == 0) {
         upload(sockid_sync, client_sync);
-      }
+      } else goto lednv1;
   	} else {
       DEBUG_PRINT("Upload desnecessário do arquivo %s.\n\n", file_name);
   		strcpy(buffer, S_OK);

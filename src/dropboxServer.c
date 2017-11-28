@@ -14,7 +14,7 @@ void sync_server(int sockid_sync, Client* client_sync) {
   // sincroniza agora o servidor com os arquivos do cliente
   synchronize_server(sockid_sync, client_sync);
 
-  DEBUG_PRINT("sincronizacao finalizada!\n");
+  DEBUG_PRINT("Sincronização cliente/servidor encerrada.\n");
 }
 
 void receive_file(char *file, int sockid_upload) {

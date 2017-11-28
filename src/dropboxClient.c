@@ -303,9 +303,9 @@ void delete_file(char *file) {
 
   status = read(sockid, buffer, BUFFER_SIZE);
   if(strcmp(buffer, S_RPL_DELETE) == 0){
-    printf("Arquivo %s deletado!\n", filename);
+		// recebe confirmação de que arquivo foi removido
+    DEBUG_PRINT("Arquivo %s deletado!\n", filename);
   }
-  // recebe confirmação de que arquivo foi removido
 }
 
 void list_server() {
