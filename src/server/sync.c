@@ -37,7 +37,7 @@ void synchronize_client(int sockid_sync, Client* client_sync) { // executa prime
       DEBUG_PRINT("ERROR writing to socket\n");
     }
 
-    status = read(sockid_sync, buffer, BUFFER_SIZE);
+    status = read(sockid_sync, buffer, BUFFER_SIZE); // recebe ou "download" ou "ok"
     if (status < 0) {
       DEBUG_PRINT("ERROR reading from socket\n");
     }

@@ -203,7 +203,7 @@ void get_file(char *file, char* fileFolder) {
 
  	/* Request de download */
 	strcpy(buffer, S_DOWNLOAD);
-	status = write(sockid, buffer, BUFFER_SIZE);
+	status = write(sockid, buffer, BUFFER_SIZE); // envia "download"
 	if (status < 0) {
 		DEBUG_PRINT("ERROR writing to socket\n");
 	}
@@ -251,7 +251,13 @@ void get_file(char *file, char* fileFolder) {
 			DEBUG_PRINT("MT: %s\n", buffer);
 
 			bytes_written = 0;
-			while(file_size > bytes_written) {
+			if(file_size == 0){ // se tamanho for 0
+				status = read(sockid, buffer, BUFFER_SIZE); // recebe arquivo no buffer
+				if (status < 0) {
+					DEBUG_PRINT("ERROR reading from socket\n");
+				}
+			}
+			while(bytes_written < file_size) {
 				status = read(sockid, buffer, BUFFER_SIZE); // recebe arquivo no buffer
 				if (status < 0) {
 					DEBUG_PRINT("ERROR reading from socket\n");

@@ -31,6 +31,7 @@ void receive_file(char *file, int sockid_upload) {
   if (status < 0) {
     printf("ERROR reading from socket\n");
   }
+  DEBUG_PRINT("Receive \"erro no arquivo\": %s\n", buffer);
   if(strcmp(buffer, S_ERRO_ARQUIVO) != 0){
     pFile = fopen(file, "wb");
     if(pFile) {
@@ -76,19 +77,15 @@ void send_file(char *file, int sockid_download) {
   if(pFile) {
     file_size = getFilesize(pFile);
     DEBUG_PRINT("file size: %d\n", file_size);
-    sprintf(buffer, "%d", file_size); // envia tamanho do arquivo para o cliente
-    status = write(sockid_download, buffer, BUFFER_SIZE);
+    sprintf(buffer, "%d", file_size);
+    status = write(sockid_download, buffer, BUFFER_SIZE);  // envia tamanho do arquivo para o cliente
     if (status < 0) {
       DEBUG_PRINT("ERROR writing to socket\n");
     }
 
-    if(file_size == 0) {
-      fclose(pFile);
-      return;
-    }
 
     getFileModifiedTime(file, buffer);
-    status = write(sockid_download, buffer, BUFFER_SIZE);
+    status = write(sockid_download, buffer, BUFFER_SIZE); // envia modified time
     if (status < 0) {
       DEBUG_PRINT("ERROR writing to socket\n");
     }
@@ -200,7 +197,6 @@ void* clientThread(void* connection_struct) {
       status = read(socket, buffer, BUFFER_SIZE);
       if (status < 0) {
         DEBUG_PRINT("ERROR reading from socket");
-        exit(1);
       }
       DEBUG_PRINT("Comando do usuário: %s\n", buffer);
 
