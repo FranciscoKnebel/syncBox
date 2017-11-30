@@ -31,38 +31,28 @@ void receive_file(char *file, int sockid_upload) {
   if (status < 0) {
     printf("ERROR reading from socket\n");
   }
-  DEBUG_PRINT("Receive \"erro no arquivo\": %s\n", buffer);
+
   if(strcmp(buffer, S_ERRO_ARQUIVO) != 0){
     pFile = fopen(file, "wb");
     if(pFile) {
       file_size = atoi(buffer);
 
-      bytes_written = 0;
-      while(file_size > bytes_written) {
-        status = read(sockid_upload, buffer, BUFFER_SIZE); // le no buffer
-        if (status < 0) {
-          printf("ERROR reading from socket\n");
-        }
-
-        if((file_size - bytes_written) > BUFFER_SIZE) { // se o tamanho faltando for maior do que o buffer, lê apenas buffer
-          fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
-          bytes_written += sizeof(char) * BUFFER_SIZE;
-        } else { // senão lê os bytes que sobram
-          fwrite(buffer, sizeof(char), (file_size - bytes_written), pFile);
-          bytes_written += sizeof(char) * (file_size - bytes_written);
-        }
-        //DEBUG_PRINT("leu buffer - Total: %d / Escritos: %d / Sobrando: %d\n", file_size, bytes_written, (file_size - bytes_written));
-      }
-      DEBUG_PRINT("Terminou de escrever.\n");
+      bytes_written = readToFile(pFile, file_size, sockid_upload);
+      if(bytes_written == file_size) {
+				DEBUG_PRINT("Terminou de escrever.\n");
+			} else {
+				DEBUG_PRINT("Erro ao escrever %d bytes. Esperado %d.\n", bytes_written, file_size);
+			}
       fclose(pFile);
 
-      DEBUG_PRINT("Arquivo %s salvo.\n", file);
+      DEBUG_PRINT("Arquivo '%s%s%s' salvo.\n", COLOR_GREEN, file, COLOR_RESET);
     } else {
-        DEBUG_PRINT("Erro abrindo arquivo %s.\n", file);
-      }
-    } else{
-      DEBUG_PRINT("Erro abrindo no cliente %s.\n", file);
+      DEBUG_PRINT("Erro abrindo arquivo %s.\n", file);
     }
+  } else {
+    DEBUG_PRINT("Receive \"erro no arquivo\": %s\n", buffer);
+    DEBUG_PRINT("Erro abrindo no cliente %s.\n", file);
+  }
 }
 
 void send_file(char *file, int sockid_download) {
@@ -83,7 +73,6 @@ void send_file(char *file, int sockid_download) {
       DEBUG_PRINT("ERROR writing to socket\n");
     }
 
-
     getFileModifiedTime(file, buffer);
     status = write(sockid_download, buffer, BUFFER_SIZE); // envia modified time
     if (status < 0) {
@@ -102,7 +91,7 @@ void send_file(char *file, int sockid_download) {
     }
 
     fclose(pFile);
-    DEBUG_PRINT("Arquivo %s enviado.\n", file);
+    DEBUG_PRINT("Arquivo %s enviado (%d bytes).\n", file, bytes_read);
   } else {
     DEBUG_PRINT("Erro abrindo arquivo %s.\n", file);
     strcpy(buffer, S_ERRO_ARQUIVO);
@@ -298,19 +287,19 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
       printf("Error on accept\n");
     }
 
-      //DEBUG_PRINT("semaforo: %d\n", sem_wait(&semaphore)); // zancan, não dá pra deixar dentro do debug código. Se tirar do debug, isso não vai executar
-      sem_wait(&semaphore);
+    //DEBUG_PRINT("semaforo: %d\n", sem_wait(&semaphore)); // zancan, não dá pra deixar dentro do debug código. Se tirar do debug, isso não vai executar
+    sem_wait(&semaphore);
 
-      char *client_ip = inet_ntoa(client.sin_addr); // inet_ntoa converte o IP de numeros e pontos para uma struct in_addr
+    char *client_ip = inet_ntoa(client.sin_addr); // inet_ntoa converte o IP de numeros e pontos para uma struct in_addr
 
-      Connection *connection = malloc(sizeof(*connection));
-      connection->socket_id = new_client_socket;
-      connection->ip = client_ip;
+    Connection *connection = malloc(sizeof(*connection));
+    connection->socket_id = new_client_socket;
+    connection->ip = client_ip;
 
-      if(pthread_create(&thread_id, NULL, clientThread, (void*) connection) < 0){
-        printf("Error on create thread\n");
-      }
+    if(pthread_create(&thread_id, NULL, clientThread, (void*) connection) < 0){
+      printf("Error on create thread\n");
     }
+  }
 
   return 0;
 

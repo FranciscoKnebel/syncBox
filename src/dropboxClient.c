@@ -190,7 +190,7 @@ void send_file(char *file, int response) {
 	} else {
 		printf("Erro abrindo arquivo %s.\n", file);
 		strcpy(buffer, S_ERRO_ARQUIVO);
-		status = write(sockid, buffer, BUFFER_SIZE); // envia o timestamp
+		status = write(sockid, buffer, BUFFER_SIZE); // avisa usuário de erro
 		if (status < 0) {
 			DEBUG_PRINT("ERROR writing to socket\n");
 		}
@@ -233,7 +233,7 @@ void get_file(char *file, char* fileFolder) {
 	if (status < 0) {
 		DEBUG_PRINT("ERROR reading from socket\n");
 	}
-	if(strcmp(buffer, S_ERRO_ARQUIVO) != 0){
+	if(strcmp(buffer, S_ERRO_ARQUIVO) != 0) {
 		FILE* pFile;
 		pFile = fopen(path, "wb");
 		if(pFile) {
@@ -241,8 +241,7 @@ void get_file(char *file, char* fileFolder) {
 			file_size = atoi(buffer);
 			DEBUG_PRINT("tamanho: %d\n", file_size);
 
-			//recebe Modified Time do arquivo
-			status = read(sockid, buffer, BUFFER_SIZE);
+			status = read(sockid, buffer, BUFFER_SIZE); // recebe Modified Time do arquivo
 			if (status < 0) {
 				DEBUG_PRINT("ERROR reading from socket\n");
 			}
@@ -250,29 +249,20 @@ void get_file(char *file, char* fileFolder) {
 			time_t modified_time = getTime(buffer);
 			DEBUG_PRINT("MT: %s\n", buffer);
 
-			bytes_written = 0;
 			if(file_size == 0){ // se tamanho for 0
 				status = read(sockid, buffer, BUFFER_SIZE); // recebe arquivo no buffer
 				if (status < 0) {
 					DEBUG_PRINT("ERROR reading from socket\n");
 				}
 			}
-			while(bytes_written < file_size) {
-				status = read(sockid, buffer, BUFFER_SIZE); // recebe arquivo no buffer
-				if (status < 0) {
-					DEBUG_PRINT("ERROR reading from socket\n");
-				}
 
-				if((file_size - bytes_written) > BUFFER_SIZE) { // se o tamanho faltando for maior do que o buffer, lê apenas buffer
-					fwrite(buffer, sizeof(char), BUFFER_SIZE, pFile);
-					bytes_written += sizeof(char) * BUFFER_SIZE;
-				} else { // senão lê os bytes que sobram
-					fwrite(buffer, sizeof(char), (file_size - bytes_written), pFile);
-					bytes_written += sizeof(char) * (file_size - bytes_written);
-				}
-				//DEBUG_PRINT("leu buffer - Total: %d / Escritos: %d / Sobrando: %d\n", file_size, bytes_written, (file_size - bytes_written));
-			}
+			bytes_written = readToFile(pFile, file_size, sockid);
+			if(bytes_written == file_size) {
 			DEBUG_PRINT("Terminou de escrever.\n");
+			} else {
+				DEBUG_PRINT("Erro ao escrever %d bytes. Esperado %d.\n", bytes_written, file_size);
+			}
+
 			fclose(pFile);
 			setModTime(path, modified_time);
 

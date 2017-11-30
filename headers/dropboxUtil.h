@@ -48,6 +48,9 @@ time_t getTime(char* last_modified);
 int setModTime(char* path, time_t mod_time);
 int older_file(char* last_modified_file_1, char* last_modified_file_2);
 
+/* I/O */
+int readToFile(FILE* pFile, int file_size, int sockid);
+
 /* Interface */
 int cprintf(char* ansicode, char* string);
 
