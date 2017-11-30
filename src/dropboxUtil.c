@@ -175,10 +175,10 @@ int older_file(char* last_modified_file_1, char* last_modified_file_2) {
   double difference = difftime(time_file_1, time_file_2);
   DEBUG_PRINT("Dif: %f - FILE1: %ld - FILE2: %ld\n", difference, time_file_1, time_file_2);
 	if(difference > 0) {
-    DEBUG_PRINT("File2 is older than File1.\n");
+    DEBUG_PRINT("File2 mais velho que File1.\n");
 		return 1;
 	} else if (difference == 0) {
-    DEBUG_PRINT("File1 is the same age as File2.\n");
+    DEBUG_PRINT("File1 mesma idade que File2.\n");
     return -1;
   }
   return 0;

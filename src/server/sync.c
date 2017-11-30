@@ -83,13 +83,14 @@ void synchronize_server(int sockid_sync, Client* client_sync) {
     strcpy(last_modified, buffer);
     DEBUG_PRINT("Last modified recebido: %s\n", last_modified);
 
+    sprintf(path, "%s/%s/%s", serverInfo.folder, client_sync->userid, file_name);
+
     int needToUpload = FALSE;
     if(!fileExists(path)) {
       DEBUG_PRINT("Arquivo não existe, então pedindo upload para o servidor.\n");
       needToUpload = TRUE;
     } else {
       DEBUG_PRINT("Arquivo existe, então buscando o MT local para comparar.\n");
-      sprintf(path, "%s/%s/%s", serverInfo.folder, client_sync->userid, file_name);
       getFileModifiedTime(path, last_modified_file_2);
       DEBUG_PRINT("Last modified local: %s\n", last_modified_file_2);
 

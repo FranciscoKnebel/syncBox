@@ -27,34 +27,34 @@ int connect_server (char *host, int port) {
 		return 0;
 	}
 
-	bzero(buffer, BUFFER_SIZE-1);
+	bzero(buffer, BUFFER_SIZE);
 
-		strcpy(buffer, user.id);
+	strcpy(buffer, user.id);
 
-		// write to socket
-		status = write(sockid, buffer, BUFFER_SIZE);
-		if (status < 0) {
-			printf("ERROR writing to socket\n");
-			return 0;
-	 	}
-
-		// read server response
-		bzero(buffer, BUFFER_SIZE);
-		status = read(sockid, buffer, BUFFER_SIZE);
-		if (status < 0) {
-			printf("ERROR reading from socket\n");
-			return 1;
-		}
-
-		if(strcmp(buffer, S_EXCESS_DEVICES) == 0){
-			printf("Muitas conexões simultâneas do mesmo usuário.\n");
-		}
-
-		if(strcmp(buffer, S_CONNECTED) == 0){
-			return 1;
-		}
-
+	// write to socket
+	status = write(sockid, buffer, BUFFER_SIZE);
+	if (status < 0) {
+		printf("ERROR writing to socket\n");
 		return 0;
+ 	}
+
+	// read server response
+	bzero(buffer, BUFFER_SIZE);
+	status = read(sockid, buffer, BUFFER_SIZE);
+	if (status < 0) {
+		printf("ERROR reading from socket\n");
+		return 1;
+	}
+
+	if(strcmp(buffer, S_EXCESS_DEVICES) == 0){
+		printf("Muitas conexões simultâneas do mesmo usuário.\n");
+	}
+
+	if(strcmp(buffer, S_CONNECTED) == 0){
+		return 1;
+	}
+
+	return 0;
 }
 
 void close_connection() {
@@ -178,8 +178,6 @@ void send_file(char *file, int response) {
 					DEBUG_PRINT("ERROR writing to socket\n");
 				}
 			}
-			//status = read(sockid, buffer, BUFFER_SIZE);
-			//printf("recebido: %s", buffer);
 			DEBUG_PRINT("Terminou de enviar arquivo.\n");
 			fclose(pFile);
 		}
@@ -195,6 +193,8 @@ void send_file(char *file, int response) {
 			DEBUG_PRINT("ERROR writing to socket\n");
 		}
 	}
+
+	bzero(buffer, BUFFER_SIZE);
 }
 
 void get_file(char *file, char* fileFolder) {
@@ -233,11 +233,12 @@ void get_file(char *file, char* fileFolder) {
 	if (status < 0) {
 		DEBUG_PRINT("ERROR reading from socket\n");
 	}
+
 	if(strcmp(buffer, S_ERRO_ARQUIVO) != 0) {
 		FILE* pFile;
+
 		pFile = fopen(path, "wb");
 		if(pFile) {
-
 			file_size = atoi(buffer);
 			DEBUG_PRINT("tamanho: %d\n", file_size);
 
@@ -249,7 +250,7 @@ void get_file(char *file, char* fileFolder) {
 			time_t modified_time = getTime(buffer);
 			DEBUG_PRINT("MT: %s\n", buffer);
 
-			if(file_size == 0){ // se tamanho for 0
+			if(file_size == 0) { // se tamanho for 0
 				status = read(sockid, buffer, BUFFER_SIZE); // recebe arquivo no buffer
 				if (status < 0) {
 					DEBUG_PRINT("ERROR reading from socket\n");
@@ -258,7 +259,7 @@ void get_file(char *file, char* fileFolder) {
 
 			bytes_written = readToFile(pFile, file_size, sockid);
 			if(bytes_written == file_size) {
-			DEBUG_PRINT("Terminou de escrever.\n");
+				DEBUG_PRINT("Terminou de escrever.\n");
 			} else {
 				DEBUG_PRINT("Erro ao escrever %d bytes. Esperado %d.\n", bytes_written, file_size);
 			}
@@ -273,6 +274,8 @@ void get_file(char *file, char* fileFolder) {
 	} else{
 		printf("Erro ao receber arquivo do servidor '%s%s%s'.\n", COLOR_GREEN, path, COLOR_RESET);
 	}
+
+	bzero(buffer, BUFFER_SIZE);
 }
 
 void delete_file(char *file) {
@@ -288,6 +291,7 @@ void delete_file(char *file) {
 	if (status < 0) {
   	DEBUG_PRINT("ERROR reading from socket\n");
   }
+
   if(strcmp(buffer, S_NAME) == 0) {
 		getLastStringElement(buffer, file, "/"); // envia o nome do arquivo para o servidor
 		sprintf(filename, "%s", buffer);
@@ -302,6 +306,8 @@ void delete_file(char *file) {
 		// recebe confirmação de que arquivo foi removido
     DEBUG_PRINT("Arquivo %s deletado!\n", filename);
   }
+
+	bzero(buffer, BUFFER_SIZE);
 }
 
 void list_server() {
@@ -330,10 +336,12 @@ void list_server() {
 	}
 	printf("Number of files: %d\n", number_files);
 
+	bzero(buffer, BUFFER_SIZE);
 }
 
 int main(int argc, char *argv[]) {
 	setlocale(LC_ALL, "pt_BR");
+
 	if (argc != 4) {
 		puts("Argumentos Insuficientes.");
 		puts("Formato esperado: './dropboxClient user endereço porta'");
