@@ -35,7 +35,7 @@ void command_getsyncdir() { // DEPRECATED get_sync_dir
 
   char buffer[BUFFER_SIZE];
   strcpy(buffer, S_GETSYNCDIR);
-  write(sockid, buffer, BUFFER_SIZE);
+  write_to_socket(sockid, buffer);
 
   printf("%sComando GET SYNC DIR depreciado na versão 0.0.2.%s\n", COLOR_RED, COLOR_RESET);
 

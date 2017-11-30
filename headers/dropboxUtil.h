@@ -50,7 +50,8 @@ int older_file(char* last_modified_file_1, char* last_modified_file_2);
 
 /* I/O */
 int readToFile(FILE* pFile, int file_size, int sockid);
-
+void write_to_socket(int socket, char* buffer);
+void read_from_socket(int socket, char* buffer);
 /* Interface */
 int cprintf(char* ansicode, char* string);
 

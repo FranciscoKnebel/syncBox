@@ -264,3 +264,22 @@ int readToFile(FILE* pFile, int file_size, int sockid) {
 
   return bytes_written;
 }
+
+void write_to_socket(int socket, char* buffer){
+  int a_enviar = BUFFER_SIZE;
+  int enviado = 0;
+  int pos_buffer = 0;
+	while((a_enviar - enviado) != 0){ // enquanto está enviando
+	     enviado = enviado + write(socket, buffer + pos_buffer, a_enviar - enviado);
+       pos_buffer = pos_buffer + enviado;
+	}
+}
+void read_from_socket(int socket, char* buffer){
+  int a_ler = BUFFER_SIZE;
+  int lido = 0;
+  int pos_buffer = 0;
+	while((a_ler - lido) != 0){
+	     lido = lido + read(socket, buffer + pos_buffer, a_ler - lido);
+       pos_buffer = pos_buffer + lido;
+	}
+}

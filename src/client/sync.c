@@ -7,37 +7,23 @@ void synchronize_local(int sockid) { // executa primeiro
   char last_modified[MAXNAME];
   int number_files_server = 0;
 
-  int status;
-
   DEBUG_PRINT("Iniciando sincronização local.\n");
 
   strcpy(buffer, S_SYNC);
-	status = write(sockid, buffer, BUFFER_SIZE); // envia comando de sincronizar
-  if (status < 0) {
-    DEBUG_PRINT("ERROR writing to socket\n");
-  }
+	write_to_socket(sockid, buffer); // envia comando "sync"
 
-	status = read(sockid, buffer, BUFFER_SIZE); // recebe número de arquivos no server
-  if (status < 0) {
-    DEBUG_PRINT("ERROR reading from socket\n");
-  }
+	read_from_socket(sockid, buffer); // recebe numero de arquivos no server
 
 	number_files_server = atoi(buffer);
 	DEBUG_PRINT("'%s%d%s' arquivos no servidor\n", COLOR_GREEN, number_files_server, COLOR_RESET);
 
 	char last_modified_2[MAXNAME];
 	for(int i = 0; i < number_files_server; i++) {
-		status = read(sockid, buffer, BUFFER_SIZE); // recebe nome do arquivo do servidor
-    if (status < 0) {
-      DEBUG_PRINT("ERROR reading from socket\n");
-    }
+		read_from_socket(sockid, buffer); // nome do arquivo no server
 		strcpy(file_name, buffer);
     DEBUG_PRINT("%d: Nome recebido: %s\n", i, file_name);
 
-		status = read(sockid, buffer, BUFFER_SIZE); // recebe data de ultima modificacao do arquivo
-    if (status < 0) {
-      DEBUG_PRINT("ERROR reading from socket\n");
-    }
+		read_from_socket(sockid, buffer); // timestamp
 		strcpy(last_modified, buffer);
     DEBUG_PRINT("%d: Last modified recebido: %s\n", i, last_modified);
 
@@ -59,10 +45,7 @@ void synchronize_local(int sockid) { // executa primeiro
       } else {
         DEBUG_PRINT("%d: Download desnecessário do arquivo %s.\n", i, file_name);
   			strcpy(buffer, S_OK);
-  			status = write(sockid, buffer, BUFFER_SIZE);
-        if (status < 0) {
-          DEBUG_PRINT("ERROR writing to socket\n");
-        }
+  			write_to_socket(sockid, buffer);
   		}
     }
 	}
@@ -76,35 +59,21 @@ void synchronize_server(int sockid) {
   char buffer[BUFFER_SIZE];
   int number_files_client = 0;
 
-  int status;
-
   DEBUG_PRINT("Iniciando sincronização do servidor.\n");
 
   number_files_client = get_dir_file_info(user.folder, localFiles);
 	sprintf(buffer, "%d", number_files_client);
-	status = write(sockid, buffer, BUFFER_SIZE); // envia número de arquivos no cliente para o servidor
-  if (status < 0) {
-    DEBUG_PRINT("ERROR writing to socket\n");
-  }
+	write_to_socket(sockid, buffer); // envia numero de arquivos do cliente pro server
 
 	for(int i = 0; i < number_files_client; i++) {
 		strcpy(buffer, localFiles[i].name);
     DEBUG_PRINT("%d: Nome enviado: %s\n", i, localFiles[i].name);
-		status = write(sockid, buffer, BUFFER_SIZE); // envia nome do arquivo para o servidor
-    if (status < 0) {
-      DEBUG_PRINT("%d: ERROR writing to socket\n", i);
-    }
+		write_to_socket(sockid, buffer);
 		strcpy(buffer, localFiles[i].last_modified);
     DEBUG_PRINT("%d: Last modified enviado: %s\n", i, localFiles[i].last_modified);
-		status = write(sockid, buffer, BUFFER_SIZE); // envia last modified para o servidor
-    if (status < 0) {
-      DEBUG_PRINT("%d: ERROR writing to socket\n", i);
-    }
+		write_to_socket(sockid, buffer);
 
-		status = read(sockid, buffer, BUFFER_SIZE); // le resposta do servidor
-    if (status < 0) {
-      DEBUG_PRINT("%d: ERROR reading from socket\n", i);
-    }
+		read_from_socket(sockid, buffer); // resposta do server
 
     DEBUG_PRINT("%d: Recebido: %s\n", i, buffer);
 		if(strcmp(buffer, S_GET) == 0) {

@@ -4,18 +4,11 @@ void upload(int socket, Client* client){
   char buffer[BUFFER_SIZE]; // 1 KB buffer
   char path[MAXNAME * 3 + 1];
   char client_folder[MAXNAME*3];
-  int status = 0;
 
   strcpy(buffer, S_NAME);
-  status = write(socket, buffer, BUFFER_SIZE);
-  if (status < 0) {
-  	DEBUG_PRINT("ERROR writing to socket\n");
-  }
+  write_to_socket(socket, buffer);
 
-  status = read(socket, buffer, BUFFER_SIZE); // recebe nome do arquivo
-  if (status < 0) {
-  	DEBUG_PRINT("ERROR reading from socket\n");
-  }
+  read_from_socket(socket, buffer); // recebe nome do arquivo
   DEBUG_PRINT("Nome recebido: %s\n", buffer);
 
   char filename[MAXNAME];
@@ -25,14 +18,8 @@ void upload(int socket, Client* client){
   sprintf(path, "%s/%s", client_folder, filename);
 
   strcpy(buffer, S_MODTIME);
-  status = write(socket, buffer, BUFFER_SIZE); // envia palavra "timestamp"
-  if (status < 0) {
-    DEBUG_PRINT("ERROR writing to socket\n");
-  }
-  status = read(socket, buffer, BUFFER_SIZE); // le o timestamp
-  if (status < 0) {
-    DEBUG_PRINT("ERROR reading from socket\n");
-  }
+  write_to_socket(socket, buffer); // envia "timestamp"
+  read_from_socket(socket, buffer); // le o timestamp
   time_t last_modified = getTime(buffer);
   DEBUG_PRINT("MT do arquivo: %s.\n", buffer);
 
@@ -62,18 +49,11 @@ void upload(int socket, Client* client){
 void download(int socket, Client* client){
   char buffer[BUFFER_SIZE]; // 1 KB buffer
   char filename[3*MAXNAME+1];
-  int status = 0;
 
   strcpy(buffer, S_NAME);
-  status = write(socket, buffer, BUFFER_SIZE);
-  if (status < 0) {
-  	DEBUG_PRINT("ERROR writing to socket\n");
-  }
+  write_to_socket(socket, buffer);
 
-  status = read(socket, buffer, BUFFER_SIZE);
-  if (status < 0) {
-  	DEBUG_PRINT("ERROR reading from socket\n");
-  }
+  read_from_socket(socket, buffer);
 
   sprintf(filename, "%s/%s/%s", serverInfo.folder, client->userid, buffer);
 
@@ -85,23 +65,16 @@ void download(int socket, Client* client){
 
 void list_server(int socket, Client* client){
   char buffer[BUFFER_SIZE]; // 1 KB buffer
-  int status = 0;
 
   sprintf(buffer, "%d", client->n_files);
   DEBUG_PRINT("number files: %d\n", atoi(buffer));
-  status = write(socket, buffer, BUFFER_SIZE);
-  if (status < 0) {
-	   DEBUG_PRINT("ERROR writing to socket\n");
-  }
+  write_to_socket(socket, buffer);
 
   for(int i = 0; i < client->n_files; i++) {
     sprintf(buffer, "%s%s%s \t- MT: %s%s%s",
     COLOR_GREEN, client->file_info[i].name, COLOR_RESET,
     COLOR_YELLOW, client->file_info[i].last_modified, COLOR_RESET);
-    status = write(socket, buffer, BUFFER_SIZE);
-    if (status < 0) {
-    	DEBUG_PRINT("ERROR writing to socket\n");
-    }
+    write_to_socket(socket, buffer);
   }
 }
 
@@ -110,18 +83,11 @@ void delete(int socket, Client* client){
   char filename[MAXNAME];
   char path[3*MAXNAME+1];
   char client_folder[MAXNAME*3];
-  int status = 0;
 
   strcpy(buffer, S_NAME);
-  status = write(socket, buffer, BUFFER_SIZE); // envia "name"
-  if (status < 0) {
-  	DEBUG_PRINT("ERROR writing to socket\n");
-  }
+  write_to_socket(socket, buffer); // envia "name"
 
-  status = read(socket, buffer, BUFFER_SIZE); // le nome do arquivo
-  if (status < 0) {
-  	DEBUG_PRINT("ERROR reading from socket\n");
-  }
+  read_from_socket(socket, buffer);
   strcpy(filename, buffer);
 
   sprintf(client_folder, "%s/%s", serverInfo.folder, client->userid);
@@ -143,10 +109,7 @@ void delete(int socket, Client* client){
     // ao invés de refazer o cálculo para todo diretório.
 
     strcpy(buffer, S_RPL_DELETE);
-    status = write(socket, buffer, BUFFER_SIZE); // envia "deletado"
-    if (status < 0) {
-      DEBUG_PRINT("ERROR writing to socket\n");
-    }
+    write_to_socket(socket, buffer); // envia "deletado"
   }
 
   pthread_mutex_unlock(&client->mutex_files[index]);

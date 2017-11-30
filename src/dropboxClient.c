@@ -32,19 +32,11 @@ int connect_server (char *host, int port) {
 	strcpy(buffer, user.id);
 
 	// write to socket
-	status = write(sockid, buffer, BUFFER_SIZE);
-	if (status < 0) {
-		printf("ERROR writing to socket\n");
-		return 0;
- 	}
+	write_to_socket(sockid, buffer);
 
 	// read server response
 	bzero(buffer, BUFFER_SIZE);
-	status = read(sockid, buffer, BUFFER_SIZE);
-	if (status < 0) {
-		printf("ERROR reading from socket\n");
-		return 1;
-	}
+	read_from_socket(sockid, buffer);
 
 	if(strcmp(buffer, S_EXCESS_DEVICES) == 0){
 		printf("Muitas conexões simultâneas do mesmo usuário.\n");
@@ -65,10 +57,7 @@ void close_connection() {
 	bzero(buffer, BUFFER_SIZE);
 
 	strcpy(buffer, S_REQ_DC);
-	status = write(sockid, buffer, BUFFER_SIZE);
-	if (status < 0) {
-		DEBUG_PRINT("ERROR writing to socket\n");
-	}
+	write_to_socket(sockid, buffer);
 
 	status = read(sockid, buffer, BUFFER_SIZE);
 	if (status < 0) {
@@ -112,38 +101,23 @@ void send_file(char *file, int response) {
 	DEBUG_PRINT("Requisita upload\n");
 	/* Request de upload */
 	strcpy(buffer, S_UPLOAD);
-	status = write(sockid, buffer, BUFFER_SIZE); // requisita upload
-	if (status < 0) {
-		DEBUG_PRINT("ERROR writing to socket\n");
-	}
+	write_to_socket(sockid, buffer); // requisita upload
 
-	status = read(sockid, buffer, BUFFER_SIZE); // recebe resposta "name"
-	if (status < 0) {
-		DEBUG_PRINT("ERROR reading from socket\n");
-	}
+	read_from_socket(sockid, buffer); // recebe resposta "name"
 
 	if(strcmp(buffer, S_NAME) == 0) {
 		getLastStringElement(buffer, file, "/"); // envia o nome do arquivo para o servidor
 		DEBUG_PRINT("Nome enviado: %s\n", buffer);
-		status = write(sockid, buffer, BUFFER_SIZE);
-		if (status < 0) {
-			DEBUG_PRINT("ERROR writing to socket\n");
-		}
+		write_to_socket(sockid, buffer);
 	}
 
-	status = read(sockid, buffer, BUFFER_SIZE); // le palavra "timestamp"
-	if (status < 0) {
-		DEBUG_PRINT("ERROR reading from socket\n");
-	}
+	read_from_socket(sockid, buffer); // le palavra "timestamp"
 	DEBUG_PRINT("recebido: %s\n", buffer);
 
 	if(strcmp(buffer, S_MODTIME) == 0) { // se palavra for igual a "timestamp"
 		getFileModifiedTime(file, buffer);
 		DEBUG_PRINT("MT enviado: %s\n", buffer);
-		status = write(sockid, buffer, BUFFER_SIZE); // envia o timestamp
-		if (status < 0) {
-			DEBUG_PRINT("ERROR writing to socket\n");
-		}
+		write_to_socket(sockid, buffer); // envia timestamp
 	}
 
 	FILE* pFile;
@@ -152,10 +126,7 @@ void send_file(char *file, int response) {
 		file_size = getFilesize(pFile);
 
 		sprintf(buffer, "%d", file_size); // envia tamanho do arquivo para o servidor
-		status = write(sockid, buffer, BUFFER_SIZE);
-		if (status < 0) {
-			DEBUG_PRINT("ERROR writing to socket\n");
-		}
+		write_to_socket(sockid, buffer);
 
 		if(file_size == 0) {
 			fclose(pFile);
@@ -172,11 +143,7 @@ void send_file(char *file, int response) {
 	      }
 
 				// enviar buffer para salvar no servidor
-				status = write(sockid, buffer, BUFFER_SIZE);
-				//DEBUG_PRINT("enviou buffer - Total: %d / Enviados: %d / Sobrando: %d\n", file_size, bytes_sent, (file_size - bytes_sent));
-				if (status < 0) {
-					DEBUG_PRINT("ERROR writing to socket\n");
-				}
+				write_to_socket(sockid, buffer);
 			}
 			DEBUG_PRINT("Terminou de enviar arquivo.\n");
 			fclose(pFile);
@@ -188,10 +155,7 @@ void send_file(char *file, int response) {
 	} else {
 		printf("Erro abrindo arquivo %s.\n", file);
 		strcpy(buffer, S_ERRO_ARQUIVO);
-		status = write(sockid, buffer, BUFFER_SIZE); // avisa usuário de erro
-		if (status < 0) {
-			DEBUG_PRINT("ERROR writing to socket\n");
-		}
+		write_to_socket(sockid, buffer);
 	}
 
 	bzero(buffer, BUFFER_SIZE);
@@ -203,25 +167,16 @@ void get_file(char *file, char* fileFolder) {
 
  	/* Request de download */
 	strcpy(buffer, S_DOWNLOAD);
-	status = write(sockid, buffer, BUFFER_SIZE); // envia "download"
-	if (status < 0) {
-		DEBUG_PRINT("ERROR writing to socket\n");
-	}
+	write_to_socket(sockid, buffer); // envia "download"
 
-	status = read(sockid, buffer, BUFFER_SIZE); // recebe resposta "name"
-	if (status < 0) {
-		DEBUG_PRINT("ERROR reading from socket\n");
-	}
+	read_from_socket(sockid, buffer); // recebe resposta "name"
 	DEBUG_PRINT("Resposta recebida: %s \n", buffer);
 
 	if(strcmp(buffer, S_NAME) == 0) { // envia o nome do arquivo para o servidor
 		DEBUG_PRINT("enviando nome do arquivo para servidor\t\n");
 		getLastStringElement(buffer, file, "/");
 
-		status = write(sockid, buffer, BUFFER_SIZE);
-		if (status < 0) {
-			DEBUG_PRINT("ERROR writing to socket\n");
-		}
+		write_to_socket(sockid, buffer);
 	}
 	DEBUG_PRINT("nome: %s\n", buffer);
 
@@ -229,10 +184,7 @@ void get_file(char *file, char* fileFolder) {
 	sprintf(path, "%s/%s", (fileFolder == NULL) ? user.folder : fileFolder, file);
 	DEBUG_PRINT("path: %s\n", path);
 
-	status = read(sockid, buffer, BUFFER_SIZE); // recebe tamanho do arquivo ou mensagem de erro
-	if (status < 0) {
-		DEBUG_PRINT("ERROR reading from socket\n");
-	}
+	read_from_socket(sockid, buffer); // recebe tamanho do arquivo ou mensagem de erro
 
 	if(strcmp(buffer, S_ERRO_ARQUIVO) != 0) {
 		FILE* pFile;
@@ -242,19 +194,13 @@ void get_file(char *file, char* fileFolder) {
 			file_size = atoi(buffer);
 			DEBUG_PRINT("tamanho: %d\n", file_size);
 
-			status = read(sockid, buffer, BUFFER_SIZE); // recebe Modified Time do arquivo
-			if (status < 0) {
-				DEBUG_PRINT("ERROR reading from socket\n");
-			}
+			read_from_socket(sockid, buffer); // recebe modified time do arquivo
 
 			time_t modified_time = getTime(buffer);
 			DEBUG_PRINT("MT: %s\n", buffer);
 
 			if(file_size == 0) { // se tamanho for 0
-				status = read(sockid, buffer, BUFFER_SIZE); // recebe arquivo no buffer
-				if (status < 0) {
-					DEBUG_PRINT("ERROR reading from socket\n");
-				}
+				read_from_socket(sockid, buffer); // recebe arquivo no buffer
 			}
 
 			bytes_written = readToFile(pFile, file_size, sockid);
@@ -283,25 +229,17 @@ void delete_file(char *file) {
   /* Request de delete */
   char filename[MAXNAME];
   strcpy(buffer, S_REQ_DELETE);
-  status = write(sockid, buffer, BUFFER_SIZE);
-	if (status < 0) {
-  	DEBUG_PRINT("ERROR writing to socket\n");
-  }
-  status = read(sockid, buffer, BUFFER_SIZE); //recebe "name"
-	if (status < 0) {
-  	DEBUG_PRINT("ERROR reading from socket\n");
-  }
+  write_to_socket(sockid, buffer);
+  read_from_socket(sockid, buffer); // recebe name
 
   if(strcmp(buffer, S_NAME) == 0) {
 		getLastStringElement(buffer, file, "/"); // envia o nome do arquivo para o servidor
 		sprintf(filename, "%s", buffer);
-  	status = write(sockid, buffer, BUFFER_SIZE); // envia nome do arquivo
-		if (status < 0) {
-	  	DEBUG_PRINT("ERROR writing to socket\n");
-	  }
+  	write_to_socket(sockid, buffer); // envia nome do arquivo
   }
 
-  status = read(sockid, buffer, BUFFER_SIZE);
+  read_from_socket(sockid, buffer);
+
   if(strcmp(buffer, S_RPL_DELETE) == 0){
 		// recebe confirmação de que arquivo foi removido
     DEBUG_PRINT("Arquivo %s deletado!\n", filename);
@@ -315,10 +253,7 @@ void list_server() {
 
 	/* Request List Server */
 	strcpy(buffer, S_LS);
-	status = write(sockid, buffer, BUFFER_SIZE); // requisita list server
-	if (status < 0) {
-		DEBUG_PRINT("ERROR writing to socket\n");
-	}
+	write_to_socket(sockid, buffer); // requisita list server
 
 	status = read(sockid, buffer, BUFFER_SIZE); // numero de arquivos no servidor
 	if (status < 0) {
@@ -328,10 +263,7 @@ void list_server() {
 	number_files = atoi(buffer);
 	printf("Number of files: %d\n", number_files);
 	for(int i = 0; i < number_files; i++) {
-		status = read(sockid, buffer, BUFFER_SIZE);
-		if (status < 0) {
-			DEBUG_PRINT("ERROR reading from socket\n");
-		}
+		read_from_socket(sockid, buffer);
 		printf("%s\n", buffer);
 	}
 	printf("Number of files: %d\n", number_files);

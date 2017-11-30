@@ -19,7 +19,6 @@ void sync_server(int sockid_sync, Client* client_sync) {
 
 void receive_file(char *file, int sockid_upload) {
   int bytes_written = 0;
-  int status = 0;
   int file_size = 0;
 
   DEBUG_PRINT("recebendo %s\n", file);
@@ -27,10 +26,7 @@ void receive_file(char *file, int sockid_upload) {
   FILE* pFile;
   char buffer[BUFFER_SIZE]; // 1 KB buffer
 
-  status = read(sockid_upload, buffer, BUFFER_SIZE); //recebe tamanho do arquivo ou "erro no arquivo"
-  if (status < 0) {
-    printf("ERROR reading from socket\n");
-  }
+  read_from_socket(sockid_upload, buffer); // recebe tamanho do arquivo ou "erro no arquivo"
 
   if(strcmp(buffer, S_ERRO_ARQUIVO) != 0){
     pFile = fopen(file, "wb");
@@ -58,7 +54,6 @@ void receive_file(char *file, int sockid_upload) {
 void send_file(char *file, int sockid_download) {
   int file_size = 0;
   int bytes_read = 0;
-  int status = 0;
 
   FILE* pFile;
   char buffer[BUFFER_SIZE]; // 1 KB buffer
@@ -68,26 +63,17 @@ void send_file(char *file, int sockid_download) {
     file_size = getFilesize(pFile);
     DEBUG_PRINT("file size: %d\n", file_size);
     sprintf(buffer, "%d", file_size);
-    status = write(sockid_download, buffer, BUFFER_SIZE);  // envia tamanho do arquivo para o cliente
-    if (status < 0) {
-      DEBUG_PRINT("ERROR writing to socket\n");
-    }
+    write_to_socket(sockid_download, buffer); // envia tamanho do arquivo para o cliente
 
     getFileModifiedTime(file, buffer);
-    status = write(sockid_download, buffer, BUFFER_SIZE); // envia modified time
-    if (status < 0) {
-      DEBUG_PRINT("ERROR writing to socket\n");
-    }
+    write_to_socket(sockid_download, buffer); // modified time
 
     while(!feof(pFile)) {
       fread(buffer, sizeof(char), BUFFER_SIZE, pFile);
       bytes_read += sizeof(char) * BUFFER_SIZE;
 
       // enviar buffer para salvar no cliente
-      status = write(sockid_download, buffer, BUFFER_SIZE);
-      if (status < 0) {
-        DEBUG_PRINT("ERROR writing to socket\n");
-	    }
+      write_to_socket(sockid_download, buffer);
     }
 
     fclose(pFile);
@@ -95,10 +81,7 @@ void send_file(char *file, int sockid_download) {
   } else {
     DEBUG_PRINT("Erro abrindo arquivo %s.\n", file);
     strcpy(buffer, S_ERRO_ARQUIVO);
-    status = write(sockid_download, buffer, BUFFER_SIZE);
-    if (status < 0) {
-      DEBUG_PRINT("ERROR writing to socket\n");
-    }
+    write_to_socket(sockid_download, buffer);
   }
 }
 
@@ -122,18 +105,13 @@ void* clientThread(void* connection_struct) {
   int socket = connection->socket_id;
   char* client_ip = connection->ip;
   char client_id[MAXNAME];
-  int status;
   int device = 0;
   Client* client;
 
   bzero(buffer, BUFFER_SIZE);
 
   // read
-  status = read(socket, buffer, BUFFER_SIZE);
-  if (status < 0) {
-    DEBUG_PRINT("ERROR reading from socket\n");
-    exit(1);
-  }
+  read_from_socket(socket, buffer);
   // do stuff...
   strncpy(client_id, buffer, MAXNAME);
   client_id[MAXNAME - 1] = '\0';
@@ -173,28 +151,19 @@ void* clientThread(void* connection_struct) {
     printf("Conexão iniciada do usuário '%s%s%s' através do IP '%s%s%s'.\n",
     COLOR_GREEN, client_id, COLOR_RESET, COLOR_GREEN, client_ip, COLOR_RESET);
 
-    status = write(socket, buffer, BUFFER_SIZE);
-    if (status < 0) {
-      DEBUG_PRINT("ERROR writing to socket\n");
-      exit(1);
-    }
+    write_to_socket(socket, buffer);
+
     sync_server(socket, client);
 
     int disconnected = 0;
     bzero(buffer, BUFFER_SIZE);
     do {
-      status = read(socket, buffer, BUFFER_SIZE);
-      if (status < 0) {
-        DEBUG_PRINT("ERROR reading from socket");
-      }
+      read_from_socket(socket, buffer);
       DEBUG_PRINT("Comando do usuário: %s\n", buffer);
 
       if(strcmp(buffer, S_REQ_DC) == 0) {
         strcpy(buffer, S_RPL_DC);
-        status = write(socket, buffer, BUFFER_SIZE);
-        if (status < 0) {
-          printf("ERROR writing to socket\n");
-        }
+        write_to_socket(socket, buffer);
 
         sem_post(&semaphore);
 
@@ -218,11 +187,7 @@ void* clientThread(void* connection_struct) {
     COLOR_GREEN, client_ip, COLOR_RESET);
 
     strcpy(buffer, S_EXCESS_DEVICES);
-    status = write(socket, buffer, BUFFER_SIZE);
-    if (status < 0) {
-      DEBUG_PRINT("ERROR writing to socket\n");
-      exit(1);
-    }
+    write_to_socket(socket, buffer);
   }
   return 0;
 }
