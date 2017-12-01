@@ -58,7 +58,7 @@ void close_connection() {
 	strcpy(buffer, S_REQ_DC);
 	write_to_socket(sockid, buffer);
 
-	status = read(sockid, buffer, BUFFER_SIZE);
+	status = read_from_socket(sockid, buffer);
 	if (status < 0) {
 		DEBUG_PRINT("ERROR reading from socket\n");
 	}
@@ -202,7 +202,7 @@ void get_file(char *file, char* fileFolder) {
 				read_from_socket(sockid, buffer); // recebe arquivo no buffer
 			}
 
-			bytes_written = readToFile(pFile, file_size, sockid);
+			bytes_written = read_to_file(pFile, file_size, sockid);
 			if(bytes_written == file_size) {
 				DEBUG_PRINT("Terminou de escrever.\n");
 			} else {
@@ -254,7 +254,7 @@ void list_server() {
 	strcpy(buffer, S_LS);
 	write_to_socket(sockid, buffer); // requisita list server
 
-	status = read(sockid, buffer, BUFFER_SIZE); // numero de arquivos no servidor
+	status = read_from_socket(sockid, buffer); // numero de arquivos no servidor
 	if (status < 0) {
 		DEBUG_PRINT("ERROR reading from socket\n");
 	}

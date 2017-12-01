@@ -65,7 +65,7 @@ int print_dir_content(char * path) {
 
   printf("Number of files: %d\n", counter);
   for (int i = 0; i < counter; i++) {
-    printf("%s%s%s/%s\n", COLOR_YELLOW, files[i].path, COLOR_RESET, files[i].name);
+    printf("%s%s%s\n", COLOR_YELLOW, files[i].name, COLOR_RESET);
   }
   printf("Number of files: %d\n", counter);
 

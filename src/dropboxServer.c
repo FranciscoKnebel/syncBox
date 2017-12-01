@@ -32,7 +32,7 @@ void receive_file(char *file, int sockid_upload) {
     if(pFile) {
       file_size = atoi(buffer);
 
-      bytes_written = readToFile(pFile, file_size, sockid_upload);
+      bytes_written = read_to_file(pFile, file_size, sockid_upload);
       if(bytes_written == file_size) {
 				DEBUG_PRINT("Terminou de escrever.\n");
 			} else {

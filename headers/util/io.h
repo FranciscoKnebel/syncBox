@@ -3,6 +3,6 @@
   #include "dropboxUtil.h"
 #endif
 
-int readToFile(FILE* pFile, int file_size, int sockid);
-void write_to_socket(int socket, char* buffer);
-void read_from_socket(int socket, char* buffer);
+int read_to_file(FILE* pFile, int file_size, int sockid);
+int write_to_socket(int socket, char* buffer);
+int read_from_socket(int socket, char* buffer);

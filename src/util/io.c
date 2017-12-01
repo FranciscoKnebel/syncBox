@@ -1,13 +1,13 @@
 #include "dropboxUtil.h"
 
-int readToFile(FILE* pFile, int file_size, int sockid) {
+int read_to_file(FILE* pFile, int file_size, int sockid) {
   int bytes_written = 0;
   int bytes_read = 0;
 
   char buffer[BUFFER_SIZE];
 
   while(bytes_written < file_size) {
-    bytes_read = read(sockid, buffer, BUFFER_SIZE); // recebe arquivo no buffer
+    bytes_read = read_from_socket(sockid, buffer); // recebe arquivo no buffer
     if (bytes_read < 0) {
       DEBUG_PRINT("ERROR reading from socket\n");
     }
@@ -25,7 +25,7 @@ int readToFile(FILE* pFile, int file_size, int sockid) {
   return bytes_written;
 }
 
-void write_to_socket(int socket, char* buffer) {
+int write_to_socket(int socket, char* buffer) {
   int a_enviar = BUFFER_SIZE;
   int enviado = 0;
   int pos_buffer = 0;
@@ -34,9 +34,11 @@ void write_to_socket(int socket, char* buffer) {
     enviado += write(socket, buffer + pos_buffer, a_enviar - enviado);
     pos_buffer += enviado;
   }
+
+  return enviado;
 }
 
-void read_from_socket(int socket, char* buffer) {
+int read_from_socket(int socket, char* buffer) {
   int a_ler = BUFFER_SIZE;
   int lido = 0;
   int pos_buffer = 0;
@@ -46,4 +48,6 @@ void read_from_socket(int socket, char* buffer) {
     lido += read(socket, buffer + pos_buffer, a_ler - lido);
     pos_buffer += lido;
   }
+
+  return lido;
 }

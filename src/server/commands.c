@@ -71,7 +71,7 @@ void list_server(int socket, Client* client){
   write_to_socket(socket, buffer);
 
   for(int i = 0; i < client->n_files; i++) {
-    sprintf(buffer, "%s%s%s \t- MT: %s%s%s",
+    sprintf(buffer, "%s%s%s \n\t- MT: %s%s%s",
     COLOR_GREEN, client->file_info[i].name, COLOR_RESET,
     COLOR_YELLOW, client->file_info[i].last_modified, COLOR_RESET);
     write_to_socket(socket, buffer);
