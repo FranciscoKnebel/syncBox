@@ -8,21 +8,21 @@
 #define S_EXCESS_DEVICES "excess devices"
 #define S_FULL_CLIENTS "muitos clientes conectados"
 
-#define S_REQ_DC "disconnect"
-#define S_RPL_DC "disconnected"
-
 #define S_OK "OK"
 
-/* Commands */
+/* Requests */
 #define S_NAME "name"
+#define S_GET "get"
+#define S_MODTIME "file modtime"
 #define S_ERRO_ARQUIVO "erro ao abrir"
+
+/* Commands */
 #define S_DOWNLOAD "download"
 #define S_UPLOAD "upload"
 #define S_LS "list server"
-#define S_REQ_DELETE "delete"
 #define S_RPL_DELETE "deleted"
+#define S_REQ_DELETE "delete"
 #define S_SYNC "sync"
-#define S_GET "get"
 #define S_GETSYNCDIR "sync dir"
-
-#define S_MODTIME "file modtime"
+#define S_REQ_DC "disconnect"
+#define S_RPL_DC "disconnected"

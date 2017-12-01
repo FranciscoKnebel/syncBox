@@ -13,15 +13,16 @@ void synchronize_client(int sockid_sync, Client* client_sync) { // executa prime
   }
 
   sprintf(buffer, "%d", client_sync->n_files);
-  DEBUG_PRINT("Client number of files: %d.\n", client_sync->n_files);
+  DEBUG_PRINT("Client number of files: %s.\n", buffer);
   write_to_socket(sockid_sync, buffer); // numero de arquivos
 
   for(int i = 0; i < client_sync->n_files; i++) {
     strcpy(buffer, client_sync->file_info[i].name);
-    DEBUG_PRINT("Nome do arquivo a enviar: %s\n", client_sync->file_info[i].name);
+    DEBUG_PRINT("Nome do arquivo a enviar: %s\n", buffer);
     write_to_socket(sockid_sync, buffer);
+
     strcpy(buffer, client_sync->file_info[i].last_modified);
-    DEBUG_PRINT("enviando Last modified: %s\n", client_sync->file_info[i].last_modified);
+    DEBUG_PRINT("enviando Last modified: %s\n", buffer);
     write_to_socket(sockid_sync, buffer);
 
     read_from_socket(sockid_sync, buffer);
@@ -79,13 +80,12 @@ void synchronize_server(int sockid_sync, Client* client_sync) {
       strcpy(buffer, S_GET);
       write_to_socket(sockid_sync, buffer);
 
-      lednv1:
       read_from_socket(sockid_sync, buffer); // resposta do cliente
       DEBUG_PRINT("Resposta recebida: %s\n", buffer);
 
       if(strcmp(buffer, S_UPLOAD) == 0) {
         upload(sockid_sync, client_sync);
-      } else goto lednv1;
+      }
   	} else {
       DEBUG_PRINT("Upload desnecessário do arquivo %s.\n\n", file_name);
   		strcpy(buffer, S_OK);

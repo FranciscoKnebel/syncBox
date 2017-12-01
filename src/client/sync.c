@@ -21,6 +21,7 @@ void synchronize_local(int sockid) { // executa primeiro
 	for(int i = 0; i < number_files_server; i++) {
 		read_from_socket(sockid, buffer); // nome do arquivo no server
 		strcpy(file_name, buffer);
+    DEBUG_PRINT("\n");
     DEBUG_PRINT("%d: Nome recebido: %s\n", i, file_name);
 
 		read_from_socket(sockid, buffer); // timestamp
@@ -67,6 +68,7 @@ void synchronize_server(int sockid) {
 
 	for(int i = 0; i < number_files_client; i++) {
 		strcpy(buffer, localFiles[i].name);
+    DEBUG_PRINT("\n");
     DEBUG_PRINT("%d: Nome enviado: %s\n", i, localFiles[i].name);
 		write_to_socket(sockid, buffer);
 		strcpy(buffer, localFiles[i].last_modified);

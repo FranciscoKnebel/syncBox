@@ -28,7 +28,6 @@ int connect_server (char *host, int port) {
 	}
 
 	bzero(buffer, BUFFER_SIZE);
-
 	strcpy(buffer, user.id);
 
 	// write to socket
@@ -38,11 +37,11 @@ int connect_server (char *host, int port) {
 	bzero(buffer, BUFFER_SIZE);
 	read_from_socket(sockid, buffer);
 
-	if(strcmp(buffer, S_EXCESS_DEVICES) == 0){
+	if(strcmp(buffer, S_EXCESS_DEVICES) == 0) {
 		printf("Muitas conexões simultâneas do mesmo usuário.\n");
 	}
 
-	if(strcmp(buffer, S_CONNECTED) == 0){
+	if(strcmp(buffer, S_CONNECTED) == 0) {
 		return 1;
 	}
 

@@ -36,13 +36,13 @@ void upload(int socket, Client* client){
 
   // envia o arquivo para o possível cliente conectado no outro dispositivo
   if(client->devices[0] == socket){ // envia para o dispositivo 1
-    if(client->devices[1] != -1){
+    if(client->devices[1] != -1) {
       sync_device_upload(client->devices[1], filename);
     }
   } else if(client->devices[1] == socket){ // envia para o dispositivo 0
-      if(client->devices[0] != -1){
-        sync_device_upload(client->devices[0], filename);
-      }
+    if(client->devices[0] != -1) {
+      sync_device_upload(client->devices[0], filename);
+    }
   }
 }
 
@@ -151,4 +151,15 @@ void select_commands(int socket, char buffer[], Client* client){
   } else if(strcmp(buffer, S_GETSYNCDIR) == 0) {
     sync_dir(socket, client);
   }
+}
+
+int is_valid_command(char* command) {
+	return
+		strncmp(command, S_DOWNLOAD, strlen(S_DOWNLOAD)) == 0 ||
+		strncmp(command, S_UPLOAD, strlen(S_UPLOAD)) == 0 ||
+		strncmp(command, S_LS, strlen(S_LS)) == 0 ||
+    strncmp(command, S_REQ_DELETE, strlen(S_REQ_DELETE)) == 0 ||
+    strncmp(command, S_REQ_DC, strlen(S_REQ_DC)) == 0 ||
+		strncmp(command, S_SYNC, strlen(S_SYNC)) == 0 ||
+		strncmp(command, S_GETSYNCDIR, strlen(S_GETSYNCDIR)) == 0;
 }

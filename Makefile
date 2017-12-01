@@ -23,8 +23,10 @@ all: util client server
 util:	$(SRC_DIR)dropboxUtil.c
 	@echo "\nCompilando módulos utilitários..."
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)dropboxUtil.o -I$(HEADERS_DIR) $(SRC_DIR)dropboxUtil.c
+	$(CC) $(CFLAGS) -c -o $(BIN_DIR)util/files.o -I$(HEADERS_DIR) $(SRC_DIR)util/files.c
+	$(CC) $(CFLAGS) -c -o $(BIN_DIR)util/io.o -I$(HEADERS_DIR) $(SRC_DIR)util/io.c
 
-OBJ_FILES = $(BIN_DIR)dropboxUtil.o
+OBJ_FILES = $(BIN_DIR)dropboxUtil.o $(BIN_DIR)util/files.o $(BIN_DIR)util/io.o
 
 ## CLIENT COMMANDS
 client-aux: $(SRC_DIR)client/interface.c $(SRC_DIR)client/commands.c $(SRC_DIR)client/help.c $(SRC_DIR)client/sync.c $(SRC_DIR)client/watcher.c

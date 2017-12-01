@@ -25,7 +25,6 @@ void receive_file(char *file, int sockid_upload) {
 
   FILE* pFile;
   char buffer[BUFFER_SIZE]; // 1 KB buffer
-
   read_from_socket(sockid_upload, buffer); // recebe tamanho do arquivo ou "erro no arquivo"
 
   if(strcmp(buffer, S_ERRO_ARQUIVO) != 0){
@@ -156,10 +155,8 @@ void* clientThread(void* connection_struct) {
     sync_server(socket, client);
 
     int disconnected = 0;
-    bzero(buffer, BUFFER_SIZE);
     do {
       read_from_socket(socket, buffer);
-      DEBUG_PRINT("Comando do usuário: %s\n", buffer);
 
       if(strcmp(buffer, S_REQ_DC) == 0) {
         strcpy(buffer, S_RPL_DC);
@@ -168,8 +165,13 @@ void* clientThread(void* connection_struct) {
         sem_post(&semaphore);
 
         disconnected = 1;
-      } else {
+      } else if(is_valid_command(buffer)) {
+        DEBUG_PRINT("Comando do usuário: %s\n", buffer);
+
         select_commands(socket, buffer, client);
+      } else {
+        DEBUG_PRINT("Comando inserido é inválido.\n");
+        DEBUG_PRINT("Informado: \n%s\n", buffer);
       }
     } while(disconnected != 1);
 
