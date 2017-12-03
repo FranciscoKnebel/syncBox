@@ -2,6 +2,7 @@
 
 char buffer[BUFFER_SIZE];
 pthread_t sync_thread;
+pthread_t sync_server_thread;
 struct user_info user;
 int sockid;
 int status;
@@ -51,6 +52,7 @@ int connect_server (char *host, int port) {
 void close_connection() {
 	// Fechar a thread de sincronização
 	pthread_cancel(sync_thread);
+	pthread_cancel(sync_server_thread);
 
 	// Fechar conexão com o servidor
 	bzero(buffer, BUFFER_SIZE);
@@ -81,7 +83,7 @@ void sync_client() {
 	}
 
 	// sincroniza pasta local com o servidor
-	synchronize_local(sockid);
+	synchronize_local(sockid, TRUE);
 
 	// sincroniza servidor com pasta local
 	synchronize_server(sockid);
@@ -270,6 +272,22 @@ void list_server() {
 	bzero(buffer, BUFFER_SIZE);
 }
 
+void* sync_from_server(){
+	DEBUG_PRINT("Thread de sincronização com o servidor criada!\n");
+	while(1){
+		DEBUG_PRINT("Esperando 5 segundos na thread de sincronizacao\n");
+		sleep(5);
+		DEBUG_PRINT("Passou 5 segundos... tenta sincronizar!\n");
+		pthread_mutex_lock(&mutex_up_down_del_list);
+		pthread_mutex_lock(&mutex_watcher);
+		sprintf(buffer, "%s", S_SYNC);
+		write_to_socket(sockid, buffer);
+		synchronize_local(sockid, FALSE);
+		pthread_mutex_unlock(&mutex_watcher);
+		pthread_mutex_unlock(&mutex_up_down_del_list);
+	}
+}
+
 int main(int argc, char *argv[]) {
 	setlocale(LC_ALL, "pt_BR");
 
@@ -279,6 +297,9 @@ int main(int argc, char *argv[]) {
 
 		exit(0);
 	}
+
+	pthread_mutex_init (&mutex_up_down_del_list, NULL);
+	pthread_mutex_init (&mutex_watcher, NULL);
 
 	int porta;
 	char *endereco;
@@ -304,6 +325,9 @@ int main(int argc, char *argv[]) {
 		// sincroniza diretórios (cliente e servidor)
 		sync_client();
 
+		if(pthread_create(&sync_server_thread, NULL, sync_from_server, NULL) < 0){
+      printf("Error on create thread\n");
+    }
 		// cria a interface do cliente e espera por comandos
 		show_client_interface();
 	} else {

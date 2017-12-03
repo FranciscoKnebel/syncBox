@@ -34,16 +34,6 @@ void upload(int socket, Client* client){
   // ao invés de refazer o cálculo para todo diretório.
   pthread_mutex_unlock(&client->mutex_files[index]);
 
-  // envia o arquivo para o possível cliente conectado no outro dispositivo
-  if(client->devices[0] == socket){ // envia para o dispositivo 1
-    if(client->devices[1] != -1) {
-      sync_device_upload(client->devices[1], filename);
-    }
-  } else if(client->devices[1] == socket){ // envia para o dispositivo 0
-    if(client->devices[0] != -1) {
-      sync_device_upload(client->devices[0], filename);
-    }
-  }
 }
 
 void download(int socket, Client* client){
@@ -114,25 +104,8 @@ void delete(int socket, Client* client){
 
   pthread_mutex_unlock(&client->mutex_files[index]);
 
-  if(client->devices[0] == socket){ // envia para o dispositivo 1
-    if(client->devices[1] != -1){
-      sync_device_delete(client->devices[1], filename);
-    }
-  } else if(client->devices[1] == socket){ // envia para o dispositivo 0
-      if(client->devices[0] != -1){
-        sync_device_delete(client->devices[0], filename);
-      }
-  }
-
 }
 
-void sync_device_upload(int socket, char* filename){ //TODO
-
-}
-
-void sync_device_delete(int socket, char* filename){ // TODO
-
-}
 
 
 void sync_dir(int socket, Client* client) {
@@ -149,6 +122,8 @@ void select_commands(int socket, char buffer[], Client* client){
   } else if(strcmp(buffer, S_REQ_DELETE) == 0){
     delete(socket, client);
   } else if(strcmp(buffer, S_GETSYNCDIR) == 0) {
+    sync_dir(socket, client);
+  } else if(strcmp(buffer, S_SYNC) == 0){
     sync_dir(socket, client);
   }
 }

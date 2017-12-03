@@ -36,13 +36,17 @@ void *watcher_thread(void* ptr_path) {
           if (event->mask & (IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO)) {
             if (fileExists(path) && (event->name[0] != '.')) {
               DEBUG_PRINT("Request upload: %s\n", path);
+              pthread_mutex_lock(&mutex_watcher);
               send_file(path, FALSE);
+              pthread_mutex_unlock(&mutex_watcher);
               DEBUG_PRINT("Enviou!\n");
             }
           } else if (event->mask & (IN_DELETE | IN_DELETE_SELF | IN_MOVED_FROM)) {
             if (event->name[0] != '.') {
               DEBUG_PRINT("Request delete: %s\n", path);
+              pthread_mutex_lock(&mutex_watcher);
               delete_file(path);
+              pthread_mutex_unlock(&mutex_watcher);
               DEBUG_PRINT("Deletou!\n");
             }
           }

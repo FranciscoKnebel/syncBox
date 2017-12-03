@@ -1,10 +1,13 @@
 #include "dropboxClient.h"
 
 void command_upload(char* path) {
+  pthread_mutex_lock(&mutex_up_down_del_list);
   send_file(path, TRUE);
+  pthread_mutex_unlock(&mutex_up_down_del_list);
 }
 
 void command_download(char* path) {
+  pthread_mutex_lock(&mutex_up_down_del_list);
   char cwd[MAXNAME*2];
 
   if (getcwd(cwd, sizeof(cwd)) == NULL) {
@@ -12,10 +15,13 @@ void command_download(char* path) {
   }
 
   get_file(path, cwd);
+  pthread_mutex_unlock(&mutex_up_down_del_list);
 }
 
 void command_listserver() {
-  return list_server();
+  pthread_mutex_lock(&mutex_up_down_del_list);
+  list_server();
+  pthread_mutex_unlock(&mutex_up_down_del_list);
 }
 
 void command_listclient() {
@@ -40,7 +46,7 @@ void command_getsyncdir() { // DEPRECATED get_sync_dir
   printf("%sComando GET SYNC DIR depreciado na versão 0.0.2.%s\n", COLOR_RED, COLOR_RESET);
 
   // sincroniza pasta local com o servidor
-  synchronize_local(sockid);
+  synchronize_local(sockid, TRUE);
   printf("Sincronização finalizada.\n");
 
   // sincroniza servidor com pasta local

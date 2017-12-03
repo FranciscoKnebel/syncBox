@@ -16,6 +16,9 @@
 
 #define INTRO_MESSAGE "v0.0.2 - 18/12/2017\n"
 
+pthread_mutex_t mutex_up_down_del_list; // mutex globais
+pthread_mutex_t mutex_watcher;
+
 // RETURN CODES
 #define MAXNAMESIZE_REACHED -1
 
