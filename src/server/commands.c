@@ -103,28 +103,29 @@ void delete(int socket, Client* client){
   }
 
   pthread_mutex_unlock(&client->mutex_files[index]);
-
 }
-
-
 
 void sync_dir(int socket, Client* client) {
   synchronize_client(socket, client);
 }
 
+void sync_local(int socket, Client* client) {
+  synchronize_client(socket, client);
+}
+
 void select_commands(int socket, char buffer[], Client* client){
-  if(strcmp(buffer, S_UPLOAD) == 0){
+  if(strcmp(buffer, S_UPLOAD) == 0) {
     upload(socket, client);
-  } else if(strcmp(buffer, S_DOWNLOAD) == 0){
+  } else if(strcmp(buffer, S_DOWNLOAD) == 0) {
     download(socket, client);
-  } else if(strcmp(buffer, S_LS) == 0){
+  } else if(strcmp(buffer, S_LS) == 0) {
     list_server(socket, client);
-  } else if(strcmp(buffer, S_REQ_DELETE) == 0){
+  } else if(strcmp(buffer, S_REQ_DELETE) == 0) {
     delete(socket, client);
   } else if(strcmp(buffer, S_GETSYNCDIR) == 0) {
     sync_dir(socket, client);
-  } else if(strcmp(buffer, S_SYNC) == 0){
-    sync_dir(socket, client);
+  } else if(strcmp(buffer, S_SYNC_LOCAL) == 0) {
+    sync_local(socket, client);
   }
 }
 

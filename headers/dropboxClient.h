@@ -8,13 +8,12 @@
   #include "client/commands.h"
   #include "client/help.h"
   #include "client/sync.h"
-  #include "client/watcher.h"
 #endif
 
 #ifndef client_h
 #define client_h
 
-#define INTRO_MESSAGE "v0.0.2 - 18/12/2017\n"
+#define INTRO_MESSAGE "v0.0.3 - 20/12/2017\n"
 
 pthread_mutex_t mutex_up_down_del_list; // mutex globais
 pthread_mutex_t mutex_watcher;
@@ -26,7 +25,6 @@ pthread_mutex_t mutex_watcher;
 #define COMMAND_WITH_ARGUMENTS 0
 #define COMMAND_WITH_NO_ARGUMENTS 1
 #define NO_ARGUMENT_PROVIDED -2
-
 
 /* STRUCTURES */
 typedef struct user_info {

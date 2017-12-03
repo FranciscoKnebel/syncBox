@@ -27,7 +27,8 @@ void synchronize_client(int sockid_sync, Client* client_sync) { // executa prime
 
     read_from_socket(sockid_sync, buffer);
     DEBUG_PRINT("Recebido: %s\n", buffer);
-    if(strcmp(buffer, S_DOWNLOAD) == 0){ // se recebeu S_DOWNLOAD do buffer, faz o download
+
+    if(strcmp(buffer, S_DOWNLOAD) == 0) { // se recebeu S_DOWNLOAD do buffer, faz o download
       download(sockid_sync, client_sync);
     }
   }

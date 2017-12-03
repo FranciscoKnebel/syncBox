@@ -24,5 +24,6 @@
 #define S_REQ_DELETE "delete"
 #define S_SYNC "sync"
 #define S_GETSYNCDIR "sync dir"
+#define S_SYNC_LOCAL "sync local"
 #define S_REQ_DC "disconnect"
 #define S_RPL_DC "disconnected"

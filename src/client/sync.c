@@ -16,9 +16,7 @@ void synchronize_local(int sockid, int print) { // executa primeiro
     files_to_delete[i] = 0;
   }
 
-  if(print){
-    DEBUG_PRINT("Iniciando sincronização local.\n");
-  }
+  DEBUG_PRINT_COND(print, "Iniciando sincronização local.\n");
 
   strcpy(buffer, S_SYNC);
 	write_to_socket(sockid, buffer); // envia comando "sync"
@@ -26,19 +24,16 @@ void synchronize_local(int sockid, int print) { // executa primeiro
 	read_from_socket(sockid, buffer); // recebe numero de arquivos no server
 
 	number_files_server = atoi(buffer);
-  if(print){
-	   DEBUG_PRINT("'%s%d%s' arquivos no servidor\n", COLOR_GREEN, number_files_server, COLOR_RESET);
-  }
+  DEBUG_PRINT_COND(print, "'%s%d%s' arquivos no servidor\n", COLOR_GREEN, number_files_server, COLOR_RESET);
 
 	char last_modified_2[MAXNAME];
 	for(int i = 0; i < number_files_server; i++) {
 		read_from_socket(sockid, buffer); // nome do arquivo no server
 		strcpy(file_name, buffer);
-    if(print){
-      DEBUG_PRINT("\n");
-      DEBUG_PRINT("%d: Nome recebido: %s\n", i, file_name);
-    }
-    for(int i = 0; i < number_files_client; i++){
+    DEBUG_PRINT_COND(print, "\n");
+    DEBUG_PRINT_COND(print, "%d: Nome recebido: %s\n", i, file_name);
+
+    for(int i = 0; i < number_files_client; i++) {
       if(strcmp(file_name, localFiles[i].name) == 0){
         files_to_delete[i] = 1;
       }
@@ -46,36 +41,24 @@ void synchronize_local(int sockid, int print) { // executa primeiro
 
 		read_from_socket(sockid, buffer); // timestamp
 		strcpy(last_modified, buffer);
-    if(print){
-      DEBUG_PRINT("%d: Last modified recebido: %s\n", i, last_modified);
-    }
+    DEBUG_PRINT_COND(print, "%d: Last modified recebido: %s\n", i, last_modified);
+
 		sprintf(path, "%s/%s", user.folder, file_name);
-    if(print){
-      DEBUG_PRINT("%d: Path: %s\n", i, path);
-    }
+    DEBUG_PRINT_COND(print, "%d: Path: %s\n", i, path);
 
 		if(!fileExists(path)) {
-      if(print){
-        DEBUG_PRINT("%d: Arquivo %s não existe... baixando\n", i, file_name);
-      }
+      DEBUG_PRINT_COND(print, "%d: Arquivo %s não existe... baixando\n", i, file_name);
 	    get_file(file_name, NULL);
 		} else {
-      if(print){
-        DEBUG_PRINT("%d: Arquivo existe, verificando se necessita baixar...\n",  i);
-      }
+      DEBUG_PRINT_COND(print, "%d: Arquivo existe, verificando se necessita baixar...\n",  i);
       getFileModifiedTime(path, last_modified_2);
-      if(print){
-        DEBUG_PRINT("%d: Last modified local: %s\n", i, last_modified_2);
-      }
+      DEBUG_PRINT_COND(print, "%d: Last modified local: %s\n", i, last_modified_2);
+
       if (older_file(last_modified, last_modified_2) == 1) {
-        if(print){
-          DEBUG_PRINT("%d: Arquivo %s mais velho... baixando\n", i, file_name);
-        }
+        DEBUG_PRINT_COND(print, "%d: Arquivo %s mais velho... baixando\n", i, file_name);
         get_file(file_name, NULL);
       } else {
-        if(print){
-          DEBUG_PRINT("%d: Download desnecessário do arquivo %s.\n", i, file_name);
-        }
+        DEBUG_PRINT_COND(print, "%d: Download desnecessário do arquivo %s.\n", i, file_name);
   			strcpy(buffer, S_OK);
   			write_to_socket(sockid, buffer);
   		}
@@ -85,14 +68,12 @@ void synchronize_local(int sockid, int print) { // executa primeiro
   for(int i = 0; i < number_files_client; i++){
     if(files_to_delete[i] == 0){
       sprintf(path, "%s/%s", user.folder, localFiles[i].name);
-      if(remove(path) == 0){
-        DEBUG_PRINT("Arquivo %s deletado!\n", path);
+      if(remove(path) == 0) {
+        DEBUG_PRINT_COND(print, "Arquivo %s deletado!\n", path);
       }
     }
   }
-  if(print){
-    DEBUG_PRINT("Encerrando sincronização local.\n\n");
-  }
+  DEBUG_PRINT_COND(print, "Encerrando sincronização local.\n\n");
 }
 
 void synchronize_server(int sockid) {
@@ -129,4 +110,89 @@ void synchronize_server(int sockid) {
 	}
 
   DEBUG_PRINT("Encerrando sincronização do servidor.\n");
+}
+
+void *watcher_thread(void* ptr_path) {
+  char* watch_path = malloc(strlen((char*) ptr_path));
+  strcpy(watch_path, (char*) ptr_path);
+
+  int fd, wd;
+  int length, i = 0;
+  char buffer[WATCHER_EVENT_BUF_LEN];
+
+  fd = inotify_init();
+  if(fd < 0) {
+    perror("inotify_init");
+  }
+
+  wd = inotify_add_watch(fd, watch_path, IN_CLOSE_WRITE | IN_CREATE | IN_DELETE | IN_DELETE_SELF | IN_MOVED_FROM | IN_MOVED_TO);
+
+  char path[MAXNAME];
+  int thread_running = TRUE;
+  while(thread_running) {
+    length = read(fd, buffer, WATCHER_EVENT_BUF_LEN);
+
+    if (length < 0) {
+      thread_running = FALSE;
+    } else {
+      i = 0;
+      while (i < length) {
+        struct inotify_event* event = (struct inotify_event *) &buffer[i];
+
+        if (event->len) {
+          sprintf(path, "%s/%s", watch_path, event->name);
+
+          if (event->mask & (IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO)) {
+            if (fileExists(path) && (event->name[0] != '.')) {
+              DEBUG_PRINT("Request upload: %s\n", path);
+              pthread_mutex_lock(&mutex_watcher);
+              send_file(path, FALSE);
+              pthread_mutex_unlock(&mutex_watcher);
+              DEBUG_PRINT("Enviou!\n");
+            }
+          } else if (event->mask & (IN_DELETE | IN_DELETE_SELF | IN_MOVED_FROM)) {
+            if (event->name[0] != '.') {
+              DEBUG_PRINT("Request delete: %s\n", path);
+              pthread_mutex_lock(&mutex_watcher);
+              delete_file(path);
+              pthread_mutex_unlock(&mutex_watcher);
+              DEBUG_PRINT("Deletou!\n");
+            }
+          }
+        }
+
+        i += WATCHER_EVENT_SIZE + event->len;
+      }
+    }
+
+    usleep(1000);
+  }
+
+  inotify_rm_watch(fd, wd);
+  close(fd);
+
+  return 0;
+}
+
+void* sync_devices_thread() {
+  char buffer[BUFFER_SIZE];
+
+	DEBUG_PRINT("%sSYNC: Thread de sincronização com o servidor criada!%s\n", COLOR_CYAN, COLOR_RESET);
+
+	while(1) {
+		// DEBUG_PRINT("%sSYNC: Esperando na thread de sincronização%s\n", COLOR_CYAN, COLOR_RESET);
+		usleep(SYNC_SLEEP);
+		// DEBUG_PRINT("%sSYNC: Passou tempo definido, sincronizando!%s\n", COLOR_CYAN, COLOR_RESET);
+
+		pthread_mutex_lock(&mutex_up_down_del_list);
+		pthread_mutex_lock(&mutex_watcher);
+
+		bzero(buffer, BUFFER_SIZE);
+		strcpy(buffer, S_SYNC_LOCAL);
+		write_to_socket(sockid, buffer);
+		synchronize_local(sockid, FALSE);
+
+		pthread_mutex_unlock(&mutex_watcher);
+		pthread_mutex_unlock(&mutex_up_down_del_list);
+	}
 }

@@ -29,13 +29,12 @@ util:	$(SRC_DIR)dropboxUtil.c
 OBJ_FILES = $(BIN_DIR)dropboxUtil.o $(BIN_DIR)util/files.o $(BIN_DIR)util/io.o
 
 ## CLIENT COMMANDS
-client-aux: $(SRC_DIR)client/interface.c $(SRC_DIR)client/commands.c $(SRC_DIR)client/help.c $(SRC_DIR)client/sync.c $(SRC_DIR)client/watcher.c
+client-aux: $(SRC_DIR)client/interface.c $(SRC_DIR)client/commands.c $(SRC_DIR)client/help.c $(SRC_DIR)client/sync.c
 	@echo "\nCompilando módulos do cliente..."
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/interface.o -I$(HEADERS_DIR) $(SRC_DIR)client/interface.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/commands.o -I$(HEADERS_DIR) $(SRC_DIR)client/commands.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/help.o -I$(HEADERS_DIR) $(SRC_DIR)client/help.c
 	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/sync.o -I$(HEADERS_DIR) $(SRC_DIR)client/sync.c
-	$(CC) $(CFLAGS) -c -o $(BIN_DIR)client/watcher.o -I$(HEADERS_DIR) $(SRC_DIR)client/watcher.c
 
 CLIENT_FILES = $(BIN_DIR)client/*.o
 client:	$(SRC_DIR)dropboxClient.c util client-aux
@@ -74,11 +73,7 @@ test_dropboxUtil: util
 	@sleep 3
 	./$(TST_DST_DIR)dropboxUtil .
 
-test_clientwatcher: util client-aux
-	#$(CC) $(CFLAGS) -o $(TST_DST_DIR)watcher $(TST_SRC_DIR)watcher.c $(OBJ_FILES) $(BIN_DIR)client/watcher.o -pthread -I$(HEADERS_DIR)
-	#./$(TST_DST_DIR)watcher /home/francisco/sync_dir_1
-
-TST_FILES = $(TST_DST_DIR)dropboxUtil $(TST_DST_DIR)util $(TST_DST_DIR)watcher
+TST_FILES = $(TST_DST_DIR)dropboxUtil $(TST_DST_DIR)util
 
 clean:
 	rm -f $(DST_DIR)*.* $(CLI_DIR)dropboxClient $(SVR_DIR)dropboxServer

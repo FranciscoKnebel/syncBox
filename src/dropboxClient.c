@@ -23,8 +23,7 @@ int connect_server (char *host, int port) {
 	serverconn.sin_addr.s_addr = inet_addr(host);
 
 	status = connect(sockid, (struct sockaddr *) &serverconn, sizeof(serverconn));
-	if(status < 0){
-		printf("\nConnection Error\n");
+	if(status < 0) {
 		return 0;
 	}
 
@@ -51,6 +50,8 @@ int connect_server (char *host, int port) {
 
 void close_connection() {
 	// Fechar a thread de sincronização
+	pthread_mutex_unlock(&mutex_watcher);
+	pthread_mutex_unlock(&mutex_up_down_del_list);
 	pthread_cancel(sync_thread);
 	pthread_cancel(sync_server_thread);
 
@@ -69,7 +70,7 @@ void close_connection() {
 		DEBUG_PRINT("Desconectado!\n");
 		close(sockid);
 	} else {
-		printf("Erro ao desconectar!\n");
+		printf("Erro ao desconectar: %s\n", buffer);
 	}
 }
 
@@ -88,10 +89,15 @@ void sync_client() {
 	// sincroniza servidor com pasta local
 	synchronize_server(sockid);
 
-	// cria thread para manter a sincronização local
+	// cria thread para manter a sincronização de arquivos locais com o servidor
 	int rc;
 	if((rc = pthread_create(&sync_thread, NULL, watcher_thread, (void *) user.folder))) {
 		printf("Syncronization Thread creation failed: %d\n", rc);
+	}
+
+	// cria thread para manter a sincronização entre devices
+	if(pthread_create(&sync_server_thread, NULL, sync_devices_thread, NULL) < 0) {
+		printf("Error on create thread\n");
 	}
 }
 
@@ -272,22 +278,6 @@ void list_server() {
 	bzero(buffer, BUFFER_SIZE);
 }
 
-void* sync_from_server(){
-	DEBUG_PRINT("Thread de sincronização com o servidor criada!\n");
-	while(1){
-		DEBUG_PRINT("Esperando 5 segundos na thread de sincronizacao\n");
-		sleep(5);
-		DEBUG_PRINT("Passou 5 segundos... tenta sincronizar!\n");
-		pthread_mutex_lock(&mutex_up_down_del_list);
-		pthread_mutex_lock(&mutex_watcher);
-		sprintf(buffer, "%s", S_SYNC);
-		write_to_socket(sockid, buffer);
-		synchronize_local(sockid, FALSE);
-		pthread_mutex_unlock(&mutex_watcher);
-		pthread_mutex_unlock(&mutex_up_down_del_list);
-	}
-}
-
 int main(int argc, char *argv[]) {
 	setlocale(LC_ALL, "pt_BR");
 
@@ -322,12 +312,9 @@ int main(int argc, char *argv[]) {
 
 	// Efetua conexão ao servidor
 	if ((connect_server(endereco, porta))) {
-		// sincroniza diretórios (cliente e servidor)
+		// sincronização de diretórios bilateral (cliente e servidor)
 		sync_client();
 
-		if(pthread_create(&sync_server_thread, NULL, sync_from_server, NULL) < 0){
-      printf("Error on create thread\n");
-    }
 		// cria a interface do cliente e espera por comandos
 		show_client_interface();
 	} else {

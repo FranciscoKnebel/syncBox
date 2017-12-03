@@ -1,5 +1,5 @@
 #include "dropboxUtil.h"
-#include "client/watcher.h"
+#include "client/sync.h"
 
 int main(int argc, char *argv[]) {
   int rc;
