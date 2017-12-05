@@ -15,6 +15,11 @@
 #include <sys/stat.h>
 #include <sys/inotify.h>
 
+//ssh
+#include <openssl/bio.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
 //sockets
 #include <sys/socket.h>
 #include <netinet/in.h>

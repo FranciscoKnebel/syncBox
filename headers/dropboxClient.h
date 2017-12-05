@@ -34,6 +34,7 @@ typedef struct user_info {
 
 extern UserInfo user;
 extern int sockid;
+extern SSL *ssl;
 
 int connect_server(char *host, int port);
 

@@ -1,13 +1,13 @@
 #include "dropboxUtil.h"
 
-int read_to_file(FILE* pFile, int file_size, int sockid) {
+int read_to_file(FILE* pFile, int file_size, SSL *ssl) {
   int bytes_written = 0;
   int bytes_read = 0;
 
   char buffer[BUFFER_SIZE];
 
   while(bytes_written < file_size) {
-    bytes_read = read_from_socket(sockid, buffer); // recebe arquivo no buffer
+    bytes_read = read_from_socket(ssl, buffer); // recebe arquivo no buffer
     if (bytes_read < 0) {
       DEBUG_PRINT("ERROR reading from socket\n");
     }
@@ -25,27 +25,27 @@ int read_to_file(FILE* pFile, int file_size, int sockid) {
   return bytes_written;
 }
 
-int write_to_socket(int socket, char* buffer) {
+int write_to_socket(SSL *ssl, char* buffer) {
   int a_enviar = BUFFER_SIZE;
   int enviado = 0;
   int pos_buffer = 0;
 
   while((a_enviar - enviado) > 0) { // enquanto está enviando
-    enviado += write(socket, buffer + pos_buffer, a_enviar - enviado);
+    enviado += SSL_write(ssl, buffer + pos_buffer, a_enviar - enviado);
     pos_buffer += enviado;
   }
 
   return enviado;
 }
 
-int read_from_socket(int socket, char* buffer) {
+int read_from_socket(SSL *ssl, char* buffer) {
   int a_ler = BUFFER_SIZE;
   int lido = 0;
   int pos_buffer = 0;
 
   bzero(buffer, BUFFER_SIZE);
   while((a_ler - lido) > 0) {
-    lido += read(socket, buffer + pos_buffer, a_ler - lido);
+    lido += SSL_read(ssl, buffer + pos_buffer, a_ler - lido);
     pos_buffer += lido;
   }
 

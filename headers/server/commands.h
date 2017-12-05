@@ -1,9 +1,9 @@
-void select_commands(int socket, char buffer[], Client* client);
-void upload(int socket, Client* client);
-void download(int socket, Client* client);
-void list_server(int socket, Client* client);
-void delete(int socket, Client* client);
-void sync_dir(int socket, Client* client);
-void sync_local(int socket, Client* client);
+void select_commands(SSL *socket, char buffer[], Client* client);
+void upload(SSL *socket, Client* client);
+void download(SSL *socket, Client* client);
+void list_server(SSL *socket, Client* client);
+void delete(SSL *socket, Client* client);
+void sync_dir(SSL *socket, Client* client);
+void sync_local(SSL *socket, Client* client);
 
 int is_valid_command(char* command);

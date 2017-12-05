@@ -4,11 +4,50 @@ char buffer[BUFFER_SIZE];
 pthread_t sync_thread;
 pthread_t sync_server_thread;
 struct user_info user;
+SSL *ssl;
+SSL_CTX	*ctx;
 int sockid;
 int status;
 
+void ShowCerts(SSL* ssl)
+{   X509 *cert;
+    char *line;
+
+    cert = SSL_get_peer_certificate(ssl); /* Get certificates (if available) */
+    if ( cert != NULL )
+    {
+        printf("Server certificates:\n");
+        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+        printf("Subject: %s\n", line);
+        free(line);
+        line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+        printf("Issuer: %s\n", line);
+        free(line);
+        X509_free(cert);
+    }
+    else
+        printf("No certificates.\n");
+}
+
 int connect_server (char *host, int port) {
+
+	DEBUG_PRINT("Inicia conexão\n");
+
 	struct sockaddr_in serverconn;
+	// Inicializa engine ssl
+	const SSL_METHOD	*method;
+
+	OpenSSL_add_all_algorithms();
+	SSL_load_error_strings();
+	method	=	SSLv23_client_method();
+	ctx	=	SSL_CTX_new(method);
+	if(ctx	==	NULL){
+			ERR_print_errors_fp(stderr);
+			abort();
+	}
+
+	DEBUG_PRINT("inicializa a engine ssl\n");
+
 	/* Create a socket point */
 	sockid = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sockid < 0) {
@@ -16,36 +55,53 @@ int connect_server (char *host, int port) {
 		return 1;
 	}
 
+	DEBUG_PRINT("Criou socket\n");
+
 	bzero((char *) &serverconn, sizeof(serverconn));
 
 	serverconn.sin_family = AF_INET;
 	serverconn.sin_port = htons(port);
 	serverconn.sin_addr.s_addr = inet_addr(host);
 
-	status = connect(sockid, (struct sockaddr *) &serverconn, sizeof(serverconn));
-	if(status < 0) {
+	if (connect(sockid, (struct sockaddr*) &serverconn, sizeof(serverconn)) != 0){
+		close(sockid);
+		perror(host);
+		abort();
+	}
+
+	DEBUG_PRINT("Conectou socket\n");
+
+	ssl	=	SSL_new(ctx);
+	SSL_set_fd(ssl,	sockid);
+
+	DEBUG_PRINT("SSL anexado ao socket\n");
+
+	if(SSL_connect(ssl)	==	-1)	{
+		DEBUG_PRINT("Erro no ssl_connect\n");
+		ERR_print_errors_fp(stderr);
+	} else{	// conexão aceita
+		DEBUG_PRINT("Conectou o ssl\n");
+		printf("\n\nConnected with %s encryption\n", SSL_get_cipher(ssl));
+		ShowCerts(ssl);
+		bzero(buffer, BUFFER_SIZE);
+		strcpy(buffer, user.id);
+
+		// write to socket
+		write_to_socket(ssl, buffer);
+
+		// read server response
+		bzero(buffer, BUFFER_SIZE);
+		read_from_socket(ssl, buffer);
+
+		if(strcmp(buffer, S_EXCESS_DEVICES) == 0) {
+			printf("Muitas conexões simultâneas do mesmo usuário.\n");
+		}
+
+		if(strcmp(buffer, S_CONNECTED) == 0) {
+			return 1;
+		}
+	}
 		return 0;
-	}
-
-	bzero(buffer, BUFFER_SIZE);
-	strcpy(buffer, user.id);
-
-	// write to socket
-	write_to_socket(sockid, buffer);
-
-	// read server response
-	bzero(buffer, BUFFER_SIZE);
-	read_from_socket(sockid, buffer);
-
-	if(strcmp(buffer, S_EXCESS_DEVICES) == 0) {
-		printf("Muitas conexões simultâneas do mesmo usuário.\n");
-	}
-
-	if(strcmp(buffer, S_CONNECTED) == 0) {
-		return 1;
-	}
-
-	return 0;
 }
 
 void close_connection() {
@@ -59,16 +115,17 @@ void close_connection() {
 	bzero(buffer, BUFFER_SIZE);
 
 	strcpy(buffer, S_REQ_DC);
-	write_to_socket(sockid, buffer);
+	write_to_socket(ssl, buffer);
 
-	status = read_from_socket(sockid, buffer);
+	status = read_from_socket(ssl, buffer);
 	if (status < 0) {
 		DEBUG_PRINT("ERROR reading from socket\n");
 	}
 
 	if(strcmp(buffer, S_RPL_DC) == 0) {
 		DEBUG_PRINT("Desconectado!\n");
-		close(sockid);
+		close(sockid);         /* close socket */
+    SSL_CTX_free(ctx);        /* release context */
 	} else {
 		printf("Erro ao desconectar: %s\n", buffer);
 	}
@@ -84,10 +141,10 @@ void sync_client() {
 	}
 
 	// sincroniza pasta local com o servidor
-	synchronize_local(sockid, TRUE);
+	synchronize_local(ssl, TRUE);
 
 	// sincroniza servidor com pasta local
-	synchronize_server(sockid);
+	synchronize_server(ssl);
 
 	// cria thread para manter a sincronização de arquivos locais com o servidor
 	int rc;
@@ -108,23 +165,23 @@ void send_file(char *file, int response) {
 	DEBUG_PRINT("Requisita upload\n");
 	/* Request de upload */
 	strcpy(buffer, S_UPLOAD);
-	write_to_socket(sockid, buffer); // requisita upload
+	write_to_socket(ssl, buffer); // requisita upload
 
-	read_from_socket(sockid, buffer); // recebe resposta "name"
+	read_from_socket(ssl, buffer); // recebe resposta "name"
 
 	if(strcmp(buffer, S_NAME) == 0) {
 		getLastStringElement(buffer, file, "/"); // envia o nome do arquivo para o servidor
 		DEBUG_PRINT("Nome enviado: %s\n", buffer);
-		write_to_socket(sockid, buffer);
+		write_to_socket(ssl, buffer);
 	}
 
-	read_from_socket(sockid, buffer); // le palavra "timestamp"
+	read_from_socket(ssl, buffer); // le palavra "timestamp"
 	DEBUG_PRINT("recebido: %s\n", buffer);
 
 	if(strcmp(buffer, S_MODTIME) == 0) { // se palavra for igual a "timestamp"
 		getFileModifiedTime(file, buffer);
 		DEBUG_PRINT("MT enviado: %s\n", buffer);
-		write_to_socket(sockid, buffer); // envia timestamp
+		write_to_socket(ssl, buffer); // envia timestamp
 	}
 
 	FILE* pFile;
@@ -133,7 +190,7 @@ void send_file(char *file, int response) {
 		file_size = getFilesize(pFile);
 
 		sprintf(buffer, "%d", file_size); // envia tamanho do arquivo para o servidor
-		write_to_socket(sockid, buffer);
+		write_to_socket(ssl, buffer);
 
 		if(file_size == 0) {
 			fclose(pFile);
@@ -150,7 +207,7 @@ void send_file(char *file, int response) {
 	      }
 
 				// enviar buffer para salvar no servidor
-				write_to_socket(sockid, buffer);
+				write_to_socket(ssl, buffer);
 			}
 			DEBUG_PRINT("Terminou de enviar arquivo.\n");
 			fclose(pFile);
@@ -162,7 +219,7 @@ void send_file(char *file, int response) {
 	} else {
 		printf("Erro abrindo arquivo %s.\n", file);
 		strcpy(buffer, S_ERRO_ARQUIVO);
-		write_to_socket(sockid, buffer);
+		write_to_socket(ssl, buffer);
 	}
 
 	bzero(buffer, BUFFER_SIZE);
@@ -174,16 +231,16 @@ void get_file(char *file, char* fileFolder) {
 
  	/* Request de download */
 	strcpy(buffer, S_DOWNLOAD);
-	write_to_socket(sockid, buffer); // envia "download"
+	write_to_socket(ssl, buffer); // envia "download"
 
-	read_from_socket(sockid, buffer); // recebe resposta "name"
+	read_from_socket(ssl, buffer); // recebe resposta "name"
 	DEBUG_PRINT("Resposta recebida: %s \n", buffer);
 
 	if(strcmp(buffer, S_NAME) == 0) { // envia o nome do arquivo para o servidor
 		DEBUG_PRINT("enviando nome do arquivo para servidor\t\n");
 		getLastStringElement(buffer, file, "/");
 
-		write_to_socket(sockid, buffer);
+		write_to_socket(ssl, buffer);
 	}
 	DEBUG_PRINT("nome: %s\n", buffer);
 
@@ -191,7 +248,7 @@ void get_file(char *file, char* fileFolder) {
 	sprintf(path, "%s/%s", (fileFolder == NULL) ? user.folder : fileFolder, file);
 	DEBUG_PRINT("path: %s\n", path);
 
-	read_from_socket(sockid, buffer); // recebe tamanho do arquivo ou mensagem de erro
+	read_from_socket(ssl, buffer); // recebe tamanho do arquivo ou mensagem de erro
 
 	if(strcmp(buffer, S_ERRO_ARQUIVO) != 0) {
 		FILE* pFile;
@@ -201,16 +258,16 @@ void get_file(char *file, char* fileFolder) {
 			file_size = atoi(buffer);
 			DEBUG_PRINT("tamanho: %d\n", file_size);
 
-			read_from_socket(sockid, buffer); // recebe modified time do arquivo
+			read_from_socket(ssl, buffer); // recebe modified time do arquivo
 
 			time_t modified_time = getTime(buffer);
 			DEBUG_PRINT("MT: %s\n", buffer);
 
 			if(file_size == 0) { // se tamanho for 0
-				read_from_socket(sockid, buffer); // recebe arquivo no buffer
+				read_from_socket(ssl, buffer); // recebe arquivo no buffer
 			}
 
-			bytes_written = read_to_file(pFile, file_size, sockid);
+			bytes_written = read_to_file(pFile, file_size, ssl);
 			if(bytes_written == file_size) {
 				DEBUG_PRINT("Terminou de escrever.\n");
 			} else {
@@ -236,16 +293,16 @@ void delete_file(char *file) {
   /* Request de delete */
   char filename[MAXNAME];
   strcpy(buffer, S_REQ_DELETE);
-  write_to_socket(sockid, buffer);
-  read_from_socket(sockid, buffer); // recebe name
+  write_to_socket(ssl, buffer);
+  read_from_socket(ssl, buffer); // recebe name
 
   if(strcmp(buffer, S_NAME) == 0) {
 		getLastStringElement(buffer, file, "/"); // envia o nome do arquivo para o servidor
 		sprintf(filename, "%s", buffer);
-  	write_to_socket(sockid, buffer); // envia nome do arquivo
+  	write_to_socket(ssl, buffer); // envia nome do arquivo
   }
 
-  read_from_socket(sockid, buffer);
+  read_from_socket(ssl, buffer);
 
   if(strcmp(buffer, S_RPL_DELETE) == 0){
 		// recebe confirmação de que arquivo foi removido
@@ -260,9 +317,9 @@ void list_server() {
 
 	/* Request List Server */
 	strcpy(buffer, S_LS);
-	write_to_socket(sockid, buffer); // requisita list server
+	write_to_socket(ssl, buffer); // requisita list server
 
-	status = read_from_socket(sockid, buffer); // numero de arquivos no servidor
+	status = read_from_socket(ssl, buffer); // numero de arquivos no servidor
 	if (status < 0) {
 		DEBUG_PRINT("ERROR reading from socket\n");
 	}
@@ -270,7 +327,7 @@ void list_server() {
 	number_files = atoi(buffer);
 	printf("Number of files: %d\n", number_files);
 	for(int i = 0; i < number_files; i++) {
-		read_from_socket(sockid, buffer);
+		read_from_socket(ssl, buffer);
 		printf("%s\n", buffer);
 	}
 	printf("Number of files: %d\n", number_files);
@@ -290,6 +347,8 @@ int main(int argc, char *argv[]) {
 
 	pthread_mutex_init (&mutex_up_down_del_list, NULL);
 	pthread_mutex_init (&mutex_watcher, NULL);
+
+	SSL_library_init();
 
 	int porta;
 	char *endereco;

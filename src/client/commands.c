@@ -41,16 +41,16 @@ void command_getsyncdir() { // DEPRECATED get_sync_dir
 
   char buffer[BUFFER_SIZE];
   strcpy(buffer, S_GETSYNCDIR);
-  write_to_socket(sockid, buffer);
+  write_to_socket(ssl, buffer);
 
   printf("%sComando GET SYNC DIR depreciado na versão 0.0.2.%s\n", COLOR_RED, COLOR_RESET);
 
   // sincroniza pasta local com o servidor
-  synchronize_local(sockid, TRUE);
+  synchronize_local(ssl, TRUE);
   printf("Sincronização finalizada.\n");
 
   // sincroniza servidor com pasta local
-  //synchronize_server(sockid);
+  //synchronize_server(ssl);
 }
 
 void command_clear() {

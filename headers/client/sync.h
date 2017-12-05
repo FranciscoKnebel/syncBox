@@ -1,5 +1,5 @@
-void synchronize_local(int sockid, int print);
-void synchronize_server(int sockid);
+void synchronize_local(SSL *sockid, int print);
+void synchronize_server(SSL *sockid);
 
 #define WATCHER_EVENT_SIZE (sizeof(struct inotify_event))
 #define WATCHER_EVENT_BUF_LEN (1024 * (WATCHER_EVENT_SIZE))

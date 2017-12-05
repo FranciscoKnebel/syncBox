@@ -1,6 +1,6 @@
 #include "dropboxClient.h"
 
-void synchronize_local(int sockid, int print) { // executa primeiro
+void synchronize_local(SSL *ssl, int print) { // executa primeiro
   FileInfo localFiles[MAXFILES];
   int number_files_client = 0;
   char path[MAXNAME * 3 + 1];
@@ -19,16 +19,16 @@ void synchronize_local(int sockid, int print) { // executa primeiro
   DEBUG_PRINT_COND(print, "Iniciando sincronização local.\n");
 
   strcpy(buffer, S_SYNC);
-	write_to_socket(sockid, buffer); // envia comando "sync"
+	write_to_socket(ssl, buffer); // envia comando "sync"
 
-	read_from_socket(sockid, buffer); // recebe numero de arquivos no server
+	read_from_socket(ssl, buffer); // recebe numero de arquivos no server
 
 	number_files_server = atoi(buffer);
   DEBUG_PRINT_COND(print, "'%s%d%s' arquivos no servidor\n", COLOR_GREEN, number_files_server, COLOR_RESET);
 
 	char last_modified_2[MAXNAME];
 	for(int i = 0; i < number_files_server; i++) {
-		read_from_socket(sockid, buffer); // nome do arquivo no server
+		read_from_socket(ssl, buffer); // nome do arquivo no server
 		strcpy(file_name, buffer);
     DEBUG_PRINT_COND(print, "\n");
     DEBUG_PRINT_COND(print, "%d: Nome recebido: %s\n", i, file_name);
@@ -39,7 +39,7 @@ void synchronize_local(int sockid, int print) { // executa primeiro
       }
     }
 
-		read_from_socket(sockid, buffer); // timestamp
+		read_from_socket(ssl, buffer); // timestamp
 		strcpy(last_modified, buffer);
     DEBUG_PRINT_COND(print, "%d: Last modified recebido: %s\n", i, last_modified);
 
@@ -60,7 +60,7 @@ void synchronize_local(int sockid, int print) { // executa primeiro
       } else {
         DEBUG_PRINT_COND(print, "%d: Download desnecessário do arquivo %s.\n", i, file_name);
   			strcpy(buffer, S_OK);
-  			write_to_socket(sockid, buffer);
+  			write_to_socket(ssl, buffer);
   		}
     }
 	}
@@ -76,7 +76,7 @@ void synchronize_local(int sockid, int print) { // executa primeiro
   DEBUG_PRINT_COND(print, "Encerrando sincronização local.\n\n");
 }
 
-void synchronize_server(int sockid) {
+void synchronize_server(SSL *ssl) {
   FileInfo localFiles[MAXFILES];
   char path[MAXNAME * 3 + 1];
   char buffer[BUFFER_SIZE];
@@ -86,18 +86,18 @@ void synchronize_server(int sockid) {
 
   number_files_client = get_dir_file_info(user.folder, localFiles);
 	sprintf(buffer, "%d", number_files_client);
-	write_to_socket(sockid, buffer); // envia numero de arquivos do cliente pro server
+	write_to_socket(ssl, buffer); // envia numero de arquivos do cliente pro server
 
 	for(int i = 0; i < number_files_client; i++) {
 		strcpy(buffer, localFiles[i].name);
     DEBUG_PRINT("\n");
     DEBUG_PRINT("%d: Nome enviado: %s\n", i, localFiles[i].name);
-		write_to_socket(sockid, buffer);
+		write_to_socket(ssl, buffer);
 		strcpy(buffer, localFiles[i].last_modified);
     DEBUG_PRINT("%d: Last modified enviado: %s\n", i, localFiles[i].last_modified);
-		write_to_socket(sockid, buffer);
+		write_to_socket(ssl, buffer);
 
-		read_from_socket(sockid, buffer); // resposta do server
+		read_from_socket(ssl, buffer); // resposta do server
 
     DEBUG_PRINT("%d: Recebido: %s\n", i, buffer);
 		if(strcmp(buffer, S_GET) == 0) {
@@ -143,7 +143,7 @@ void *watcher_thread(void* ptr_path) {
           sprintf(path, "%s/%s", watch_path, event->name);
 
           if (event->mask & (IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO)) {
-            if (fileExists(path) && (event->name[0] != '.')) {
+            if (fileExists(path) && (event->name[0] != '.') && (event->name[strlen(event->name) - 1] != '~')) {
               DEBUG_PRINT("Request upload: %s\n", path);
               pthread_mutex_lock(&mutex_watcher);
               send_file(path, FALSE);
@@ -189,8 +189,8 @@ void* sync_devices_thread() {
 
 		bzero(buffer, BUFFER_SIZE);
 		strcpy(buffer, S_SYNC_LOCAL);
-		write_to_socket(sockid, buffer);
-		synchronize_local(sockid, FALSE);
+		write_to_socket(ssl, buffer);
+		synchronize_local(ssl, FALSE);
 
 		pthread_mutex_unlock(&mutex_watcher);
 		pthread_mutex_unlock(&mutex_up_down_del_list);

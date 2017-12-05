@@ -52,15 +52,18 @@ typedef struct server_info {
 
 typedef struct connection_info{
   int socket_id;
+  SSL *ssl;
   char* ip;
 } Connection;
 
 extern ServerInfo serverInfo;
 
-void sync_server(int sockid_sync, Client* client_sync);
+pthread_mutex_t mutex_exclusao_mutua_lock;
 
-void receive_file(char *file, int sockid_upload);
+void sync_server(SSL *sockid_sync, Client* client_sync);
 
-void send_file(char *file, int sockid_download);
+void receive_file(char *file, SSL *sockid_upload);
+
+void send_file(char *file, SSL *sockid_download);
 
 #endif

@@ -1,15 +1,36 @@
 #include "dropboxServer.h"
 
-void upload(int socket, Client* client){
+void upload(SSL *socket, Client* client){
   char buffer[BUFFER_SIZE]; // 1 KB buffer
   char path[MAXNAME * 3 + 1];
+  char lock_path[MAXNAME*3+1];
   char client_folder[MAXNAME*3];
+  int can_upload = 0;
 
   strcpy(buffer, S_NAME);
   write_to_socket(socket, buffer);
 
   read_from_socket(socket, buffer); // recebe nome do arquivo
   DEBUG_PRINT("Nome recebido: %s\n", buffer);
+
+  sprintf(lock_path, "%s/%s/%s.lock", serverInfo.folder, client->userid, buffer);
+  // exclusão mutua distribuida no upload
+  while(!can_upload){
+    DEBUG_PRINT("entrou no while\n");
+    pthread_mutex_lock(&mutex_exclusao_mutua_lock);
+    if(!fileExists(lock_path)){ // se não existe o arquivo lock, cria!
+      FILE* pFile;
+      pFile = fopen(lock_path, "wb");
+      fclose(pFile);
+      can_upload = 1;
+    } else{
+      can_upload = 0;
+    }
+    //usleep(5000000); só para testes...
+    pthread_mutex_unlock(&mutex_exclusao_mutua_lock);
+    usleep(1000); // espera 0.001 segundo
+  }
+
 
   char filename[MAXNAME];
   strcpy(filename, buffer);
@@ -36,7 +57,7 @@ void upload(int socket, Client* client){
 
 }
 
-void download(int socket, Client* client){
+void download(SSL *socket, Client* client){
   char buffer[BUFFER_SIZE]; // 1 KB buffer
   char filename[3*MAXNAME+1];
 
@@ -53,7 +74,7 @@ void download(int socket, Client* client){
   pthread_mutex_unlock(&client->mutex_files[index]);
 }
 
-void list_server(int socket, Client* client){
+void list_server(SSL *socket, Client* client){
   char buffer[BUFFER_SIZE]; // 1 KB buffer
 
   sprintf(buffer, "%d", client->n_files);
@@ -68,7 +89,7 @@ void list_server(int socket, Client* client){
   }
 }
 
-void delete(int socket, Client* client){
+void delete(SSL *socket, Client* client){
   char buffer[BUFFER_SIZE]; // 1 KB buffer
   char filename[MAXNAME];
   char path[3*MAXNAME+1];
@@ -98,22 +119,22 @@ void delete(int socket, Client* client){
     // TODO: alterar essa função para apenas decrementar n_files e remover de file_info o elemento
     // ao invés de refazer o cálculo para todo diretório.
 
-    strcpy(buffer, S_RPL_DELETE);
-    write_to_socket(socket, buffer); // envia "deletado"
   }
+  strcpy(buffer, S_RPL_DELETE);
+  write_to_socket(socket, buffer); // envia "deletado"
 
   pthread_mutex_unlock(&client->mutex_files[index]);
 }
 
-void sync_dir(int socket, Client* client) {
+void sync_dir(SSL *socket, Client* client) {
   synchronize_client(socket, client);
 }
 
-void sync_local(int socket, Client* client) {
+void sync_local(SSL *socket, Client* client) {
   synchronize_client(socket, client);
 }
 
-void select_commands(int socket, char buffer[], Client* client){
+void select_commands(SSL *socket, char buffer[], Client* client){
   if(strcmp(buffer, S_UPLOAD) == 0) {
     upload(socket, client);
   } else if(strcmp(buffer, S_DOWNLOAD) == 0) {

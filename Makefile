@@ -39,7 +39,7 @@ client-aux: $(SRC_DIR)client/interface.c $(SRC_DIR)client/commands.c $(SRC_DIR)c
 CLIENT_FILES = $(BIN_DIR)client/*.o
 client:	$(SRC_DIR)dropboxClient.c util client-aux
 	@echo "Linkando objetos e compilando aplicação do cliente."
-	$(CC) $(CFLAGS) -o $(CLI_DIR)dropboxClient $(SRC_DIR)dropboxClient.c $(OBJ_FILES) $(CLIENT_FILES) -pthread -I$(HEADERS_DIR)
+	$(CC) $(CFLAGS) -o $(CLI_DIR)dropboxClient $(SRC_DIR)dropboxClient.c $(OBJ_FILES) $(CLIENT_FILES) -pthread -lssl -lcrypto -I$(HEADERS_DIR)
 
 ## SERVER COMMANDS
 server-aux:
@@ -51,7 +51,7 @@ server-aux:
 SERVER_FILES = $(BIN_DIR)server/*.o
 server: $(SRC_DIR)dropboxServer.c util server-aux
 	@echo "Linkando objetos e compilando aplicação do servidor."
-	$(CC) $(CFLAGS) -o $(SVR_DIR)dropboxServer $(SRC_DIR)dropboxServer.c $(OBJ_FILES) $(SERVER_FILES) -pthread -I$(HEADERS_DIR)
+	$(CC) $(CFLAGS) -o $(SVR_DIR)dropboxServer $(SRC_DIR)dropboxServer.c $(OBJ_FILES) $(SERVER_FILES) -pthread -lssl -lcrypto -I$(HEADERS_DIR)
 
 ## TEST
 test: test_dropboxUtil test_util

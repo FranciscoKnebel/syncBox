@@ -1,4 +1,4 @@
-//#define DEBUG // Comentar esta linha para desativar DEBUG mode.
+#define DEBUG // Comentar esta linha para desativar DEBUG mode.
 
 // syncBox CONSTANTS
 #define MAXNAME 128
