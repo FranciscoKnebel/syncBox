@@ -142,8 +142,10 @@ void *watcher_thread(void* ptr_path) {
         if (event->len) {
           sprintf(path, "%s/%s", watch_path, event->name);
 
+          int not_a_temp_file = (event->name[0] != '.') && (event->name[strlen(event->name) - 1] != '~');
+
           if (event->mask & (IN_CLOSE_WRITE | IN_CREATE | IN_MOVED_TO)) {
-            if (fileExists(path) && (event->name[0] != '.') && (event->name[strlen(event->name) - 1] != '~')) {
+            if (fileExists(path) && not_a_temp_file) {
               DEBUG_PRINT("Request upload: %s\n", path);
               pthread_mutex_lock(&mutex_watcher);
               send_file(path, FALSE);
@@ -151,7 +153,7 @@ void *watcher_thread(void* ptr_path) {
               DEBUG_PRINT("Enviou!\n");
             }
           } else if (event->mask & (IN_DELETE | IN_DELETE_SELF | IN_MOVED_FROM)) {
-            if (event->name[0] != '.') {
+            if (not_a_temp_file) {
               DEBUG_PRINT("Request delete: %s\n", path);
               pthread_mutex_lock(&mutex_watcher);
               delete_file(path);

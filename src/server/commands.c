@@ -118,7 +118,6 @@ void delete(SSL *socket, Client* client){
     client->n_files = get_dir_file_info(client_folder, client->file_info);
     // TODO: alterar essa função para apenas decrementar n_files e remover de file_info o elemento
     // ao invés de refazer o cálculo para todo diretório.
-
   }
   strcpy(buffer, S_RPL_DELETE);
   write_to_socket(socket, buffer); // envia "deletado"
