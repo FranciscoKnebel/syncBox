@@ -3,9 +3,9 @@
 void upload(SSL *socket, Client* client){
   char buffer[BUFFER_SIZE]; // 1 KB buffer
   char path[MAXNAME * 3 + 1];
-  char lock_path[MAXNAME*3+1];
+  char lock_path[MAXNAME * 3 + 6];
   char client_folder[MAXNAME*3];
-  int can_upload = 0;
+  int can_upload = FALSE;
 
   strcpy(buffer, S_NAME);
   write_to_socket(socket, buffer);
@@ -15,16 +15,16 @@ void upload(SSL *socket, Client* client){
 
   sprintf(lock_path, "%s/%s/%s.lock", serverInfo.folder, client->userid, buffer);
   // exclusão mutua distribuida no upload
-  while(!can_upload){
-    DEBUG_PRINT("entrou no while\n");
+  while(!can_upload) {
+    // /DEBUG_PRINT("entrou no while\n");
     pthread_mutex_lock(&mutex_exclusao_mutua_lock);
-    if(!fileExists(lock_path)){ // se não existe o arquivo lock, cria!
+    if(!fileExists(lock_path)) { // se não existe o arquivo lock, cria!
       FILE* pFile;
       pFile = fopen(lock_path, "wb");
       fclose(pFile);
-      can_upload = 1;
-    } else{
-      can_upload = 0;
+      can_upload = TRUE;
+    } else {
+      can_upload = FALSE;
     }
     //usleep(5000000); só para testes...
     pthread_mutex_unlock(&mutex_exclusao_mutua_lock);
@@ -134,7 +134,7 @@ void sync_local(SSL *socket, Client* client) {
   synchronize_client(socket, client);
 }
 
-void select_commands(SSL *socket, char buffer[], Client* client){
+void select_commands(SSL *socket, char buffer[], Client* client) {
   if(strcmp(buffer, S_UPLOAD) == 0) {
     upload(socket, client);
   } else if(strcmp(buffer, S_DOWNLOAD) == 0) {
@@ -158,5 +158,6 @@ int is_valid_command(char* command) {
     strncmp(command, S_REQ_DELETE, strlen(S_REQ_DELETE)) == 0 ||
     strncmp(command, S_REQ_DC, strlen(S_REQ_DC)) == 0 ||
 		strncmp(command, S_SYNC, strlen(S_SYNC)) == 0 ||
-		strncmp(command, S_GETSYNCDIR, strlen(S_GETSYNCDIR)) == 0;
+		strncmp(command, S_GETSYNCDIR, strlen(S_GETSYNCDIR)) == 0 ||
+    strncmp(command, S_SYNC_LOCAL, strlen(S_SYNC_LOCAL)) == 0;
 }

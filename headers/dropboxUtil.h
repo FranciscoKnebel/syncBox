@@ -21,6 +21,7 @@
   #include "util/types.h"
   #include "util/files.h"
   #include "util/io.h"
+  #include "util/ssl.h"
 #endif
 
 /* Interface */

@@ -9,44 +9,22 @@ SSL_CTX	*ctx;
 int sockid;
 int status;
 
-void ShowCerts(SSL* ssl)
-{   X509 *cert;
-    char *line;
-
-    cert = SSL_get_peer_certificate(ssl); /* Get certificates (if available) */
-    if ( cert != NULL )
-    {
-        printf("Server certificates:\n");
-        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-        printf("Subject: %s\n", line);
-        free(line);
-        line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-        printf("Issuer: %s\n", line);
-        free(line);
-        X509_free(cert);
-    }
-    else
-        printf("No certificates.\n");
-}
-
 int connect_server (char *host, int port) {
-
 	DEBUG_PRINT("Inicia conexão\n");
 
 	struct sockaddr_in serverconn;
 	// Inicializa engine ssl
-	const SSL_METHOD	*method;
+	const SSL_METHOD *method;
 
 	OpenSSL_add_all_algorithms();
 	SSL_load_error_strings();
 	method	=	SSLv23_client_method();
 	ctx	=	SSL_CTX_new(method);
-	if(ctx	==	NULL){
-			ERR_print_errors_fp(stderr);
-			abort();
+	if(ctx	==	NULL) {
+		ERR_print_errors_fp(stderr);
+		abort();
 	}
-
-	DEBUG_PRINT("inicializa a engine ssl\n");
+	DEBUG_PRINT("Inicializado a engine SSL\n");
 
 	/* Create a socket point */
 	sockid = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -76,12 +54,13 @@ int connect_server (char *host, int port) {
 
 	DEBUG_PRINT("SSL anexado ao socket\n");
 
-	if(SSL_connect(ssl)	==	-1)	{
+	if(SSL_connect(ssl)	== -1) {
 		DEBUG_PRINT("Erro no ssl_connect\n");
 		ERR_print_errors_fp(stderr);
-	} else{	// conexão aceita
+	} else {	// conexão aceita
 		DEBUG_PRINT("Conectou o ssl\n");
-		printf("\n\nConnected with %s encryption\n", SSL_get_cipher(ssl));
+		printf("Conexão com criptografia %s estabelecida.\n", SSL_get_cipher(ssl));
+
 		ShowCerts(ssl);
 		bzero(buffer, BUFFER_SIZE);
 		strcpy(buffer, user.id);
@@ -101,7 +80,8 @@ int connect_server (char *host, int port) {
 			return 1;
 		}
 	}
-		return 0;
+
+	return 0;
 }
 
 void close_connection() {

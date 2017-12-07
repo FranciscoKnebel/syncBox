@@ -15,7 +15,7 @@
 #include <sys/stat.h>
 #include <sys/inotify.h>
 
-//ssh
+//ssl
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>

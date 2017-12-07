@@ -208,48 +208,6 @@ void* clientThread(void* connection_struct) {
   return 0;
 }
 
-void LoadCertificates(SSL_CTX* ctx, char* CertFile, char* KeyFile){
-    /* set the local certificate from CertFile */
-    if (SSL_CTX_use_certificate_file(ctx, CertFile, SSL_FILETYPE_PEM) <= 0 )
-    {
-        ERR_print_errors_fp(stderr);
-        abort();
-    }
-    /* set the private key from KeyFile (may be the same as CertFile) */
-    if (SSL_CTX_use_PrivateKey_file(ctx, KeyFile, SSL_FILETYPE_PEM) <= 0 )
-    {
-        ERR_print_errors_fp(stderr);
-        abort();
-    }
-    /* verify private key */
-    if (!SSL_CTX_check_private_key(ctx) )
-    {
-        fprintf(stderr, "Private key does not match the public certificate\n");
-        abort();
-    }
-}
-
-void ShowCerts(SSL* ssl)
-{   X509 *cert;
-    char *line;
-
-    cert = SSL_get_peer_certificate(ssl); /* Get certificates (if available) */
-    if ( cert != NULL )
-    {
-        printf("Server certificates:\n");
-        line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-        printf("Subject: %s\n", line);
-        free(line);
-        line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-        printf("Issuer: %s\n", line);
-        free(line);
-        X509_free(cert);
-    }
-    else{
-        printf("No certificates.\n");
-    }
-}
-
 int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
   setlocale(LC_ALL, "pt_BR");
   int port = DEFAULT_PORT;
@@ -275,18 +233,18 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
   strcpy(serverInfo.ip, address);
   serverInfo.port = port;
 
-  SSL_library_init();
   // ssl
-  const SSL_METHOD	*method;
+  SSL_library_init();
+  const SSL_METHOD *method;
 	SSL_CTX	*ctx;
 
 	OpenSSL_add_all_algorithms();  /* Load cryptos, et.al. */
 	SSL_load_error_strings();
 	method = SSLv23_server_method();
 	ctx	=	SSL_CTX_new(method);
-	if	(ctx	==	NULL){
-				ERR_print_errors_fp(stderr);
-				abort();
+	if (ctx	== NULL) {
+		ERR_print_errors_fp(stderr);
+		abort();
 	}
 
   // Criação e nomeação de socket
@@ -316,7 +274,6 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
   }
 
   pthread_t thread_id;
-
   while(1) {
     unsigned int cliLen = sizeof(struct sockaddr_in);
 
@@ -326,28 +283,25 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
     if(new_client_socket < 0){
       printf("Error on accept\n");
     }
-    SSL *ssl	=	SSL_new(ctx);
+    SSL *ssl = SSL_new(ctx);
 		SSL_set_fd(ssl,	new_client_socket);
 
-    if ( SSL_accept(ssl) == -1){     /* do SSL-protocol accept */
-        ERR_print_errors_fp(stderr);
-    } else{
-        ShowCerts(ssl);
+    if (SSL_accept(ssl) == -1) {     /* do SSL-protocol accept */
+      ERR_print_errors_fp(stderr);
+    } else {
+      sem_wait(&semaphore);
 
-        //DEBUG_PRINT("semaforo: %d\n", sem_wait(&semaphore)); // zancan, não dá pra deixar dentro do debug código. Se tirar do debug, isso não vai executar
-        sem_wait(&semaphore);
+      char *client_ip = inet_ntoa(client.sin_addr); // inet_ntoa converte o IP de numeros e pontos para uma struct in_addr
 
-        char *client_ip = inet_ntoa(client.sin_addr); // inet_ntoa converte o IP de numeros e pontos para uma struct in_addr
+      Connection *connection = malloc(sizeof(*connection));
+      connection->socket_id = new_client_socket;
+      connection->ip = client_ip;
+      connection->ssl = ssl;
 
-        Connection *connection = malloc(sizeof(*connection));
-        connection->socket_id = new_client_socket;
-        connection->ip = client_ip;
-        connection->ssl = ssl;
-
-        if(pthread_create(&thread_id, NULL, clientThread, (void*) connection) < 0){
-          printf("Error on create thread\n");
-        }
+      if(pthread_create(&thread_id, NULL, clientThread, (void*) connection) < 0){
+        printf("Error on create thread\n");
       }
+    }
   }
 
   return 0;
