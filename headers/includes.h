@@ -26,6 +26,8 @@
 #include <arpa/inet.h>
 #include <errno.h>
 
+#include <signal.h>
+
 #define TRUE 1
 #define FALSE 0
 

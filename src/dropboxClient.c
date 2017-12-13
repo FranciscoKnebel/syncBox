@@ -315,6 +315,10 @@ void list_server() {
 	bzero(buffer, BUFFER_SIZE);
 }
 
+void handler(int s) {
+	printf("Caught SIGPIPE\n");
+}
+
 int main(int argc, char *argv[]) {
 	setlocale(LC_ALL, "pt_BR");
 
@@ -351,6 +355,7 @@ int main(int argc, char *argv[]) {
 
 	// Efetua conexão ao servidor
 	if ((connect_server(endereco, porta))) {
+		signal(SIGPIPE, handler);
 		// sincronização de diretórios bilateral (cliente e servidor)
 		sync_client();
 
