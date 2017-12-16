@@ -19,7 +19,6 @@ int read_to_file(FILE* pFile, int file_size, SSL *ssl) {
       fwrite(buffer, sizeof(char), bytes_read, pFile);
       bytes_written += sizeof(char) * bytes_read;
     }
-    // DEBUG_PRINT("leu buffer %d bytes - Total: %d / Escritos: %d / Sobrando: %d\n", bytes_read, file_size, bytes_written, (file_size - bytes_written));
   }
 
   return bytes_written;
@@ -37,6 +36,7 @@ int write_to_socket(SSL *ssl, char* buffer) {
     // DEBUG_PRINT("Recebido: %s\n", answer);
     // if(strcmp("lido!", answer) != 0){
     //   DEBUG_PRINT("Não leu!\n");
+    //   sleep(5);
     // }
     pos_buffer += enviado;
   }

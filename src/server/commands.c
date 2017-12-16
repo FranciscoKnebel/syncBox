@@ -70,7 +70,7 @@ void download(SSL *socket, Client* client){
 
   int index = getFileIndex(buffer, client->file_info);
   pthread_mutex_lock(&client->mutex_files[index]);
-  send_file(filename, socket);
+  send_file(filename, socket, TRUE);
   pthread_mutex_unlock(&client->mutex_files[index]);
 }
 

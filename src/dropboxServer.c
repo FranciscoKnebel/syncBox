@@ -2,10 +2,115 @@
 
 ServerInfo serverInfo;
 ClientList* client_list;
+ClientList* client_list_servers;
+int numServers = 0;
 pthread_mutex_t mutex_clientes;
+pthread_mutex_t mutex_clientes_servers;
 
 sem_t semaphore;
 
+
+void* connect_server_replica (void* connection_struct) {
+  DEBUG_PRINT("Inicia conexão replica\n");
+
+  Connection* connection = (Connection*) connection_struct;
+  char* host = connection->ip;
+  int port = connection->porta;
+
+  struct sockaddr_in serverconn;
+  SSL *ssl;
+  SSL_CTX	*ctx;
+  const SSL_METHOD *method;
+  int sockid;
+  char replicaName[MAXNAME];
+  char buffer[BUFFER_SIZE];
+
+	OpenSSL_add_all_algorithms();
+	SSL_load_error_strings();
+	method	=	SSLv23_client_method();
+	ctx	=	SSL_CTX_new(method);
+	if(ctx	==	NULL) {
+		ERR_print_errors_fp(stderr);
+		abort();
+	}
+	DEBUG_PRINT("Inicializado a engine SSL\n");
+
+	/* Create a socket point */
+	sockid = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (sockid < 0) {
+		printf("ERROR opening socket\n");
+		return 1;
+	}
+
+	DEBUG_PRINT("Criou socket\n");
+
+	bzero((char *) &serverconn, sizeof(serverconn));
+
+	serverconn.sin_family = AF_INET;
+	serverconn.sin_port = htons(port);
+	serverconn.sin_addr.s_addr = inet_addr(host);
+
+	if (connect(sockid, (struct sockaddr*) &serverconn, sizeof(serverconn)) != 0){
+		close(sockid);
+		perror(host);
+		abort();
+	}
+
+	DEBUG_PRINT("Conectou socket\n");
+
+	ssl	=	SSL_new(ctx);
+	SSL_set_fd(ssl,	sockid);
+
+	DEBUG_PRINT("SSL anexado ao socket\n");
+
+	if(SSL_connect(ssl)	== -1) {
+		DEBUG_PRINT("Erro no ssl_connect\n");
+		ERR_print_errors_fp(stderr);
+	} else {	// conexão aceita
+		DEBUG_PRINT("Conectou o ssl\n");
+		printf("Conexão com criptografia %s estabelecida.\n", SSL_get_cipher(ssl));
+
+		ShowCerts(ssl);
+		bzero(buffer, BUFFER_SIZE);
+		strcpy(buffer, S_SERVER_REPLICA);
+
+		// write to socket
+		write_to_socket(ssl, buffer); // envia S_SERVER_REPLICA
+
+    read_from_socket(ssl, buffer); // recebe nome de identificaçao desse server replica no principal
+    strcpy(replicaName, buffer);
+
+    synchronize_replica_receive(ssl, serverInfo.folder);
+
+    char filePath_server[MAXNAME*2];
+    char last_modified[MAXNAME];
+    char filePath_local[MAXNAME*2];
+    char filename[MAXNAME];
+
+    while(1){
+      read_from_socket(ssl, buffer); // recebe S_UPLOAD
+      if(strcmp(buffer, S_UPLOAD) == 0){
+        read_from_socket(ssl, buffer); // nome do arquivo no server
+    		strcpy(filePath_server, buffer);
+        DEBUG_PRINT("connect_server_replica: Path recebido: %s\n", filePath_server);
+        sprintf(filename, "%syyy", buffer); // TODO: tirar yyy
+        DEBUG_PRINT("connect_server_replica:Filename a receber: %s\n", filename);
+        // recebe o arquivo
+        sprintf(filePath_local, "%s/%s", serverInfo.folder, filename);
+        DEBUG_PRINT("connect_server_replica: Recebendo: %s\n", filePath_local);
+        read_from_socket(ssl, buffer); // timestamp
+        strcpy(last_modified, buffer);
+        DEBUG_PRINT("connect_server_replica: Last modified recebido: %s\n", last_modified);
+        receive_file(filePath_local, ssl);
+        time_t last_modified_time = getTime(last_modified);
+        setModTime(filePath_local, last_modified_time);
+      }
+    }
+
+	}
+
+	return 0;
+}
 
 void sync_server(SSL *ssl_sync, Client* client_sync) {
   // sincronizar arquivos no dispositivo do cliente
@@ -23,7 +128,7 @@ void receive_file(char *file, SSL *ssl_download) {
   char lock_path[MAXNAME*3+1];
 
 
-  DEBUG_PRINT("recebendo %s\n", file);
+  DEBUG_PRINT("receive_file: recebendo %s\n", file);
 
   FILE* pFile;
   char buffer[BUFFER_SIZE]; // 1 KB buffer
@@ -33,16 +138,18 @@ void receive_file(char *file, SSL *ssl_download) {
     pFile = fopen(file, "wb");
     if(pFile) {
       file_size = atoi(buffer);
-
+      DEBUG_PRINT("receive_file: tamanho recebido: %d\n", file_size);
       bytes_written = read_to_file(pFile, file_size, ssl_download);
+
       if(bytes_written == file_size) {
-				DEBUG_PRINT("Terminou de escrever.\n");
+				DEBUG_PRINT("receive_file: Terminou de escrever.\n");
 			} else {
-				DEBUG_PRINT("Erro ao escrever %d bytes. Esperado %d.\n", bytes_written, file_size);
+				DEBUG_PRINT("receive_file: Erro ao escrever %d bytes. Esperado %d.\n", bytes_written, file_size);
 			}
       fclose(pFile);
 
-      DEBUG_PRINT("Arquivo '%s%s%s' salvo.\n", COLOR_GREEN, file, COLOR_RESET);
+      DEBUG_PRINT("receive_file: Arquivo '%s%s%s' salvo.\n", COLOR_GREEN, file, COLOR_RESET);
+      updateReplicas(file);
     } else {
       DEBUG_PRINT("Erro abrindo arquivo %s.\n", file);
     }
@@ -54,7 +161,6 @@ void receive_file(char *file, SSL *ssl_download) {
   sprintf(lock_path, "%s.lock", file);
 
   if(fileExists(lock_path)) {
-    //usleep(5000000); só para teste...
     if(remove(lock_path) != 0) {
       DEBUG_PRINT("Erro ao deletar o arquivo LOCK %s\n", lock_path);
     } else {
@@ -63,7 +169,38 @@ void receive_file(char *file, SSL *ssl_download) {
   }
 }
 
-void send_file(char *file, SSL *ssl_download) {
+int updateReplicas(char* file_path){
+  ClientList* current = client_list_servers;
+  char buffer[BUFFER_SIZE];
+
+  while(current != NULL){
+    Client* client = current->client;
+    SSL* ssl = client->devices[0];
+    char last_modified[MAXNAME];
+
+    strcpy(buffer, S_UPLOAD);
+    write_to_socket(ssl,buffer); // envia string upload
+    strcpy(buffer, file_path + strlen(serverInfo.folder) + 1);
+    DEBUG_PRINT("update replicas: Enviando: %s\n", buffer);
+    write_to_socket(ssl, buffer); // envia nome
+    char* name = &file_path;
+    DEBUG_PRINT("Nome: %s\n", file_path + strlen(serverInfo.folder) + 1);
+    if (strchr(file_path + strlen(serverInfo.folder) + 1, '/') != NULL){
+      getFileModifiedTime(file_path, last_modified);
+      strcpy(buffer, last_modified);
+      DEBUG_PRINT("enviando Last modified: %s\n", buffer);
+      write_to_socket(ssl, buffer); // envia last modified
+      DEBUG_PRINT("Enviando: %s\n", file_path);
+      send_file(file_path, ssl, FALSE);
+    } else{
+      DEBUG_PRINT("Enviando nome da pasta!\n");
+    }
+    current = current->next;
+  }
+}
+
+
+void send_file(char *file, SSL *ssl_download, int send_mod_time) {
   int file_size = 0;
   int bytes_read = 0;
 
@@ -77,8 +214,11 @@ void send_file(char *file, SSL *ssl_download) {
     sprintf(buffer, "%d", file_size);
     write_to_socket(ssl_download, buffer); // envia tamanho do arquivo para o cliente
 
-    getFileModifiedTime(file, buffer);
-    write_to_socket(ssl_download, buffer); // modified time
+    if(send_mod_time){
+      getFileModifiedTime(file, buffer);
+      write_to_socket(ssl_download, buffer); // modified time
+    }
+
 
     while(!feof(pFile)) {
       fread(buffer, sizeof(char), BUFFER_SIZE, pFile);
@@ -97,7 +237,8 @@ void send_file(char *file, SSL *ssl_download) {
   }
 }
 
-void parseArguments(int argc, char *argv[], char* address, int* port) {
+
+void parseArguments(int argc, char *argv[], char* address, int* port, char* addressReplica, int* portReplica) {
   if(argc > 2) { // endereço e porta
     strcpy(address, argv[1]);
     *port = atoi(argv[2]);
@@ -107,6 +248,10 @@ void parseArguments(int argc, char *argv[], char* address, int* port) {
   } else {
     strcpy(address, DEFAULT_ADDRESS);
     *port = DEFAULT_PORT;
+  }
+  if(argc > 3){
+    strcpy(addressReplica, argv[3]);
+    *portReplica = atoi(argv[4]);
   }
 }
 
@@ -124,86 +269,106 @@ void* clientThread(void* connection_struct) {
   bzero(buffer, BUFFER_SIZE);
 
   // read
-  read_from_socket(ssl, buffer);
-  // do stuff...
-  strncpy(client_id, buffer, MAXNAME);
-  client_id[MAXNAME - 1] = '\0';
+  read_from_socket(ssl, buffer); // le o nome do cliente conectado
 
-  strcpy(buffer, S_CONNECTED);
-  DEBUG_PRINT("Cliente conectado: '%s%s%s'.\n", COLOR_GREEN, client_id, COLOR_RESET);
-  client = searchClient(client_id, client_list);
-  DEBUG_PRINT("Cliente '%s%s%s' encontrado: %s.\n",
-  COLOR_GREEN, client_id, COLOR_RESET,
-  client == NULL ? "FALSE" : "TRUE");
+  if(strcmp(buffer, S_SERVER_REPLICA) == 0){ // SERVIDOR REPLICA QUE CONECTOU!
+    pthread_mutex_lock(&mutex_clientes_servers);
+    numServers += 1;
+    sprintf(client_id, "%s%d", buffer, numServers);
+    sprintf(buffer, client_id, numServers);
+    write_to_socket(ssl, buffer);
+    client_list_servers = newClient(client_id, ssl, client_list_servers);
+    DEBUG_PRINT("Adicionado %s a lista de servidores replica\n", client_id);
+    pthread_mutex_unlock(&mutex_clientes_servers);
 
-  if(client == NULL) {
-    DEBUG_PRINT("Criando novo cliente.\n");
-    pthread_mutex_lock(&mutex_clientes);
-    client_list = newClient(client_id, socket, client_list);
-    pthread_mutex_unlock(&mutex_clientes);
-    client = searchClient(client_id, client_list);
-  } else {
-    DEBUG_PRINT("Adicionando device ao cliente encontrado.\n");
-    pthread_mutex_lock(&mutex_clientes);
-    device = addDevice(client, socket);
-    pthread_mutex_unlock(&mutex_clientes);
-  }
-  DEBUG_PRINT("socket: %d - device: %d\n", socket, device);
+    // Sincroniza as pastas dos servidores
+    client = searchClient(client_id, client_list_servers);
+    synchronize_replica_send(ssl, client_list, serverInfo.folder);
 
-  if(device != -1) {
-    char client_folder[2*MAXNAME +1];
+    while(1){
 
-    sprintf(client_folder, "%s/%s", serverInfo.folder, client_id);
-    if(!fileExists(client_folder)) {
-      if(mkdir(client_folder, 0777) != 0) {
-        printf("Error creating user folder in server '%s'.\n", client_folder);
-        return NULL;
-      }
     }
+  } else{
 
-    printf("Conexão iniciada do usuário '%s%s%s' através do IP '%s%s%s'.\n",
-    COLOR_GREEN, client_id, COLOR_RESET, COLOR_GREEN, client_ip, COLOR_RESET);
+    strncpy(client_id, buffer, MAXNAME);
+    client_id[MAXNAME - 1] = '\0';
 
-    write_to_socket(ssl, buffer);
+    strcpy(buffer, S_CONNECTED);
+    DEBUG_PRINT("Cliente conectado: '%s%s%s'.\n", COLOR_GREEN, client_id, COLOR_RESET);
+    client = searchClient(client_id, client_list);
+    DEBUG_PRINT("Cliente '%s%s%s' encontrado: %s.\n",
+    COLOR_GREEN, client_id, COLOR_RESET,
+    client == NULL ? "FALSE" : "TRUE");
 
-    sync_server(ssl, client);
+    if(client == NULL) {
+      DEBUG_PRINT("Criando novo cliente.\n");
+      pthread_mutex_lock(&mutex_clientes);
+      client_list = newClient(client_id, socket, client_list);
+      pthread_mutex_unlock(&mutex_clientes);
+      client = searchClient(client_id, client_list);
+    } else {
+      DEBUG_PRINT("Adicionando device ao cliente encontrado.\n");
+      pthread_mutex_lock(&mutex_clientes);
+      device = addDevice(client, ssl);
+      pthread_mutex_unlock(&mutex_clientes);
+    }
+    DEBUG_PRINT("device: %d\n", device);
 
-    int disconnected = 0;
-    do {
-      read_from_socket(ssl, buffer);
+    if(device != -1) {
+      char client_folder[2*MAXNAME +1];
 
-      if(strcmp(buffer, S_REQ_DC) == 0) {
-        strcpy(buffer, S_RPL_DC);
-        write_to_socket(ssl, buffer);
-
-        sem_post(&semaphore);
-
-        disconnected = 1;
-      } else if(is_valid_command(buffer)) {
-        DEBUG_PRINT("Comando do usuário: %s\n", buffer);
-
-        select_commands(ssl, buffer, client);
-      } else {
-        DEBUG_PRINT("Comando inserido é inválido.\n");
-        DEBUG_PRINT("Informado: \n%s\n", buffer);
+      sprintf(client_folder, "%s/%s", serverInfo.folder, client_id);
+      if(!fileExists(client_folder)) {
+        if(mkdir(client_folder, 0777) != 0) {
+          printf("Error creating user folder in server '%s'.\n", client_folder);
+          return NULL;
+        }
       }
-    } while(disconnected != 1);
 
-    pthread_mutex_lock(&mutex_clientes);
-    printf("'%s%s%s' desconectou no dispositivo '%s%d%s', socket '%s%d%s'!\n",
-    COLOR_GREEN, client_id, COLOR_RESET,
-    COLOR_GREEN, removeDevice(client, device, client_list), COLOR_RESET,
-    COLOR_GREEN, socket, COLOR_RESET);
-    client_list = check_login_status(client, client_list);
-    pthread_mutex_unlock(&mutex_clientes);
+      printf("Conexão iniciada do usuário '%s%s%s' através do IP '%s%s%s'.\n",
+      COLOR_GREEN, client_id, COLOR_RESET, COLOR_GREEN, client_ip, COLOR_RESET);
 
-  } else {
-    DEBUG_PRINT("Muitas conexões simultâneas de '%s%s%s' em '%s%s%s'. Acesso negado.\n",
-    COLOR_GREEN, client_id, COLOR_RESET,
-    COLOR_GREEN, client_ip, COLOR_RESET);
+      write_to_socket(ssl, buffer);
 
-    strcpy(buffer, S_EXCESS_DEVICES);
-    write_to_socket(ssl, buffer);
+      sync_server(ssl, client);
+
+      int disconnected = 0;
+      do {
+        read_from_socket(ssl, buffer);
+
+        if(strcmp(buffer, S_REQ_DC) == 0) {
+          strcpy(buffer, S_RPL_DC);
+          write_to_socket(ssl, buffer);
+
+          sem_post(&semaphore);
+
+          disconnected = 1;
+        } else if(is_valid_command(buffer)) {
+          DEBUG_PRINT("Comando do usuário: %s\n", buffer);
+
+          select_commands(ssl, buffer, client);
+        } else {
+          DEBUG_PRINT("Comando inserido é inválido.\n");
+          DEBUG_PRINT("Informado: \n%s\n", buffer);
+        }
+      } while(disconnected != 1);
+
+      pthread_mutex_lock(&mutex_clientes);
+      printf("'%s%s%s' desconectou no dispositivo '%s%d%s'!\n",
+      COLOR_GREEN, client_id, COLOR_RESET,
+      COLOR_GREEN, removeDevice(client, device, client_list), COLOR_RESET,
+      COLOR_GREEN, COLOR_RESET);
+      client_list = check_login_status(client, client_list);
+      pthread_mutex_unlock(&mutex_clientes);
+
+    } else {
+      DEBUG_PRINT("Muitas conexões simultâneas de '%s%s%s' em '%s%s%s'. Acesso negado.\n",
+      COLOR_GREEN, client_id, COLOR_RESET,
+      COLOR_GREEN, client_ip, COLOR_RESET);
+
+      strcpy(buffer, S_EXCESS_DEVICES);
+      write_to_socket(ssl, buffer);
+    }
   }
   return 0;
 }
@@ -212,6 +377,9 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
   setlocale(LC_ALL, "pt_BR");
   int port = DEFAULT_PORT;
   struct sockaddr_in server, client;
+  int isReplica = 0;
+  int replicaPort = DEFAULT_PORT;
+  char* replicaHost;
 
   pthread_mutex_init (&mutex_clientes, NULL); // inicializa mutex da fila de clientes
   pthread_mutex_init (&mutex_exclusao_mutua_lock, NULL);
@@ -220,11 +388,20 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
 
   int addressLength = (argc > 1) ? strlen(argv[1]) : strlen(DEFAULT_ADDRESS);
   char* address = malloc(addressLength + 1);
+  int addressLengthReplica = (argc > 3) ? strlen(argv[3]) : strlen(DEFAULT_ADDRESS);
+  replicaHost = malloc(addressLengthReplica + 1);
 
   /* Initialize socket structure */
   bzero((char *) &server, sizeof(server));
 
-  parseArguments(argc, argv, address, &port);
+  parseArguments(argc, argv, address, &port, replicaHost, &replicaPort);
+
+  if(argc > 3){ // é replica
+    isReplica = 1;
+    DEBUG_PRINT("É Replica! - host: %s, porta: %d\n", replicaHost, replicaPort);
+  } else{
+    DEBUG_PRINT("É servidor principal!\n");
+  }
   server.sin_family = AF_INET; // address format is host and port number
   server.sin_port = htons(port); // host to network short
   server.sin_addr.s_addr = inet_addr(address);
@@ -271,6 +448,18 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
     printf("\nListening Error\n");
   } else {
     printf("Servidor no ar! Esperando conexões...\n");
+  }
+
+  if(isReplica){
+    pthread_t thread_replica;
+    Connection *connection = malloc(sizeof(*connection));
+    strcpy(connection->ip, replicaHost);
+    connection->porta = replicaPort;
+
+    if(pthread_create(&thread_replica, NULL, connect_server_replica, (void*) connection) < 0){
+      printf("Error on create thread\n");
+    }
+    pthread_join(thread_replica, NULL);
   }
 
   pthread_t thread_id;

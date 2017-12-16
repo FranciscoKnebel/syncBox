@@ -30,7 +30,7 @@
 
 typedef struct client
 {
-  int devices[2];
+  SSL* devices[2];
   char userid[MAXNAME];
   FileInfo file_info[MAXFILES];
   pthread_mutex_t mutex_files[MAXFILES];
@@ -54,6 +54,7 @@ typedef struct connection_info{
   int socket_id;
   SSL *ssl;
   char* ip;
+  int porta;
 } Connection;
 
 extern ServerInfo serverInfo;
@@ -64,6 +65,8 @@ void sync_server(SSL *sockid_sync, Client* client_sync);
 
 void receive_file(char *file, SSL *sockid_upload);
 
-void send_file(char *file, SSL *sockid_download);
+void send_file(char *file, SSL *sockid_download, int send_mod_time);
+
+int updateReplicas(char* file_path);
 
 #endif

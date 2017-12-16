@@ -96,3 +96,111 @@ void synchronize_server(SSL *ssl_sync, Client* client_sync) {
 
   DEBUG_PRINT("Encerrando sincronização do servidor.\n");
 }
+
+
+void synchronize_replica_send(SSL *ssl_sync, ClientList* ClientList, char* serverFolder) { // envia informaçoes de todos os usuarios para o servidor replica
+
+  struct d_file files[MAXFILES*MAX_CLIENTS];
+  int counter = 0;
+  char buffer[BUFFER_SIZE]; // 1 KB buffer
+  char fullPath[MAXNAME*2];
+  char last_modified[MAXNAME];
+
+  DEBUG_PRINT("Iniciando sincronização do servidor replica.\n");
+
+  read_from_socket(ssl_sync, buffer); // le S_SYNC
+
+  DEBUG_PRINT("COMMAND: %s\n", buffer);
+  if(strcmp(buffer, S_SYNC) == 0) {
+    DEBUG_PRINT("sincronizar replica!\n");
+  }
+
+  get_dir_content(serverFolder, files, &counter);
+
+  sprintf(buffer, "%d", counter);
+  DEBUG_PRINT("Number of files to send: %s.\n", buffer);
+  write_to_socket(ssl_sync, buffer); // numero de arquivos
+
+  for (int i = 0; i < counter; i++) {
+    sprintf(fullPath, "%s/%s", files[i].path, files[i].name);
+    strcpy(buffer, fullPath + strlen(serverFolder) + 1);
+    DEBUG_PRINT("Enviando: %s\n", buffer);
+    write_to_socket(ssl_sync, buffer); // envia nome
+    // envia arquivo
+    char* name = &fullPath;
+    DEBUG_PRINT("Nome: %s\n", name + strlen(serverFolder) + 1);
+    if (strchr(name + strlen(serverFolder) + 1, '/') != NULL){
+      getFileModifiedTime(fullPath, last_modified);
+      strcpy(buffer, last_modified);
+      DEBUG_PRINT("enviando Last modified: %s\n", buffer);
+      write_to_socket(ssl_sync, buffer); // envia last modified
+      DEBUG_PRINT("Enviando: %s\n", fullPath);
+      send_file(fullPath, ssl_sync, FALSE);
+    } else{
+      DEBUG_PRINT("Enviando nome da pasta!\n");
+    }
+  }
+
+  DEBUG_PRINT("Encerrando sincronização da replica.\n");
+}
+
+void synchronize_replica_receive(SSL *ssl_sync, char* serverFolder) {
+  int number_files_server = 0;
+  char last_modified[MAXNAME];
+  char filePath_server[MAXNAME*2];
+  char filePath_local[MAXNAME*2];
+  char filename[MAXNAME];
+  int counter = 0;
+  char buffer[BUFFER_SIZE];
+  DEBUG_PRINT("Iniciando sincronização local da replica.\n");
+
+
+  // primeiro exclui todos os arquivos no servidor
+  struct d_file files[MAXFILES*MAX_CLIENTS];
+  char file_to_delete [MAXNAME*2];
+  get_dir_content(serverFolder, files, &counter);
+
+  for(int i = 0; i < counter; i++){
+      sprintf(file_to_delete, "%s/%s", files->path, files->name);
+      if(remove(file_to_delete) == 0) {
+        DEBUG_PRINT("Arquivo %s deletado!\n", file_to_delete);
+      }
+  }
+
+  strcpy(buffer, S_SYNC);
+	write_to_socket(ssl_sync, buffer); // envia comando "sync"
+
+	read_from_socket(ssl_sync, buffer); // recebe numero de arquivos no server
+
+	number_files_server = atoi(buffer);
+  DEBUG_PRINT("'%s%d%s' arquivos no servidor\n", COLOR_GREEN, number_files_server, COLOR_RESET);
+
+  DEBUG_PRINT("Pasta do servidor: %s\n", serverFolder);
+	for(int i = 0; i < number_files_server; i++) {
+		read_from_socket(ssl_sync, buffer); // nome do arquivo no server
+		strcpy(filePath_server, buffer);
+    DEBUG_PRINT("Path recebido: %s\n", filePath_server);
+    sprintf(filename, "%sxxx", buffer); //TODO: retirar xxx
+    DEBUG_PRINT("Filename a receber: %s\n", filename);
+    // recebe o arquivo
+    sprintf(filePath_local, "%s/%s", serverFolder, filename);
+    DEBUG_PRINT("Recebendo: %s\n", filePath_local);
+    if (strchr(filename, '/') != NULL){ // se tiver '/', é arquivo, senão é pasta
+      read_from_socket(ssl_sync, buffer); // timestamp
+      strcpy(last_modified, buffer);
+      DEBUG_PRINT("%d: Last modified recebido: %s\n", i, last_modified);
+      receive_file(filePath_local, ssl_sync);
+      time_t last_modified_time = getTime(last_modified);
+      setModTime(filePath_local, last_modified_time);
+    } else{
+      char dir_user[MAXNAME];
+      sprintf(dir_user, "%s/%s", serverFolder, filename);
+      if(mkdir(dir_user, 0777) != 0) {
+        printf("Error creating user folder in server '%s'.\n", filename);
+      } else{
+        DEBUG_PRINT("Criado pasta!\n");
+      }
+    }
+
+	}
+}

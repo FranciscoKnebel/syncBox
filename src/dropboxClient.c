@@ -8,13 +8,15 @@ SSL *ssl;
 SSL_CTX	*ctx;
 int sockid;
 int status;
+struct sockaddr_in serverconn;
+// Inicializa engine ssl
+const SSL_METHOD *method;
+
+int porta;
+char *endereco;
 
 int connect_server (char *host, int port) {
 	DEBUG_PRINT("Inicia conexão\n");
-
-	struct sockaddr_in serverconn;
-	// Inicializa engine ssl
-	const SSL_METHOD *method;
 
 	OpenSSL_add_all_algorithms();
 	SSL_load_error_strings();
@@ -316,7 +318,17 @@ void list_server() {
 }
 
 void handler(int s) {
-	printf("Caught SIGPIPE\n");
+	signal(SIGPIPE, handler);
+	DEBUG_PRINT("SIGPIPE\n");
+	porta += 1;
+	char argv[4][MAXNAME];
+	connect_server(endereco, porta);
+	pthread_mutex_init (&mutex_up_down_del_list, NULL);
+	pthread_mutex_init (&mutex_watcher, NULL);
+	sync_client();
+	DEBUG_PRINT("Finaliza sync\n");
+	show_client_interface();
+	DEBUG_PRINT("Finaliza show interface\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -334,8 +346,6 @@ int main(int argc, char *argv[]) {
 
 	SSL_library_init();
 
-	int porta;
-	char *endereco;
 
 	// Parsing de argumentos do programa
 	if (strlen(argv[1]) <= MAXNAME) {
@@ -353,9 +363,10 @@ int main(int argc, char *argv[]) {
 
 	porta = atoi(argv[3]);
 
+	signal(SIGPIPE, handler);
+
 	// Efetua conexão ao servidor
 	if ((connect_server(endereco, porta))) {
-		signal(SIGPIPE, handler);
 		// sincronização de diretórios bilateral (cliente e servidor)
 		sync_client();
 
@@ -365,4 +376,5 @@ int main(int argc, char *argv[]) {
 		printf("Conexão ao servidor '%s%s%s' na porta '%s%d%s' falhou.\n",
 		COLOR_GREEN, endereco, COLOR_RESET, COLOR_GREEN, porta, COLOR_RESET);
 	}
+	DEBUG_PRINT("Encerrando main\n");
 }

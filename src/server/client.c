@@ -2,7 +2,7 @@
 
 char client_folder[3*MAXNAME +1];
 
-ClientList* newClient(char* userid, int socket, ClientList* client_list) {
+ClientList* newClient(char* userid, SSL* socket, ClientList* client_list) {
 	Client* client = (Client*) malloc(sizeof(Client));
 	if(client == NULL) {
 		fprintf(stderr, "Unable to allocate memory for new node\n");
@@ -10,7 +10,7 @@ ClientList* newClient(char* userid, int socket, ClientList* client_list) {
 	}
 	strcpy(client->userid, userid);
 	client->devices[0] = socket;
-	client->devices[1] = -1;
+	client->devices[1] = NULL;
 	sprintf(client_folder, "%s/%s", serverInfo.folder, userid);
 	client->n_files = get_dir_file_info(client_folder, client->file_info);
 	client->logged_in = 1;
@@ -93,8 +93,8 @@ ClientList* removeClient(Client* client, ClientList* client_list){
 	return client_list;
 }
 
-int addDevice(Client* client, int socket) {
-  if(client->devices[0] == -1) {
+int addDevice(Client* client, SSL* socket) {
+  if(client->devices[0] == NULL) {
    	sprintf(client_folder, "%s/%s", serverInfo.folder, client->userid);
     client->n_files = get_dir_file_info(client_folder, client->file_info);
 		client->devices[0] = socket;
@@ -102,7 +102,7 @@ int addDevice(Client* client, int socket) {
 		return 0;
   }
 
-  if(client->devices[1] == -1) {
+  if(client->devices[1] == NULL) {
    	sprintf(client_folder, "%s/%s", serverInfo.folder, client->userid);
     client->n_files = get_dir_file_info(client_folder, client->file_info);
 		client->devices[1] = socket;
@@ -114,7 +114,7 @@ int addDevice(Client* client, int socket) {
 
 int removeDevice(Client* client, int device, ClientList* client_list) {
 	if(client) {
-		client->devices[device] = -1;
+		client->devices[device] = NULL;
 		DEBUG_PRINT("'%s' removeu dispositivo '%d'.\n", client->userid, device);
 		return device;
 	}
@@ -123,7 +123,7 @@ int removeDevice(Client* client, int device, ClientList* client_list) {
 }
 
 ClientList* check_login_status(Client* client, ClientList* client_list) {
-	if(client->devices[0] == -1 && client->devices[1] == -1) {
+	if(client->devices[0] == NULL && client->devices[1] == NULL) {
 		client->logged_in = 0;
 		printf("Cliente '%s%s%s' desconectou todos dispositivos!\n", COLOR_GREEN, client->userid, COLOR_RESET);
 

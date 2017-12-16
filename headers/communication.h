@@ -27,3 +27,4 @@
 #define S_SYNC_LOCAL "sync local"
 #define S_REQ_DC "disconnect"
 #define S_RPL_DC "disconnected"
+#define S_SERVER_REPLICA "_REPLICA_SERVER"
