@@ -39,7 +39,7 @@ void* connect_server_replica (void* connection_struct) {
 	sockid = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sockid < 0) {
 		printf("ERROR opening socket\n");
-		return 1;
+		return 0;
 	}
 
 	DEBUG_PRINT("Criou socket\n");
@@ -88,12 +88,12 @@ void* connect_server_replica (void* connection_struct) {
     char filename[MAXNAME];
 
     while(1){
-      read_from_socket(ssl, buffer); // recebe S_UPLOAD
+      read_from_socket(ssl, buffer); // recebe S_UPLOAD ou S_DELETE
       if(strcmp(buffer, S_UPLOAD) == 0){
         read_from_socket(ssl, buffer); // nome do arquivo no server
     		strcpy(filePath_server, buffer);
         DEBUG_PRINT("connect_server_replica: Path recebido: %s\n", filePath_server);
-        sprintf(filename, "%syyy", buffer); // TODO: tirar yyy
+        sprintf(filename, "%s", buffer); // TODO: tirar yyy
         DEBUG_PRINT("connect_server_replica:Filename a receber: %s\n", filename);
         // recebe o arquivo
         sprintf(filePath_local, "%s/%s", serverInfo.folder, filename);
@@ -104,10 +104,23 @@ void* connect_server_replica (void* connection_struct) {
         receive_file(filePath_local, ssl);
         time_t last_modified_time = getTime(last_modified);
         setModTime(filePath_local, last_modified_time);
-      }
+      } else if(strcmp(buffer, S_DELETE) == 0){
+        read_from_socket(ssl, buffer); // nome do arquivo no server
+        strcpy(filePath_server, buffer);
+        DEBUG_PRINT("connect_server_replica: Path recebido: %s\n", filePath_server);
+        sprintf(filename, "%s", buffer); // TODO: tirar yyy
+        DEBUG_PRINT("connect_server_replica:Filename a deletar: %s\n", filename);
+        // recebe o arquivo
+        sprintf(filePath_local, "%s/%s", serverInfo.folder, filename);
+        if(remove(filePath_local) != 0) {
+      		DEBUG_PRINT("Erro ao deletar o arquivo %s\n", filePath_local);
+      	} else {
+        	DEBUG_PRINT("Arquivo %s excluido!\n", filePath_local);
+        }
     }
 
 	}
+}
 
 	return 0;
 }
@@ -149,7 +162,7 @@ void receive_file(char *file, SSL *ssl_download) {
       fclose(pFile);
 
       DEBUG_PRINT("receive_file: Arquivo '%s%s%s' salvo.\n", COLOR_GREEN, file, COLOR_RESET);
-      updateReplicas(file);
+      updateReplicas(file, S_UPLOAD);
     } else {
       DEBUG_PRINT("Erro abrindo arquivo %s.\n", file);
     }
@@ -169,7 +182,7 @@ void receive_file(char *file, SSL *ssl_download) {
   }
 }
 
-int updateReplicas(char* file_path){
+int updateReplicas(char* file_path, char* command){
   ClientList* current = client_list_servers;
   char buffer[BUFFER_SIZE];
 
@@ -178,25 +191,33 @@ int updateReplicas(char* file_path){
     SSL* ssl = client->devices[0];
     char last_modified[MAXNAME];
 
-    strcpy(buffer, S_UPLOAD);
+    if(strcmp(command, S_UPLOAD) == 0){
+      strcpy(buffer, S_UPLOAD);
+      write_to_socket(ssl,buffer); // envia string upload
+      strcpy(buffer, file_path + strlen(serverInfo.folder) + 1);
+      DEBUG_PRINT("update replicas: Enviando: %s\n", buffer);
+      write_to_socket(ssl, buffer); // envia nome
+      DEBUG_PRINT("Nome: %s\n", file_path + strlen(serverInfo.folder) + 1);
+      if (strchr(file_path + strlen(serverInfo.folder) + 1, '/') != NULL){
+        getFileModifiedTime(file_path, last_modified);
+        strcpy(buffer, last_modified);
+        DEBUG_PRINT("enviando Last modified: %s\n", buffer);
+        write_to_socket(ssl, buffer); // envia last modified
+        DEBUG_PRINT("Enviando: %s\n", file_path);
+        send_file(file_path, ssl, FALSE);
+      } else{
+        DEBUG_PRINT("Enviando nome da pasta!\n");
+      }
+  } else if(strcmp(command, S_DELETE) == 0){
+    strcpy(buffer, S_DELETE);
     write_to_socket(ssl,buffer); // envia string upload
     strcpy(buffer, file_path + strlen(serverInfo.folder) + 1);
     DEBUG_PRINT("update replicas: Enviando: %s\n", buffer);
     write_to_socket(ssl, buffer); // envia nome
-    char* name = &file_path;
-    DEBUG_PRINT("Nome: %s\n", file_path + strlen(serverInfo.folder) + 1);
-    if (strchr(file_path + strlen(serverInfo.folder) + 1, '/') != NULL){
-      getFileModifiedTime(file_path, last_modified);
-      strcpy(buffer, last_modified);
-      DEBUG_PRINT("enviando Last modified: %s\n", buffer);
-      write_to_socket(ssl, buffer); // envia last modified
-      DEBUG_PRINT("Enviando: %s\n", file_path);
-      send_file(file_path, ssl, FALSE);
-    } else{
-      DEBUG_PRINT("Enviando nome da pasta!\n");
-    }
+  }
     current = current->next;
   }
+  return 0;
 }
 
 
@@ -260,7 +281,6 @@ void* clientThread(void* connection_struct) {
   char buffer[BUFFER_SIZE];
 
   SSL *ssl = connection->ssl;
-  int socket = connection->socket_id;
   char* client_ip = connection->ip;
   char client_id[MAXNAME];
   int device = 0;
@@ -303,7 +323,7 @@ void* clientThread(void* connection_struct) {
     if(client == NULL) {
       DEBUG_PRINT("Criando novo cliente.\n");
       pthread_mutex_lock(&mutex_clientes);
-      client_list = newClient(client_id, socket, client_list);
+      client_list = newClient(client_id, ssl, client_list);
       pthread_mutex_unlock(&mutex_clientes);
       client = searchClient(client_id, client_list);
     } else {
@@ -356,8 +376,7 @@ void* clientThread(void* connection_struct) {
       pthread_mutex_lock(&mutex_clientes);
       printf("'%s%s%s' desconectou no dispositivo '%s%d%s'!\n",
       COLOR_GREEN, client_id, COLOR_RESET,
-      COLOR_GREEN, removeDevice(client, device, client_list), COLOR_RESET,
-      COLOR_GREEN, COLOR_RESET);
+      COLOR_GREEN, removeDevice(client, device, client_list), COLOR_RESET);
       client_list = check_login_status(client, client_list);
       pthread_mutex_unlock(&mutex_clientes);
 

@@ -113,6 +113,7 @@ void delete(SSL *socket, Client* client){
   		DEBUG_PRINT("Erro ao deletar o arquivo %s\n", path);
   	} else {
     	DEBUG_PRINT("Arquivo %s excluido!\n", path);
+      updateReplicas(path, S_DELETE);
     }
 
     client->n_files = get_dir_file_info(client_folder, client->file_info);

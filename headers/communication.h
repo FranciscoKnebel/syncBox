@@ -22,6 +22,7 @@
 #define S_LS "list server"
 #define S_RPL_DELETE "deleted"
 #define S_REQ_DELETE "delete"
+#define S_DELETE "deletar"
 #define S_SYNC "sync"
 #define S_GETSYNCDIR "sync dir"
 #define S_SYNC_LOCAL "sync local"

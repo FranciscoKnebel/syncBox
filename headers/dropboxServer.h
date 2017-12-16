@@ -67,6 +67,6 @@ void receive_file(char *file, SSL *sockid_upload);
 
 void send_file(char *file, SSL *sockid_download, int send_mod_time);
 
-int updateReplicas(char* file_path);
+int updateReplicas(char* file_path, char* command);
 
 #endif
