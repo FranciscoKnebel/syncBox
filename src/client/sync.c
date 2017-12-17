@@ -148,12 +148,11 @@ void *watcher_thread(void* ptr_path) {
             if (fileExists(path) && not_a_temp_file) {
               DEBUG_PRINT("Request upload: %s\n", path);
               pthread_mutex_lock(&mutex_watcher);
-              if(check_connection()){
-                send_file(path, FALSE);
-              } else{
-                reconnect_server();
-                send_file(path, FALSE);
-              }
+
+              strcpy(buffer, ".");
+              write_to_socket(ssl, buffer);
+
+              send_file(path, FALSE);
 
               pthread_mutex_unlock(&mutex_watcher);
               DEBUG_PRINT("Enviou!\n");
@@ -162,12 +161,12 @@ void *watcher_thread(void* ptr_path) {
             if (not_a_temp_file) {
               DEBUG_PRINT("Request delete: %s\n", path);
               pthread_mutex_lock(&mutex_watcher);
-              if(check_connection()){
-                delete_file(path);
-              } else{
-                reconnect_server();
-                delete_file(path);
-              }
+
+              strcpy(buffer, ".");
+              write_to_socket(ssl, buffer);
+
+              delete_file(path);
+
               pthread_mutex_unlock(&mutex_watcher);
               DEBUG_PRINT("Deletou!\n");
             }
@@ -199,6 +198,9 @@ void* sync_devices_thread() {
 
 		pthread_mutex_lock(&mutex_up_down_del_list);
 		pthread_mutex_lock(&mutex_watcher);
+
+    strcpy(buffer, ".");
+    write_to_socket(ssl, buffer);
 
 		bzero(buffer, BUFFER_SIZE);
 		strcpy(buffer, S_SYNC_LOCAL);

@@ -9,6 +9,8 @@ pthread_mutex_t mutex_clientes_servers;
 
 sem_t semaphore;
 
+int was_replica = 0;
+
 
 void* connect_server_replica (void* connection_struct) {
   DEBUG_PRINT("Inicia conexão replica\n");
@@ -364,9 +366,12 @@ void* clientThread(void* connection_struct) {
       printf("Conexão iniciada do usuário '%s%s%s' através do IP '%s%s%s'.\n",
       COLOR_GREEN, client_id, COLOR_RESET, COLOR_GREEN, client_ip, COLOR_RESET);
 
-      write_to_socket(ssl, buffer);
 
-      sync_server(ssl, client);
+      write_to_socket(ssl, buffer); // envia "connected"
+      
+      if(!was_replica){
+        sync_server(ssl, client);
+      }
 
       int disconnected = 0;
       do {
@@ -379,6 +384,8 @@ void* clientThread(void* connection_struct) {
           sem_post(&semaphore);
 
           disconnected = 1;
+        } else if(strcmp(buffer, ".") == 0){
+            DEBUG_PRINT("Check de conexão!\n");
         } else if(is_valid_command(buffer)) {
           DEBUG_PRINT("Comando do usuário: %s\n", buffer);
 
@@ -486,6 +493,7 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
   }
 
   if(isReplica){
+    was_replica = 1;
     pthread_t thread_replica;
     Connection *connection = malloc(sizeof(*connection));
     strcpy(connection->ip, replicaHost);

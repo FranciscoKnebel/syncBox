@@ -1,40 +1,42 @@
 #include "dropboxClient.h"
 
 void command_upload(char* path) {
+  char buffer[BUFFER_SIZE];
   pthread_mutex_lock(&mutex_up_down_del_list);
-  if(check_connection()){
-    send_file(path, TRUE);
-  } else{
-    reconnect_server();
-    send_file(path, TRUE);
-  }
+
+  strcpy(buffer, ".");
+  write_to_socket(ssl, buffer);
+
+  send_file(path, TRUE);
+
   pthread_mutex_unlock(&mutex_up_down_del_list);
 }
 
 void command_download(char* path) {
+  char buffer[BUFFER_SIZE];
   pthread_mutex_lock(&mutex_up_down_del_list);
   char cwd[MAXNAME*2];
 
   if (getcwd(cwd, sizeof(cwd)) == NULL) {
     perror("getcwd() error");
   }
-  if(check_connection()){
-    get_file(path, cwd);
-  } else{
-    reconnect_server();
-    get_file(path, cwd);
-  }
+
+  strcpy(buffer, ".");
+  write_to_socket(ssl, buffer);
+  get_file(path, cwd);
+
   pthread_mutex_unlock(&mutex_up_down_del_list);
 }
 
 void command_listserver() {
+  char buffer[BUFFER_SIZE];
   pthread_mutex_lock(&mutex_up_down_del_list);
-  if(check_connection()){
-    list_server();
-  } else{
-    reconnect_server();
-    list_server();
-  }
+
+  strcpy(buffer, ".");
+  write_to_socket(ssl, buffer);
+
+  list_server();
+
   pthread_mutex_unlock(&mutex_up_down_del_list);
 }
 

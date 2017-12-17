@@ -3,6 +3,7 @@
 char buffer[BUFFER_SIZE];
 pthread_t sync_thread;
 pthread_t sync_server_thread;
+
 struct user_info user;
 SSL *ssl;
 SSL_CTX	*ctx;
@@ -17,17 +18,27 @@ int configLine = 1; // linha 1 do arquivo config
 int porta;
 char *endereco;
 
-int check_connection(){
+/*int check_connection(){
   char command_ping[MAXNAME];
   sprintf(command_ping, "ping -c1 %s -w 2 ", endereco);
   if (system(command_ping) == 0){
+        DEBUG_PRINT("check_connection: TRUE!\n");
         return 1;
   } else{
+      DEBUG_PRINT("check_connection: FALSE!\n");
       return 0;
   }
+}*/
+
+void init_mutexes(){
+  pthread_mutex_init (&mutex_up_down_del_list, NULL);
+	pthread_mutex_init (&mutex_watcher, NULL);
 }
 
 int connect_server (char *host, int port) {
+
+  init_mutexes();
+
 	DEBUG_PRINT("Inicia conexão\n");
 
 	OpenSSL_add_all_algorithms();
@@ -329,8 +340,13 @@ void list_server() {
 	bzero(buffer, BUFFER_SIZE);
 }
 
+
+void handler(int s) {
+  DEBUG_PRINT("Caught SIGPIPE\n");
+  reconnect_server();
+}
+
 void reconnect_server() {
-	//signal(SIGPIPE, handler);
 
 	// config para conexão aos servidores backup
 	char filename_config[MAXNAME];
@@ -341,24 +357,27 @@ void reconnect_server() {
 	if(file_config == NULL){
 		DEBUG_PRINT("Arquivo '%s' nao encontrado\n", filename_config);
 	} else{
+    configLine+=2;
 		while (fgets(line, sizeof line, file_config) != NULL){ // read a line
+        DEBUG_PRINT("count: %d, configLine: %d\n", count, configLine);
         if (count == configLine){
 						DEBUG_PRINT("config: host lido: %s\n", line);
 						strcpy(endereco, line);
 						fgets(line, sizeof line, file_config);
 						DEBUG_PRINT("config: porta lida: %s\n", line);
 						porta = atoi(line);
-						configLine++;
+            count++;
         }
         else{
             count++;
         }
     }
     fclose(file_config);
-		configLine++;
 	}
 
 	connect_server(endereco, porta);
+  sleep(2);
+  show_client_interface();
 
 }
 
@@ -371,9 +390,6 @@ int main(int argc, char *argv[]) {
 
 		exit(0);
 	}
-
-	pthread_mutex_init (&mutex_up_down_del_list, NULL);
-	pthread_mutex_init (&mutex_watcher, NULL);
 
 	SSL_library_init();
 
@@ -394,7 +410,7 @@ int main(int argc, char *argv[]) {
 
 	porta = atoi(argv[3]);
 
-	//signal(SIGPIPE, handler);
+	signal(SIGPIPE, handler);
 
 	// Efetua conexão ao servidor
 	if ((connect_server(endereco, porta))) {
