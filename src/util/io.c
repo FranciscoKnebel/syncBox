@@ -1,5 +1,6 @@
 #include "dropboxUtil.h"
 
+
 int read_to_file(FILE* pFile, int file_size, SSL *ssl) {
   int bytes_written = 0;
   int bytes_read = 0;
@@ -28,7 +29,7 @@ int write_to_socket(SSL *ssl, char* buffer) {
   int a_enviar = BUFFER_SIZE;
   int enviado = 0;
   int pos_buffer = 0;
-  char answer[50];
+  //char answer[50];
 
   while((a_enviar - enviado) > 0) { // enquanto está enviando
     enviado += SSL_write(ssl, buffer + pos_buffer, a_enviar - enviado);
@@ -48,7 +49,7 @@ int read_from_socket(SSL *ssl, char* buffer) {
   int a_ler = BUFFER_SIZE;
   int lido = 0;
   int pos_buffer = 0;
-  char answer[50] = "lido!";
+  //char answer[50] = "lido!";
 
   bzero(buffer, BUFFER_SIZE);
   while((a_ler - lido) > 0) {

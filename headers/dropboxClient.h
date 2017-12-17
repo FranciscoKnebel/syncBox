@@ -53,4 +53,9 @@ void list_server();
 
 void show_client_interface();
 
+int check_connection();
+
+void reconnect_server();
+
+
 #endif

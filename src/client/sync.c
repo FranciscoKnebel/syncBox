@@ -148,7 +148,13 @@ void *watcher_thread(void* ptr_path) {
             if (fileExists(path) && not_a_temp_file) {
               DEBUG_PRINT("Request upload: %s\n", path);
               pthread_mutex_lock(&mutex_watcher);
-              send_file(path, FALSE);
+              if(check_connection()){
+                send_file(path, FALSE);
+              } else{
+                reconnect_server();
+                send_file(path, FALSE);
+              }
+
               pthread_mutex_unlock(&mutex_watcher);
               DEBUG_PRINT("Enviou!\n");
             }
@@ -156,7 +162,12 @@ void *watcher_thread(void* ptr_path) {
             if (not_a_temp_file) {
               DEBUG_PRINT("Request delete: %s\n", path);
               pthread_mutex_lock(&mutex_watcher);
-              delete_file(path);
+              if(check_connection()){
+                delete_file(path);
+              } else{
+                reconnect_server();
+                delete_file(path);
+              }
               pthread_mutex_unlock(&mutex_watcher);
               DEBUG_PRINT("Deletou!\n");
             }

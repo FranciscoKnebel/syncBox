@@ -12,8 +12,20 @@ struct sockaddr_in serverconn;
 // Inicializa engine ssl
 const SSL_METHOD *method;
 
+int configLine = 1; // linha 1 do arquivo config
+
 int porta;
 char *endereco;
+
+int check_connection(){
+  char command_ping[MAXNAME];
+  sprintf(command_ping, "ping -c1 %s -w 2 ", endereco);
+  if (system(command_ping) == 0){
+        return 1;
+  } else{
+      return 0;
+  }
+}
 
 int connect_server (char *host, int port) {
 	DEBUG_PRINT("Inicia conexão\n");
@@ -317,18 +329,37 @@ void list_server() {
 	bzero(buffer, BUFFER_SIZE);
 }
 
-void handler(int s) {
-	signal(SIGPIPE, handler);
-	DEBUG_PRINT("SIGPIPE\n");
-	porta += 1;
-	char argv[4][MAXNAME];
+void reconnect_server() {
+	//signal(SIGPIPE, handler);
+
+	// config para conexão aos servidores backup
+	char filename_config[MAXNAME];
+	sprintf(filename_config, "%s/%s", getUserHome(), "connection.config");
+	FILE *file_config = fopen(filename_config, "r");
+	int count = 1; // inicia na linha 1
+	char line[MAXNAME];
+	if(file_config == NULL){
+		DEBUG_PRINT("Arquivo '%s' nao encontrado\n", filename_config);
+	} else{
+		while (fgets(line, sizeof line, file_config) != NULL){ // read a line
+        if (count == configLine){
+						DEBUG_PRINT("config: host lido: %s\n", line);
+						strcpy(endereco, line);
+						fgets(line, sizeof line, file_config);
+						DEBUG_PRINT("config: porta lida: %s\n", line);
+						porta = atoi(line);
+						configLine++;
+        }
+        else{
+            count++;
+        }
+    }
+    fclose(file_config);
+		configLine++;
+	}
+
 	connect_server(endereco, porta);
-	pthread_mutex_init (&mutex_up_down_del_list, NULL);
-	pthread_mutex_init (&mutex_watcher, NULL);
-	sync_client();
-	DEBUG_PRINT("Finaliza sync\n");
-	show_client_interface();
-	DEBUG_PRINT("Finaliza show interface\n");
+
 }
 
 int main(int argc, char *argv[]) {
@@ -363,7 +394,7 @@ int main(int argc, char *argv[]) {
 
 	porta = atoi(argv[3]);
 
-	signal(SIGPIPE, handler);
+	//signal(SIGPIPE, handler);
 
 	// Efetua conexão ao servidor
 	if ((connect_server(endereco, porta))) {

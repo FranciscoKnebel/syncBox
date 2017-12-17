@@ -2,7 +2,12 @@
 
 void command_upload(char* path) {
   pthread_mutex_lock(&mutex_up_down_del_list);
-  send_file(path, TRUE);
+  if(check_connection()){
+    send_file(path, TRUE);
+  } else{
+    reconnect_server();
+    send_file(path, TRUE);
+  }
   pthread_mutex_unlock(&mutex_up_down_del_list);
 }
 
@@ -13,14 +18,23 @@ void command_download(char* path) {
   if (getcwd(cwd, sizeof(cwd)) == NULL) {
     perror("getcwd() error");
   }
-
-  get_file(path, cwd);
+  if(check_connection()){
+    get_file(path, cwd);
+  } else{
+    reconnect_server();
+    get_file(path, cwd);
+  }
   pthread_mutex_unlock(&mutex_up_down_del_list);
 }
 
 void command_listserver() {
   pthread_mutex_lock(&mutex_up_down_del_list);
-  list_server();
+  if(check_connection()){
+    list_server();
+  } else{
+    reconnect_server();
+    list_server();
+  }
   pthread_mutex_unlock(&mutex_up_down_del_list);
 }
 

@@ -89,11 +89,12 @@ void* connect_server_replica (void* connection_struct) {
 
     while(1){
       read_from_socket(ssl, buffer); // recebe S_UPLOAD ou S_DELETE
+      DEBUG_PRINT("connect_server_replica: Lido: %s\n", buffer);
       if(strcmp(buffer, S_UPLOAD) == 0){
         read_from_socket(ssl, buffer); // nome do arquivo no server
     		strcpy(filePath_server, buffer);
         DEBUG_PRINT("connect_server_replica: Path recebido: %s\n", filePath_server);
-        sprintf(filename, "%s", buffer); // TODO: tirar yyy
+        sprintf(filename, "%s", buffer);
         DEBUG_PRINT("connect_server_replica:Filename a receber: %s\n", filename);
         // recebe o arquivo
         sprintf(filePath_local, "%s/%s", serverInfo.folder, filename);
@@ -108,7 +109,7 @@ void* connect_server_replica (void* connection_struct) {
         read_from_socket(ssl, buffer); // nome do arquivo no server
         strcpy(filePath_server, buffer);
         DEBUG_PRINT("connect_server_replica: Path recebido: %s\n", filePath_server);
-        sprintf(filename, "%s", buffer); // TODO: tirar yyy
+        sprintf(filename, "%s", buffer);
         DEBUG_PRINT("connect_server_replica:Filename a deletar: %s\n", filename);
         // recebe o arquivo
         sprintf(filePath_local, "%s/%s", serverInfo.folder, filename);
@@ -117,8 +118,17 @@ void* connect_server_replica (void* connection_struct) {
       	} else {
         	DEBUG_PRINT("Arquivo %s excluido!\n", filePath_local);
         }
-    }
-
+        } else if(strcmp(buffer, S_NEW_FOLDER) == 0){
+          read_from_socket(ssl, buffer);
+          char folderPath[MAXNAME*2];
+          sprintf(folderPath, "%s/%s", serverInfo.folder, buffer);
+          if(!fileExists(folderPath)) {
+            if(mkdir(folderPath, 0777) != 0) {
+              printf("Error creating user folder in server '%s'.\n", folderPath);
+              return 0;
+            }
+          }
+        }
 	}
 }
 
@@ -214,6 +224,11 @@ int updateReplicas(char* file_path, char* command){
     strcpy(buffer, file_path + strlen(serverInfo.folder) + 1);
     DEBUG_PRINT("update replicas: Enviando: %s\n", buffer);
     write_to_socket(ssl, buffer); // envia nome
+  } else if(strcmp(command, S_NEW_FOLDER) == 0){
+    strcpy(buffer, S_NEW_FOLDER);
+    write_to_socket(ssl, buffer);
+    strcpy(buffer, file_path + strlen(serverInfo.folder) + 1);
+    write_to_socket(ssl, buffer);
   }
     current = current->next;
   }
@@ -325,6 +340,7 @@ void* clientThread(void* connection_struct) {
       pthread_mutex_lock(&mutex_clientes);
       client_list = newClient(client_id, ssl, client_list);
       pthread_mutex_unlock(&mutex_clientes);
+      updateReplicas(client_id, S_NEW_FOLDER);
       client = searchClient(client_id, client_list);
     } else {
       DEBUG_PRINT("Adicionando device ao cliente encontrado.\n");
@@ -478,8 +494,8 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
     if(pthread_create(&thread_replica, NULL, connect_server_replica, (void*) connection) < 0){
       printf("Error on create thread\n");
     }
-    pthread_join(thread_replica, NULL);
   }
+
 
   pthread_t thread_id;
   while(1) {

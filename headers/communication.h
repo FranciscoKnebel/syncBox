@@ -17,6 +17,7 @@
 #define S_ERRO_ARQUIVO "erro ao abrir"
 
 /* Commands */
+#define S_NEW_FOLDER "pasta"
 #define S_DOWNLOAD "download"
 #define S_UPLOAD "upload"
 #define S_LS "list server"
