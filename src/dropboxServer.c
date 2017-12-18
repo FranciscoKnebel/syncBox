@@ -7,135 +7,199 @@ int numServers = 0;
 pthread_mutex_t mutex_clientes;
 pthread_mutex_t mutex_clientes_servers;
 
+pthread_t thread_replica;
+
 sem_t semaphore;
+
+char addressToConnect[MAXNAME];
+int portToConnect = 0;
+
+int porta;
+char address[MAXNAME];
+
+char replicaHost[MAXNAME];
+int replicaPort;
 
 int was_replica = 0;
 
+int configLine = 1;
+Connection *connection_replica;
 
 void* connect_server_replica (void* connection_struct) {
-  DEBUG_PRINT("Inicia conexão replica\n");
+      DEBUG_PRINT("Inicia conexão replica\n");
 
-  Connection* connection = (Connection*) connection_struct;
-  char* host = connection->ip;
-  int port = connection->porta;
+      Connection* connection = (Connection*) connection_struct;
+      char* host = connection->ip;
+      int port = connection->porta;
 
-  struct sockaddr_in serverconn;
-  SSL *ssl;
-  SSL_CTX	*ctx;
-  const SSL_METHOD *method;
-  int sockid;
-  char replicaName[MAXNAME];
-  char buffer[BUFFER_SIZE];
 
-	OpenSSL_add_all_algorithms();
-	SSL_load_error_strings();
-	method	=	SSLv23_client_method();
-	ctx	=	SSL_CTX_new(method);
-	if(ctx	==	NULL) {
-		ERR_print_errors_fp(stderr);
-		abort();
-	}
-	DEBUG_PRINT("Inicializado a engine SSL\n");
+      struct sockaddr_in serverconn;
+      SSL *ssl;
+      SSL_CTX	*ctx;
+      const SSL_METHOD *method;
+      int sockid;
+      char replicaName[MAXNAME];
+      char buffer[BUFFER_SIZE];
 
-	/* Create a socket point */
-	sockid = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (sockid < 0) {
-		printf("ERROR opening socket\n");
-		return 0;
-	}
+    	OpenSSL_add_all_algorithms();
+    	SSL_load_error_strings();
+    	method	=	SSLv23_client_method();
+    	ctx	=	SSL_CTX_new(method);
+    	if(ctx	==	NULL) {
+    		ERR_print_errors_fp(stderr);
+    		abort();
+    	}
+    	DEBUG_PRINT("Inicializado a engine SSL\n");
 
-	DEBUG_PRINT("Criou socket\n");
+    	/* Create a socket point */
+    	sockid = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    	if (sockid < 0) {
+    		printf("ERROR opening socket\n");
+    		return 0;
+    	}
 
-	bzero((char *) &serverconn, sizeof(serverconn));
+    	DEBUG_PRINT("Criou socket\n");
 
-	serverconn.sin_family = AF_INET;
-	serverconn.sin_port = htons(port);
-	serverconn.sin_addr.s_addr = inet_addr(host);
+    	bzero((char *) &serverconn, sizeof(serverconn));
 
-	if (connect(sockid, (struct sockaddr*) &serverconn, sizeof(serverconn)) != 0){
-		close(sockid);
-		perror(host);
-		abort();
-	}
+    	serverconn.sin_family = AF_INET;
+    	serverconn.sin_port = htons(port);
+    	serverconn.sin_addr.s_addr = inet_addr(host);
 
-	DEBUG_PRINT("Conectou socket\n");
+    	if (connect(sockid, (struct sockaddr*) &serverconn, sizeof(serverconn)) != 0){
+    		close(sockid);
+    		perror(host);
+    		abort();
+    	}
 
-	ssl	=	SSL_new(ctx);
-	SSL_set_fd(ssl,	sockid);
+    	DEBUG_PRINT("Conectou socket\n");
 
-	DEBUG_PRINT("SSL anexado ao socket\n");
+    	ssl	=	SSL_new(ctx);
+    	SSL_set_fd(ssl,	sockid);
 
-	if(SSL_connect(ssl)	== -1) {
-		DEBUG_PRINT("Erro no ssl_connect\n");
-		ERR_print_errors_fp(stderr);
-	} else {	// conexão aceita
-		DEBUG_PRINT("Conectou o ssl\n");
-		printf("Conexão com criptografia %s estabelecida.\n", SSL_get_cipher(ssl));
+    	DEBUG_PRINT("SSL anexado ao socket\n");
 
-		ShowCerts(ssl);
-		bzero(buffer, BUFFER_SIZE);
-		strcpy(buffer, S_SERVER_REPLICA);
+    	if(SSL_connect(ssl)	== -1) {
+    		DEBUG_PRINT("Erro no ssl_connect\n");
+    		ERR_print_errors_fp(stderr);
+    	} else {	// conexão aceita
+    		DEBUG_PRINT("Conectou o ssl\n");
+    		printf("Conexão com criptografia %s estabelecida.\n", SSL_get_cipher(ssl));
 
-		// write to socket
-		write_to_socket(ssl, buffer); // envia S_SERVER_REPLICA
+    		ShowCerts(ssl);
+    		bzero(buffer, BUFFER_SIZE);
+    		strcpy(buffer, S_SERVER_REPLICA);
 
-    read_from_socket(ssl, buffer); // recebe nome de identificaçao desse server replica no principal
-    strcpy(replicaName, buffer);
+    		// write to socket
+    		write_to_socket(ssl, buffer); // envia S_SERVER_REPLICA
 
-    synchronize_replica_receive(ssl, serverInfo.folder);
+        read_from_socket(ssl, buffer); // recebe nome de identificaçao desse server replica no principal
+        strcpy(replicaName, buffer);
 
-    char filePath_server[MAXNAME*2];
-    char last_modified[MAXNAME];
-    char filePath_local[MAXNAME*2];
-    char filename[MAXNAME];
+        strcpy(buffer, address);
+        write_to_socket(ssl, buffer);
+        sprintf(buffer, "%d", porta);
+        write_to_socket(ssl, buffer);
 
-    while(1){
-      read_from_socket(ssl, buffer); // recebe S_UPLOAD ou S_DELETE
-      //DEBUG_PRINT("connect_server_replica: Lido: %s\n", buffer);
-      if(strcmp(buffer, S_UPLOAD) == 0){
-        read_from_socket(ssl, buffer); // nome do arquivo no server
-    		strcpy(filePath_server, buffer);
-        DEBUG_PRINT("connect_server_replica: Path recebido: %s\n", filePath_server);
-        sprintf(filename, "%s", buffer);
-        DEBUG_PRINT("connect_server_replica:Filename a receber: %s\n", filename);
-        // recebe o arquivo
-        sprintf(filePath_local, "%s/%s", serverInfo.folder, filename);
-        DEBUG_PRINT("connect_server_replica: Recebendo: %s\n", filePath_local);
-        read_from_socket(ssl, buffer); // timestamp
-        strcpy(last_modified, buffer);
-        DEBUG_PRINT("connect_server_replica: Last modified recebido: %s\n", last_modified);
-        receive_file(filePath_local, ssl);
-        time_t last_modified_time = getTime(last_modified);
-        setModTime(filePath_local, last_modified_time);
-      } else if(strcmp(buffer, S_DELETE) == 0){
-        read_from_socket(ssl, buffer); // nome do arquivo no server
-        strcpy(filePath_server, buffer);
-        DEBUG_PRINT("connect_server_replica: Path recebido: %s\n", filePath_server);
-        sprintf(filename, "%s", buffer);
-        DEBUG_PRINT("connect_server_replica:Filename a deletar: %s\n", filename);
-        // recebe o arquivo
-        sprintf(filePath_local, "%s/%s", serverInfo.folder, filename);
-        if(remove(filePath_local) != 0) {
-      		DEBUG_PRINT("Erro ao deletar o arquivo %s\n", filePath_local);
-      	} else {
-        	DEBUG_PRINT("Arquivo %s excluido!\n", filePath_local);
-        }
-        } else if(strcmp(buffer, S_NEW_FOLDER) == 0){
-          read_from_socket(ssl, buffer);
-          char folderPath[MAXNAME*2];
-          sprintf(folderPath, "%s/%s", serverInfo.folder, buffer);
-          if(!fileExists(folderPath)) {
-            if(mkdir(folderPath, 0777) != 0) {
-              printf("Error creating user folder in server '%s'.\n", folderPath);
-              return 0;
-            }
+
+        synchronize_replica_receive(ssl, serverInfo.folder);
+
+        char filePath_server[MAXNAME*2];
+        char last_modified[MAXNAME];
+        char filePath_local[MAXNAME*2];
+        char filename[MAXNAME];
+
+        while(1){
+          if(read_from_socket(ssl, buffer) == 0){ // recebe S_UPLOAD ou S_DELETE ou S_NEW_FOLDER ou nao recebe nada (server caiu)
+            reconnect_server_replica();
+          } else{
+            if(strcmp(buffer, S_UPLOAD) == 0){
+              read_from_socket(ssl, buffer); // nome do arquivo no server
+          		strcpy(filePath_server, buffer);
+              DEBUG_PRINT("connect_server_replica: Path recebido: %s\n", filePath_server);
+              sprintf(filename, "%s", buffer);
+              DEBUG_PRINT("connect_server_replica:Filename a receber: %s\n", filename);
+              // recebe o arquivo
+              sprintf(filePath_local, "%s/%s", serverInfo.folder, filename);
+              DEBUG_PRINT("connect_server_replica: Recebendo: %s\n", filePath_local);
+              read_from_socket(ssl, buffer); // timestamp
+              strcpy(last_modified, buffer);
+              DEBUG_PRINT("connect_server_replica: Last modified recebido: %s\n", last_modified);
+              receive_file(filePath_local, ssl);
+              time_t last_modified_time = getTime(last_modified);
+              setModTime(filePath_local, last_modified_time);
+            } else if(strcmp(buffer, S_DELETE) == 0){
+              read_from_socket(ssl, buffer); // nome do arquivo no server
+              strcpy(filePath_server, buffer);
+              DEBUG_PRINT("connect_server_replica: Path recebido: %s\n", filePath_server);
+              sprintf(filename, "%s", buffer);
+              DEBUG_PRINT("connect_server_replica:Filename a deletar: %s\n", filename);
+              // recebe o arquivo
+              sprintf(filePath_local, "%s/%s", serverInfo.folder, filename);
+              if(remove(filePath_local) != 0) {
+            		DEBUG_PRINT("Erro ao deletar o arquivo %s\n", filePath_local);
+            	} else {
+              	DEBUG_PRINT("Arquivo %s excluido!\n", filePath_local);
+              }
+              } else if(strcmp(buffer, S_NEW_FOLDER) == 0){
+                read_from_socket(ssl, buffer);
+                char folderPath[MAXNAME*2];
+                sprintf(folderPath, "%s/%s", serverInfo.folder, buffer);
+                if(!fileExists(folderPath)) {
+                  if(mkdir(folderPath, 0777) != 0) {
+                    printf("Error creating user folder in server '%s'.\n", folderPath);
+                    return 0;
+                  }
+                }
+              }
           }
-        }
-	}
+    	}
+    }
+  return 0;
 }
 
-	return 0;
+int reconnect_server_replica() {
+	// config para conexão aos servidores backup
+	char filename_config[MAXNAME];
+	sprintf(filename_config, "%s/%s", getUserHome(), "connection.config");
+	FILE *file_config = fopen(filename_config, "r");
+	int count = 1; // inicia na linha 1
+	char line[MAXNAME];
+	if(file_config == NULL){
+		DEBUG_PRINT("Arquivo '%s' nao encontrado\n", filename_config);
+	} else{
+    configLine+=2;
+		while (fgets(line, sizeof line, file_config) != NULL){ // read a line
+        DEBUG_PRINT("count: %d, configLine: %d\n", count, configLine);
+        if (count == configLine){
+						DEBUG_PRINT("config: host lido: %s\n", line);
+						strcpy(addressToConnect, line);
+						fgets(line, sizeof line, file_config);
+						DEBUG_PRINT("config: porta lida: %s\n", line);
+						portToConnect = atoi(line);
+            count++;
+        }
+        else{
+            count++;
+        }
+    }
+    fclose(file_config);
+	}
+
+  if((strcmp(addressToConnect, address) != 0) && (portToConnect != porta)){
+      DEBUG_PRINT("\nENDERECO DIFERENTE E PORTA DIFERENTE\n");
+      strcpy(connection_replica->ip, addressToConnect);
+      connection_replica->porta = portToConnect;
+
+      connect_server_replica((void*) connection_replica);
+  }else{
+    DEBUG_PRINT("\nENDERECO IGUAL OU PORTA IGUAL!!!!!\n");
+    pthread_exit(NULL);
+  }
+
+  return 0;
 }
+
 
 void sync_server(SSL *ssl_sync, Client* client_sync) {
   // sincronizar arquivos no dispositivo do cliente
@@ -318,12 +382,23 @@ void* clientThread(void* connection_struct) {
     DEBUG_PRINT("Adicionado %s a lista de servidores replica\n", client_id);
     pthread_mutex_unlock(&mutex_clientes_servers);
 
-    // Sincroniza as pastas dos servidores
     client = searchClient(client_id, client_list_servers);
+
+    read_from_socket(ssl, buffer);
+    strcpy(client->host, buffer);
+    read_from_socket(ssl, buffer);
+    client->port = atoi(buffer);
+
+    DEBUG_PRINT("host: %s porta: %d\n", client->host, client->port);
+
+    // Sincroniza as pastas dos servidores
     synchronize_replica_send(ssl, client_list, serverInfo.folder);
 
     while(1){
-
+      /*strcpy(buffer, ".");
+      write_to_socket(ssl, buffer);
+      usleep(1000);
+      */
     }
   } else{
 
@@ -420,26 +495,23 @@ void* clientThread(void* connection_struct) {
 
 int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
   setlocale(LC_ALL, "pt_BR");
-  int port = DEFAULT_PORT;
+  porta = DEFAULT_PORT;
   struct sockaddr_in server, client;
   int isReplica = 0;
-  int replicaPort = DEFAULT_PORT;
-  char* replicaHost;
+  replicaPort = DEFAULT_PORT;
 
   pthread_mutex_init (&mutex_clientes, NULL); // inicializa mutex da fila de clientes
   pthread_mutex_init (&mutex_exclusao_mutua_lock, NULL);
 
   sem_init(&semaphore, 0, MAX_CLIENTS);
 
-  int addressLength = (argc > 1) ? strlen(argv[1]) : strlen(DEFAULT_ADDRESS);
-  char* address = malloc(addressLength + 1);
-  int addressLengthReplica = (argc > 3) ? strlen(argv[3]) : strlen(DEFAULT_ADDRESS);
-  replicaHost = malloc(addressLengthReplica + 1);
+  //int addressLengthReplica = (argc > 3) ? strlen(argv[3]) : strlen(DEFAULT_ADDRESS);
+  //replicaHost = malloc(addressLengthReplica + 1);
 
   /* Initialize socket structure */
   bzero((char *) &server, sizeof(server));
 
-  parseArguments(argc, argv, address, &port, replicaHost, &replicaPort);
+  parseArguments(argc, argv, address, &porta, replicaHost, &replicaPort);
 
   if(argc > 3){ // é replica
     isReplica = 1;
@@ -448,12 +520,12 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
     DEBUG_PRINT("É servidor principal!\n");
   }
   server.sin_family = AF_INET; // address format is host and port number
-  server.sin_port = htons(port); // host to network short
+  server.sin_port = htons(porta); // host to network short
   server.sin_addr.s_addr = inet_addr(address);
 
   sprintf(serverInfo.folder, "%s/%s", getUserHome(), SERVER_FOLDER);
   strcpy(serverInfo.ip, address);
-  serverInfo.port = port;
+  serverInfo.port = porta;
 
   // ssl
   SSL_library_init();
@@ -498,11 +570,11 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
   if(isReplica){
     was_replica = 1;
     pthread_t thread_replica;
-    Connection *connection = malloc(sizeof(*connection));
-    strcpy(connection->ip, replicaHost);
-    connection->porta = replicaPort;
+    connection_replica = malloc(sizeof(*connection_replica));
+    strcpy(connection_replica->ip, replicaHost);
+    connection_replica->porta = replicaPort;
 
-    if(pthread_create(&thread_replica, NULL, connect_server_replica, (void*) connection) < 0){
+    if(pthread_create(&thread_replica, NULL, connect_server_replica, (void*) connection_replica) < 0){
       printf("Error on create thread\n");
     }
   }

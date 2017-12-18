@@ -36,6 +36,8 @@ typedef struct client
   pthread_mutex_t mutex_files[MAXFILES];
   int n_files;
   int logged_in;
+  char host[MAXNAME];
+  int port;
 } Client;
 
 typedef struct client_list
@@ -68,5 +70,7 @@ void receive_file(char *file, SSL *sockid_upload);
 void send_file(char *file, SSL *sockid_download, int send_mod_time);
 
 int updateReplicas(char* file_path, char* command);
+
+int reconnect_server_replica();
 
 #endif
