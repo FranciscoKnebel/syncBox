@@ -37,7 +37,7 @@ extern int sockid;
 extern SSL *ssl;
 extern struct sockaddr_in serverconn;
 
-int connect_server(char *host, int port);
+int connect_server(char *host, int port, int show_certs);
 
 void sync_client();
 

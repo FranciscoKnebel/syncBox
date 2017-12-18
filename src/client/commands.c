@@ -7,7 +7,13 @@ void command_upload(char* path) {
   strcpy(buffer, ".");
   write_to_socket(ssl, buffer);
 
-  send_file(path, TRUE);
+  if(read_from_socket(ssl, buffer) != 0){
+    send_file(path, TRUE);
+  } else{
+    reconnect_server();
+
+    send_file(path, TRUE);
+  }
 
   pthread_mutex_unlock(&mutex_up_down_del_list);
 }
@@ -21,9 +27,17 @@ void command_download(char* path) {
     perror("getcwd() error");
   }
 
+
   strcpy(buffer, ".");
   write_to_socket(ssl, buffer);
-  get_file(path, cwd);
+
+  if(read_from_socket(ssl, buffer) != 0){
+    get_file(path, cwd);
+  } else{
+    reconnect_server();
+
+    get_file(path, cwd);
+  }
 
   pthread_mutex_unlock(&mutex_up_down_del_list);
 }
@@ -35,7 +49,13 @@ void command_listserver() {
   strcpy(buffer, ".");
   write_to_socket(ssl, buffer);
 
-  list_server();
+  if(read_from_socket(ssl, buffer) != 0){
+    list_server();
+  } else{
+    reconnect_server();
+
+    list_server();
+  }
 
   pthread_mutex_unlock(&mutex_up_down_del_list);
 }

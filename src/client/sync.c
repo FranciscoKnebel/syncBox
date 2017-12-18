@@ -18,11 +18,14 @@ void synchronize_local(SSL *ssl, int print) { // executa primeiro
 
   DEBUG_PRINT_COND(print, "Iniciando sincronização local.\n");
 
+  DEBUG_PRINT("synchronize_local: envia S_SYNC\n");
   strcpy(buffer, S_SYNC);
 	write_to_socket(ssl, buffer); // envia comando "sync"
 
+  DEBUG_PRINT("synchronize_local: recebe numero de arquivos\n");
 	read_from_socket(ssl, buffer); // recebe numero de arquivos no server
 
+  DEBUG_PRINT("synchronize_local: recebeu ja o numero de arquivos\n");
 	number_files_server = atoi(buffer);
   DEBUG_PRINT_COND(print, "'%s%d%s' arquivos no servidor\n", COLOR_GREEN, number_files_server, COLOR_RESET);
 
@@ -152,7 +155,13 @@ void *watcher_thread(void* ptr_path) {
               strcpy(buffer, ".");
               write_to_socket(ssl, buffer);
 
-              send_file(path, FALSE);
+              if(read_from_socket(ssl, buffer) != 0){
+                send_file(path, FALSE);
+              } else{
+                reconnect_server();
+
+                send_file(path, FALSE);
+              }
 
               pthread_mutex_unlock(&mutex_watcher);
               DEBUG_PRINT("Enviou!\n");
@@ -165,7 +174,13 @@ void *watcher_thread(void* ptr_path) {
               strcpy(buffer, ".");
               write_to_socket(ssl, buffer);
 
-              delete_file(path);
+              if(read_from_socket(ssl, buffer) != 0){
+                delete_file(path);
+              } else{
+                reconnect_server();
+
+                delete_file(path);
+              }
 
               pthread_mutex_unlock(&mutex_watcher);
               DEBUG_PRINT("Deletou!\n");
@@ -202,10 +217,21 @@ void* sync_devices_thread() {
     strcpy(buffer, ".");
     write_to_socket(ssl, buffer);
 
-		bzero(buffer, BUFFER_SIZE);
-		strcpy(buffer, S_SYNC_LOCAL);
-		write_to_socket(ssl, buffer);
-		synchronize_local(ssl, FALSE);
+    if(read_from_socket(ssl, buffer) != 0){
+      bzero(buffer, BUFFER_SIZE);
+  		strcpy(buffer, S_SYNC_LOCAL);
+      //DEBUG_PRINT("sync_devices_thread: write S_SYNC_LOCAL\n");
+  		write_to_socket(ssl, buffer);
+  		synchronize_local(ssl, FALSE);
+    } else{
+      reconnect_server();
+
+      bzero(buffer, BUFFER_SIZE);
+  		strcpy(buffer, S_SYNC_LOCAL);
+      //DEBUG_PRINT("sync_devices_thread: write S_SYNC_LOCAL\n");
+  		write_to_socket(ssl, buffer);
+  		synchronize_local(ssl, FALSE);
+    }
 
 		pthread_mutex_unlock(&mutex_watcher);
 		pthread_mutex_unlock(&mutex_up_down_del_list);

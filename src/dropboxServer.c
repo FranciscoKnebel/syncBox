@@ -91,7 +91,7 @@ void* connect_server_replica (void* connection_struct) {
 
     while(1){
       read_from_socket(ssl, buffer); // recebe S_UPLOAD ou S_DELETE
-      DEBUG_PRINT("connect_server_replica: Lido: %s\n", buffer);
+      //DEBUG_PRINT("connect_server_replica: Lido: %s\n", buffer);
       if(strcmp(buffer, S_UPLOAD) == 0){
         read_from_socket(ssl, buffer); // nome do arquivo no server
     		strcpy(filePath_server, buffer);
@@ -368,7 +368,7 @@ void* clientThread(void* connection_struct) {
 
 
       write_to_socket(ssl, buffer); // envia "connected"
-      
+
       if(!was_replica){
         sync_server(ssl, client);
       }
@@ -386,6 +386,9 @@ void* clientThread(void* connection_struct) {
           disconnected = 1;
         } else if(strcmp(buffer, ".") == 0){
             DEBUG_PRINT("Check de conexão!\n");
+            sprintf(buffer, "%s", S_CONNECTED);
+            write_to_socket(ssl, buffer);
+            DEBUG_PRINT("Escrito S_CONNECTED no buffer\n");
         } else if(is_valid_command(buffer)) {
           DEBUG_PRINT("Comando do usuário: %s\n", buffer);
 

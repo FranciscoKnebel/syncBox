@@ -18,6 +18,15 @@ int configLine = 1; // linha 1 do arquivo config
 int porta;
 char *endereco;
 
+
+void error(char *msg)
+{
+    DEBUG_PRINT("Erro: %s\n", msg);
+    perror(msg);
+    exit(1);
+}
+
+
 /*int check_connection(){
   char command_ping[MAXNAME];
   sprintf(command_ping, "ping -c1 %s -w 2 ", endereco);
@@ -35,7 +44,7 @@ void init_mutexes(){
 	pthread_mutex_init (&mutex_watcher, NULL);
 }
 
-int connect_server (char *host, int port) {
+int connect_server (char *host, int port, int show_certs) {
 
   init_mutexes();
 
@@ -84,9 +93,11 @@ int connect_server (char *host, int port) {
 		ERR_print_errors_fp(stderr);
 	} else {	// conexão aceita
 		DEBUG_PRINT("Conectou o ssl\n");
-		printf("Conexão com criptografia %s estabelecida.\n", SSL_get_cipher(ssl));
+		DEBUG_PRINT("Conexão com criptografia %s estabelecida.\n", SSL_get_cipher(ssl));
 
-		ShowCerts(ssl);
+    if(show_certs){
+		  ShowCerts(ssl);
+    }
 		bzero(buffer, BUFFER_SIZE);
 		strcpy(buffer, user.id);
 
@@ -375,9 +386,9 @@ void reconnect_server() {
     fclose(file_config);
 	}
 
-	connect_server(endereco, porta);
-  sleep(2);
-  show_client_interface();
+	connect_server(endereco, porta, FALSE);
+  //sleep(2);
+  //show_client_interface();
 
 }
 
@@ -410,10 +421,10 @@ int main(int argc, char *argv[]) {
 
 	porta = atoi(argv[3]);
 
-	signal(SIGPIPE, handler);
+	//signal(SIGPIPE, handler);
 
 	// Efetua conexão ao servidor
-	if ((connect_server(endereco, porta))) {
+	if ((connect_server(endereco, porta, TRUE))) {
 		// sincronização de diretórios bilateral (cliente e servidor)
 		sync_client();
 
