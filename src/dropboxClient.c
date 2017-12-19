@@ -361,7 +361,7 @@ void reconnect_server() {
 
 	// config para conexão aos servidores backup
 	char filename_config[MAXNAME];
-	sprintf(filename_config, "%s/%s", getUserHome(), "connection.config");
+	sprintf(filename_config, "%s", "connection.config");
 	FILE *file_config = fopen(filename_config, "r");
 	int count = 1; // inicia na linha 1
 	char line[MAXNAME];

@@ -18,14 +18,14 @@ void synchronize_local(SSL *ssl, int print) { // executa primeiro
 
   DEBUG_PRINT_COND(print, "Iniciando sincronização local.\n");
 
-  DEBUG_PRINT("synchronize_local: envia S_SYNC\n");
+  //DEBUG_PRINT("synchronize_local: envia S_SYNC\n");
   strcpy(buffer, S_SYNC);
 	write_to_socket(ssl, buffer); // envia comando "sync"
 
-  DEBUG_PRINT("synchronize_local: recebe numero de arquivos\n");
+  //DEBUG_PRINT("synchronize_local: recebe numero de arquivos\n");
 	read_from_socket(ssl, buffer); // recebe numero de arquivos no server
 
-  DEBUG_PRINT("synchronize_local: recebeu ja o numero de arquivos\n");
+  //DEBUG_PRINT("synchronize_local: recebeu ja o numero de arquivos\n");
 	number_files_server = atoi(buffer);
   DEBUG_PRINT_COND(print, "'%s%d%s' arquivos no servidor\n", COLOR_GREEN, number_files_server, COLOR_RESET);
 

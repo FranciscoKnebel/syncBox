@@ -143,6 +143,7 @@ void* connect_server_replica (void* connection_struct) {
               }
               } else if(strcmp(buffer, S_NEW_FOLDER) == 0){
                 read_from_socket(ssl, buffer);
+                DEBUG_PRINT("Criando folder de nome %s", buffer);
                 char folderPath[MAXNAME*2];
                 sprintf(folderPath, "%s/%s", serverInfo.folder, buffer);
                 if(!fileExists(folderPath)) {
@@ -291,10 +292,13 @@ int updateReplicas(char* file_path, char* command){
     DEBUG_PRINT("update replicas: Enviando: %s\n", buffer);
     write_to_socket(ssl, buffer); // envia nome
   } else if(strcmp(command, S_NEW_FOLDER) == 0){
+    DEBUG_PRINT("Enviando S_NEW_FOLDER\n");
     strcpy(buffer, S_NEW_FOLDER);
     write_to_socket(ssl, buffer);
-    strcpy(buffer, file_path + strlen(serverInfo.folder) + 1);
+    DEBUG_PRINT("File path: %s\n", file_path);
+    strcpy(buffer, file_path);
     write_to_socket(ssl, buffer);
+    DEBUG_PRINT("nome do folder: %s\n", buffer);
   }
     current = current->next;
   }
