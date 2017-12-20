@@ -575,6 +575,7 @@ int main(int argc, char *argv[]) { // ./dropboxServer endereço porta
     was_replica = 1;
     pthread_t thread_replica;
     connection_replica = malloc(sizeof(*connection_replica));
+    connection_replica->ip = malloc(sizeof(MAXNAME));
     strcpy(connection_replica->ip, replicaHost);
     connection_replica->porta = replicaPort;
 
