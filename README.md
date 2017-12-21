@@ -8,9 +8,6 @@ Application developed as a project for the Operating Systems II (INF01151) class
 [![BR](assets/flags/br.gif)]()
 Aplicação desenvolvida como projeto da disciplina de Sistemas Operacionais II (INF01151).
 
-Link do Relatório: https://docs.google.com/document/d/1oecFbi0hCt_8Ax5vFzYKOlbkrzjiL77_sUPwPz9WHIQ/edit?usp=sharing
-
-
 ## Building
 
 ```
@@ -70,4 +67,4 @@ See also the full list of [contributors](https://github.com/FranciscoKnebel/sync
 
 ## License
 
-This project is licensed under the _insert name here_ License - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the _MIT_ License - see the [LICENSE.md](LICENSE.md) file for details.
