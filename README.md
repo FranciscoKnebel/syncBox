@@ -3,10 +3,10 @@
 [![Build Status](https://travis-ci.com/FranciscoKnebel/syncBox.svg?token=XTCGVcTeCasm1L7c4fss&branch=master)](https://travis-ci.com/FranciscoKnebel/syncBox)
 
 [![US](assets/flags/eua.gif)]()
-Application developed as a project for the Operating Systems II (INF01151) class.
+Inspired by Dropbox application, developed as a project for the Operating Systems II (INF01151) class.
 
 [![BR](assets/flags/br.gif)]()
-Aplicação desenvolvida como projeto da disciplina de Sistemas Operacionais II (INF01151).
+Aplicação inspirada no Dropbox, desenvolvida como projeto da disciplina de Sistemas Operacionais II (INF01151).
 
 ## Building
 
